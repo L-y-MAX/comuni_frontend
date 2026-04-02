@@ -1,0 +1,1547 @@
+<template>
+  <view class="knowledge-page">
+    <!-- 加载中占位 -->
+    <view
+      v-if="isLoading"
+      class="loading-container"
+    >
+      <uni-load-more
+        type="loading"
+        text="加载中..."
+      />
+    </view>
+
+    <!-- 知识库分栏容器 -->
+    <view
+      v-else
+      class="kb-container"
+    >
+      <!-- 分栏切换按钮 -->
+      <view class="kb-tab-header">
+        <button
+          class="tab-btn"
+          :class="{ active: activeTab === 'left' }"
+          @click="switchTab('left')"
+        >
+          关注/分享的知识库
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: activeTab === 'right' }"
+          @click="switchTab('right')"
+        >
+          我的知识库
+        </button>
+      </view>
+
+      <!-- 分栏内容区域 -->
+      <view class="kb-columns">
+        <!-- 左侧栏：关注的知识库 + 分享给我的知识库 -->
+        <view
+          class="kb-column left-column"
+          v-if="activeTab === 'left'"
+        >
+          <!-- 关注的知识库 -->
+          <view class="kb-section">
+            <view class="kb-header">
+              <text class="title">关注的知识库</text>
+              <view class="kb-header-actions">
+                <button
+                  class="fold-button"
+                  @click="toggleFollowKbExpand"
+                >
+                  <image
+                    class="fold-icon"
+                    :src="
+                      isFollowKbExpanded
+                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+                    "
+                    mode="aspectFit"
+                  />
+                </button>
+              </view>
+            </view>
+
+            <view v-if="isFollowKbExpanded">
+              <!--增加可选链保护 length 访问 -->
+              <view
+                v-if="followKbList?.length === 0"
+                class="empty-tip"
+              >
+                <text>暂无关注的知识库</text>
+              </view>
+              <!--遍历前确保数组存在 -->
+              <view
+                class="kb-item"
+                v-for="item in followKbList || []"
+                :key="`follow-${item.id}`"
+                :class="{ active: tabState[activeTab].selectedKbId === item.id }"
+              >
+                <view
+                  class="kb-info"
+                  @click="selectKb(item.id)"
+                >
+                  <!-- 核心修改：将公开/私有标签与名称放在同一行，标签在前 -->
+                  <view class="kb-name-row">
+                    <text
+                      class="kb-public"
+                      v-if="item.is_public"
+                    >
+                      公开
+                    </text>
+                    <text
+                      class="kb-private"
+                      v-else
+                    >
+                      私有
+                    </text>
+                    <text class="kb-name">{{ item.name }}</text>
+                  </view>
+                  <text class="kb-desc">{{ item.description || '' }}</text>
+                </view>
+                <!-- 新增：取消关注按钮 -->
+                <view class="kb-actions">
+                  <button
+                    class="unfollow-kb-btn"
+                    @click.stop="unfollowKbHandle(item.id)"
+                  >
+                    <image
+                      class="action-icon"
+                      src="https://youupro.xyz/notes/static/icons/unfollow.png"
+                      mode="aspectFit"
+                    />
+                  </button>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 分享给我的知识库 -->
+          <view class="kb-section">
+            <view class="kb-header">
+              <text class="title">分享给我的知识库</text>
+              <view class="kb-header-actions">
+                <button
+                  class="fold-button"
+                  @click="toggleShareKbExpand"
+                >
+                  <image
+                    class="fold-icon"
+                    :src="
+                      isShareKbExpanded
+                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+                    "
+                    mode="aspectFit"
+                  />
+                </button>
+              </view>
+            </view>
+
+            <view v-if="isShareKbExpanded">
+              <!--增加可选链保护 length 访问 -->
+              <view
+                v-if="shareKbList?.length === 0"
+                class="empty-tip"
+              >
+                <text>暂无分享给我的知识库</text>
+              </view>
+              <!--遍历前确保数组存在 -->
+              <view
+                class="kb-item"
+                v-for="item in shareKbList || []"
+                :key="`share-${item.id}`"
+                :class="{ active: tabState[activeTab].selectedKbId === item.id }"
+              >
+                <view
+                  class="kb-info"
+                  @click="selectKb(item.id)"
+                >
+                  <!-- 核心修改：将公开/私有标签与名称放在同一行，标签在前 -->
+                  <view class="kb-name-row">
+                    <text
+                      class="kb-public"
+                      v-if="item.is_public"
+                    >
+                      公开
+                    </text>
+                    <text
+                      class="kb-private"
+                      v-else
+                    >
+                      私有
+                    </text>
+                    <text class="kb-name">{{ item.name }}</text>
+                  </view>
+                  <text class="kb-desc">{{ item.description || '' }}</text>
+                </view>
+                <!-- 新增：关注/取消关注按钮 -->
+                <view class="kb-actions">
+                  <button
+                    class="follow-kb-btn"
+                    @click.stop="followKbHandle(item.id)"
+                    v-if="!isKbFollowed(item.id)"
+                  >
+                    <image
+                      class="action-icon"
+                      src="https://youupro.xyz/notes/static/icons/follow.png"
+                      mode="aspectFit"
+                    />
+                  </button>
+                  <button
+                    class="unfollow-kb-btn"
+                    @click.stop="unfollowKbHandle(item.id)"
+                    v-else
+                  >
+                    <image
+                      class="action-icon"
+                      src="https://youupro.xyz/notes/static/icons/unfollow.png"
+                      mode="aspectFit"
+                    />
+                  </button>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 右侧栏：我的知识库 -->
+        <view
+          class="kb-column right-column"
+          v-if="activeTab === 'right'"
+        >
+          <view class="kb-section">
+            <view class="kb-header">
+              <text class="title">我的知识库</text>
+              <view class="kb-header-actions">
+                <!-- 知识库折叠按钮 -->
+                <button
+                  class="fold-button"
+                  @click="toggleKbListExpand"
+                >
+                  <image
+                    class="fold-icon"
+                    :src="
+                      isKbListExpanded
+                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+                    "
+                    mode="aspectFit"
+                  />
+                </button>
+                <!-- 知识库按钮 -->
+                <view class="add-kb-section">
+                  <button
+                    @click="toAddKb"
+                    class="add-button"
+                  >
+                    <image
+                      class="add-icon"
+                      src="https://youupro.xyz/notes/static/icons/add.png"
+                      mode="aspectFit"
+                    />
+                  </button>
+                </view>
+              </view>
+            </view>
+
+            <!-- 知识库列表内容 显示/隐藏 -->
+            <view v-if="isKbListExpanded">
+              <!-- 空列表提示, 可选链保护 length 访问 -->
+              <view
+                v-if="kbList?.length === 0"
+                class="empty-tip"
+              >
+                <text>暂无知识库，点击「新增知识库」创建</text>
+              </view>
+
+              <!--知识库条目, 遍历前确保数组存在 -->
+              <view
+                class="kb-item"
+                v-for="item in kbList || []"
+                :key="`my-${item.id}`"
+                :class="{ active: tabState[activeTab].selectedKbId === item.id }"
+              >
+                <view
+                  class="kb-info"
+                  @click="selectKb(item.id)"
+                >
+                  <!-- 核心修改：将公开/私有标签与名称放在同一行，标签在前 -->
+                  <view class="kb-name-row">
+                    <text
+                      class="kb-public"
+                      v-if="item.is_public"
+                    >
+                      公开
+                    </text>
+                    <text
+                      class="kb-private"
+                      v-else
+                    >
+                      私有
+                    </text>
+                    <text class="kb-name">{{ item.name }}</text>
+                  </view>
+                  <text class="kb-desc">{{ item.description || '' }}</text>
+                </view>
+                <view class="kb-actions">
+                  <button
+                    class="delete-kb-btn"
+                    @click.stop="deleteKnowledgeBaseHandle(item.id)"
+                  >
+                    <image
+                      class="action-icon"
+                      src="https://youupro.xyz/notes/static/icons/delete.png"
+                      mode="aspectFit"
+                    />
+                  </button>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 文章列表：仅选中知识库且非加载中时显示 -->
+    <view
+      class="node-list"
+      v-if="
+        tabState[activeTab].selectedKbId &&
+        !isLoading &&
+        (activeTab === 'right'
+          ? kbList?.length > 0
+          : followKbList?.length > 0 || shareKbList?.length > 0)
+      "
+    >
+      <!-- 新增文章按钮 -->
+      <view class="node-subheader">
+        <text class="subheader-text">当前知识库：{{ selectedKbName }}</text>
+        <!-- 文章列表折叠按钮 -->
+        <button
+          class="fold-button node-fold-button"
+          @click="toggleNodeListExpand"
+        >
+          <image
+            class="fold-icon"
+            :src="
+              tabState[activeTab].isNodeListExpanded
+                ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+            "
+            mode="aspectFit"
+          />
+        </button>
+      </view>
+
+      <!-- 文章列表内容：根据折叠状态显示/隐藏 -->
+      <view v-if="tabState[activeTab].isNodeListExpanded">
+        <view class="node-header">
+          <text class="title">文章列表</text>
+          <view class="add-node-section">
+            <button
+              @click="toAddNode"
+              class="add-button"
+            >
+              <image
+                class="add-icon"
+                src="https://youupro.xyz/notes/static/icons/add.png"
+                mode="aspectFit"
+              />
+            </button>
+          </view>
+        </view>
+
+        <!--增加可选链保护 length 访问 -->
+        <view
+          v-if="tabState[activeTab].nodeList?.length === 0"
+          class="empty-tip"
+        >
+          <text>当前知识库暂无文章，点击「新增文章」创建</text>
+        </view>
+
+        <!--遍历前确保数组存在 -->
+        <view
+          class="node-item"
+          v-for="item in tabState[activeTab].nodeList || []"
+          :key="item.id"
+        >
+          <text
+            class="node-name"
+            @click="toNodeDetail(item.id)"
+          >
+            {{ item.name }}
+          </text>
+          <view class="node-actions">
+            <button
+              class="edit-btn"
+              @click="toEditNode(item.id)"
+            >
+              <image
+                class="action-icon"
+                src="https://youupro.xyz/notes/static/icons/edit.png"
+                mode="aspectFit"
+              />
+            </button>
+            <button
+              class="delete-btn"
+              @click="deleteNode(item.id)"
+            >
+              <image
+                class="action-icon"
+                src="https://youupro.xyz/notes/static/icons/delete.png"
+                mode="aspectFit"
+              />
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { computed, ref } from 'vue'
+import {
+  getKnowledgeBaseList,
+  getKnowledgeNodeList,
+  deleteKnowledgeNode,
+  deleteKnowledgeBase,
+  addKnowledgeNode,
+  getFollowKnowledgeBaseList,
+  getSharedToMeKnowledgeBaseList,
+  followKnowledgeBase,
+  unfollowKnowledgeBase,
+} from '@/api/knowledge'
+
+// ==========  分栏相关状态 ==========
+// 活跃分栏（left:关注/分享，right:我的），从缓存读取
+const getActiveTab = (): string => {
+  try {
+    const cache = uni.getStorageSync('kbActiveTab')
+    return cache || 'right' // 默认显示我的知识库
+  } catch (e) {
+    return 'right'
+  }
+}
+const activeTab = ref<string>(getActiveTab())
+
+// 关注的知识库列表及折叠状态（初始化空数组，TS 类型明确）
+const followKbList = ref<any[]>([])
+const getFollowKbExpandedStatus = (): boolean => {
+  try {
+    const cache = uni.getStorageSync('followKbExpandedStatus')
+    return cache === '' || cache === null || cache === undefined ? true : Boolean(cache)
+  } catch (e) {
+    return true
+  }
+}
+const isFollowKbExpanded = ref<boolean>(getFollowKbExpandedStatus())
+
+// 分享给我的知识库列表及折叠状态（初始化空数组，TS 类型明确）
+const shareKbList = ref<any[]>([])
+const getShareKbExpandedStatus = (): boolean => {
+  try {
+    const cache = uni.getStorageSync('shareKbExpandedStatus')
+    return cache === '' || cache === null || cache === undefined ? true : Boolean(cache)
+  } catch (e) {
+    return true
+  }
+}
+const isShareKbExpanded = ref<boolean>(getShareKbExpandedStatus())
+
+// ========== 原有状态重构：按标签页存储状态 ==========
+// 定义标签页状态结构
+interface TabState {
+  selectedKbId: string
+  nodeList: any[]
+  isNodeListExpanded: boolean
+}
+
+// 从缓存读取指定标签页的节点列表折叠状态
+const getNodeListExpandedStatus = (tab: string): boolean => {
+  try {
+    const cache = uni.getStorageSync(`nodeListExpandedStatus_${tab}`)
+    return cache === '' || cache === null || cache === undefined ? true : Boolean(cache)
+  } catch (e) {
+    return true
+  }
+}
+
+// 从缓存读取指定标签页的选中知识库ID
+const getSelectedKbId = (tab: string): string => {
+  try {
+    const cache = uni.getStorageSync(`selectedKbId_${tab}`)
+    return cache || ''
+  } catch (e) {
+    return ''
+  }
+}
+
+// 初始化标签页状态（带记忆功能）
+const tabState = ref<Record<string, TabState>>({
+  left: {
+    selectedKbId: getSelectedKbId('left'),
+    nodeList: [],
+    isNodeListExpanded: getNodeListExpandedStatus('left'),
+  },
+  right: {
+    selectedKbId: getSelectedKbId('right'),
+    nodeList: [],
+    isNodeListExpanded: getNodeListExpandedStatus('right'),
+  },
+})
+
+const kbList = ref<any[]>([]) // 我的知识库列表（初始化空数组）
+const isLoading = ref(false) // 加载状态
+let refreshTimer: number | null = null // 防抖定时器
+
+//先定义获取缓存状态的函数，再赋值给ref（正确的TS写法）
+const getKbListExpandedStatus = (): boolean => {
+  try {
+    const cache = uni.getStorageSync('kbListExpandedStatus')
+    // uni.getStorageSync 返回空字符串/undefined 时，默认展开
+    return cache === '' || cache === null || cache === undefined ? true : Boolean(cache)
+  } catch (e) {
+    return true
+  }
+}
+
+// 折叠状态管理（从本地缓存读取，无则默认展开）- 修复后
+const isKbListExpanded = ref<boolean>(getKbListExpandedStatus())
+
+/**
+ * 核心修复：计算属性重命名为 selectedKbName，避免命名混淆 + 空值保护
+ * 基于当前激活标签页的选中ID获取名称
+ */
+const selectedKbName = computed(() => {
+  const currentTab = activeTab.value
+  const currentSelectedId = tabState.value[currentTab].selectedKbId
+
+  if (!currentSelectedId) return ''
+
+  // 根据当前标签页筛选对应的知识库列表
+  let targetList: any[] = []
+  if (currentTab === 'right') {
+    targetList = kbList.value || []
+  } else {
+    targetList = [...(followKbList.value || []), ...(shareKbList.value || [])]
+  }
+
+  const targetKb = targetList.find((item) => item.id === currentSelectedId)
+  return targetKb ? targetKb.name : '未知知识库'
+})
+
+// ==========  新增：关注相关方法 ==========
+/**
+ * 判断知识库是否已关注
+ * @param kbId 知识库ID
+ */
+const isKbFollowed = (kbId: string): boolean => {
+  const safeFollowKbList = followKbList.value || []
+  return safeFollowKbList.some((item) => item.id === kbId)
+}
+
+/**
+ * 关注知识库处理函数
+ * @param kbId 知识库ID
+ */
+const followKbHandle = async (kbId: string) => {
+  uni.showModal({
+    title: '确认关注',
+    content: '是否确认关注该知识库？',
+    async success(res) {
+      if (res.confirm) {
+        isLoading.value = true
+        try {
+          await followKnowledgeBase(kbId)
+          uni.showToast({ title: '关注成功', icon: 'success' })
+          // 刷新关注列表
+          await refreshKnowledgeBaseList(true)
+        } catch (error) {
+          console.error('关注知识库失败：', error)
+          const errMsg = (error as Error).message.includes('403')
+            ? '无关注权限'
+            : '关注失败，请重试'
+          uni.showToast({ title: errMsg, icon: 'none' })
+        } finally {
+          isLoading.value = false
+        }
+      }
+    },
+  })
+}
+
+/**
+ * 取消关注知识库处理函数
+ * @param kbId 知识库ID
+ */
+const unfollowKbHandle = async (kbId: string) => {
+  uni.showModal({
+    title: '确认取消关注',
+    content: '是否确认取消关注该知识库？',
+    async success(res) {
+      if (res.confirm) {
+        isLoading.value = true
+        try {
+          await unfollowKnowledgeBase(kbId)
+          uni.showToast({ title: '取消关注成功', icon: 'success' })
+          // 刷新关注列表
+          await refreshKnowledgeBaseList(true)
+        } catch (error) {
+          console.error('取消关注知识库失败：', error)
+          const errMsg = (error as Error).message.includes('403')
+            ? '无取消关注权限'
+            : '取消关注失败，请重试'
+          uni.showToast({ title: errMsg, icon: 'none' })
+        } finally {
+          isLoading.value = false
+        }
+      }
+    },
+  })
+}
+
+// ==========  分栏相关方法 ==========
+/**
+ * 切换分栏并缓存状态
+ */
+const switchTab = (tab: string) => {
+  activeTab.value = tab
+  uni.setStorageSync('kbActiveTab', tab)
+}
+
+/**
+ * 切换关注的知识库折叠状态
+ */
+const toggleFollowKbExpand = () => {
+  isFollowKbExpanded.value = !isFollowKbExpanded.value
+  uni.setStorageSync('followKbExpandedStatus', isFollowKbExpanded.value)
+}
+
+/**
+ * 切换分享给我的知识库折叠状态
+ */
+const toggleShareKbExpand = () => {
+  isShareKbExpanded.value = !isShareKbExpanded.value
+  uni.setStorageSync('shareKbExpandedStatus', isShareKbExpanded.value)
+}
+
+// ========== 原有方法 ==========
+/**
+ * 切换知识库列表折叠/展开状态（带本地记忆）
+ */
+const toggleKbListExpand = () => {
+  isKbListExpanded.value = !isKbListExpanded.value
+  // 保存到本地缓存（确保存储的是boolean类型）
+  uni.setStorageSync('kbListExpandedStatus', isKbListExpanded.value)
+}
+
+/**
+ * 切换当前标签页的文章列表折叠/展开状态（带本地记忆）
+ */
+const toggleNodeListExpand = () => {
+  const currentTab = activeTab.value
+  tabState.value[currentTab].isNodeListExpanded = !tabState.value[currentTab].isNodeListExpanded
+  // 按标签页保存到本地缓存
+  uni.setStorageSync(
+    `nodeListExpandedStatus_${currentTab}`,
+    tabState.value[currentTab].isNodeListExpanded,
+  )
+}
+
+/**
+ * 刷新所有知识库列表（我的、关注的、分享的）
+ */
+const refreshKnowledgeBaseList = async (isForce = false) => {
+  if (!isForce && refreshTimer) return
+  if (!isForce) {
+    refreshTimer = setTimeout(() => {
+      doRefreshKbList()
+      refreshTimer = null
+    }, 500) as unknown as number
+  } else {
+    doRefreshKbList()
+  }
+}
+
+/**
+ * 实际刷新知识库列表逻辑（核心修复：接口返回值空值保护 + 标签页状态校验）
+ */
+const doRefreshKbList = async () => {
+  isLoading.value = true
+  try {
+    // 1. 获取我的知识库（原有接口）-空值兜底
+    const myKbRes = await getKnowledgeBaseList()
+    kbList.value = myKbRes?.results || [] // 防止 res 为 undefined 或无 results 属性
+
+    // 2. 获取关注的知识库（替换为真实接口调用）-空值兜底
+    const followKbRes = await getFollowKnowledgeBaseList()
+    followKbList.value = followKbRes?.results || []
+
+    // 3. 获取分享给我的知识库（替换为真实接口调用）-空值兜底
+    const shareKbRes = await getSharedToMeKnowledgeBaseList()
+    shareKbList.value = shareKbRes?.results || []
+
+    // 校验各标签页选中的知识库是否存在，不存在则清空
+    // 校验right标签页（我的知识库）
+    const rightKbIds = (kbList.value || []).map((item) => item.id)
+    if (
+      tabState.value.right.selectedKbId &&
+      !rightKbIds.includes(tabState.value.right.selectedKbId)
+    ) {
+      tabState.value.right.selectedKbId = ''
+      tabState.value.right.nodeList = []
+      uni.setStorageSync('selectedKbId_right', '')
+    }
+
+    // 校验left标签页（关注/分享）
+    const leftKbIds = [...(followKbList.value || []), ...(shareKbList.value || [])].map(
+      (item) => item.id,
+    )
+    if (tabState.value.left.selectedKbId && !leftKbIds.includes(tabState.value.left.selectedKbId)) {
+      tabState.value.left.selectedKbId = ''
+      tabState.value.left.nodeList = []
+      uni.setStorageSync('selectedKbId_left', '')
+    }
+  } catch (error) {
+    console.error('刷新知识库列表失败：', error)
+    //出错时强制赋值空数组，避免后续渲染报错
+    kbList.value = []
+    followKbList.value = []
+    shareKbList.value = []
+    uni.showToast({ title: '刷新失败，请重试', icon: 'none' })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * 选择当前标签页的知识库 - 仅加载该库下的文章
+ */
+const selectKb = async (id: string, isRefresh = true) => {
+  const currentTab = activeTab.value
+  if (id === tabState.value[currentTab].selectedKbId) return
+
+  if (isRefresh) isLoading.value = true
+  // 更新当前标签页的选中状态
+  tabState.value[currentTab].selectedKbId = id
+  tabState.value[currentTab].nodeList = [] // 先清空旧文章
+  // 缓存当前标签页的选中ID
+  uni.setStorageSync(`selectedKbId_${currentTab}`, id)
+
+  try {
+    const res = await getKnowledgeNodeList(id)
+    //接口返回值空值兜底
+    tabState.value[currentTab].nodeList = res?.results || []
+
+    // 检查是否存在待加入的文档（来自搜索页面的 pendingDocToAdd）
+    try {
+      const pendingRaw = uni.getStorageSync('pendingDocToAdd')
+      let pending: any = null
+      if (pendingRaw) {
+        pending = typeof pendingRaw === 'string' ? JSON.parse(pendingRaw) : pendingRaw
+      }
+      if (pending && pending.doc) {
+        // 弹框确认是否将该文档加入当前选择的知识库
+        uni.showModal({
+          title: '加入知识库',
+          content: `将文档 "${pending.doc.name || pending.doc.title || '未命名'}" 加入知识库 "${selectedKbName.value}" ?`,
+          confirmText: '加入',
+          cancelText: '取消',
+          async success(res) {
+            if (res.confirm) {
+              try {
+                await addKnowledgeNode({
+                  name: pending.doc.name || pending.doc.title || '未命名',
+                  content: pending.doc.content || pending.doc.summary || '',
+                  knowledge_base_id: id,
+                })
+                uni.showToast({ title: '已加入知识库', icon: 'success' })
+                // 清除 pending
+                uni.removeStorageSync('pendingDocToAdd')
+                // 刷新当前标签页的文章列表
+                await selectKb(id, true)
+              } catch (err) {
+                console.error('将文档加入知识库失败：', err)
+                uni.showToast({ title: '加入失败', icon: 'none' })
+              }
+            }
+          },
+        })
+      }
+    } catch (e) {
+      console.warn('解析 pendingDocToAdd 失败：', e)
+    }
+  } catch (error) {
+    // 仅打印警告，不抛出错误，友好提示用户
+    console.warn('加载知识库内容时出现异常：', error)
+    uni.showToast({ title: '您没有访问该知识库的权限', icon: 'none' })
+    tabState.value[currentTab].nodeList = []
+  } finally {
+    if (isRefresh) isLoading.value = false
+  }
+}
+
+// ====================== 生命周期 ======================
+onLoad(async () => {
+  await refreshKnowledgeBaseList(true)
+  // 初始化时加载当前标签页选中知识库的文章
+  const currentTab = activeTab.value
+  const currentSelectedId = tabState.value[currentTab].selectedKbId
+  if (currentSelectedId) {
+    await selectKb(currentSelectedId, false)
+  }
+})
+
+onShow(() => {
+  refreshKnowledgeBaseList()
+})
+
+// ====================== 新增：分享功能 ======================
+// 分享给好友
+onShareAppMessage(() => {
+  const currentTab = activeTab.value
+  const currentKbId = tabState.value[currentTab].selectedKbId
+  const shareTitle = currentKbId ? `知识库-${selectedKbName.value}` : '我的知识库管理'
+  const sharePath = `/pagesMember/knowledge/knowledge?tab=${currentTab}&kbId=${currentKbId || ''}`
+
+  return {
+    title: shareTitle,
+    path: sharePath,
+    imageUrl: 'https://youupro.xyz/notes/static/icons/share-icon.png', // 可替换为实际分享图片地址
+  }
+})
+
+// 分享到朋友圈
+onShareTimeline(() => {
+  const currentTab = activeTab.value
+  const currentKbId = tabState.value[currentTab].selectedKbId
+  const shareTitle = currentKbId ? `知识库-${selectedKbName.value}` : '我的知识库管理'
+
+  return {
+    title: shareTitle,
+    query: `tab=${currentTab}&kbId=${currentKbId || ''}`,
+    imageUrl: 'https://youupro.xyz/notes/static/icons/share-icon.png', // 可替换为实际分享图片地址
+  }
+})
+
+// ====================== 页面操作方法 ======================
+const toAddKb = () => {
+  uni.navigateTo({
+    url: '/pagesMember/knowledge/addKb/addKb',
+  })
+}
+
+const toAddNode = () => {
+  const currentTab = activeTab.value
+  if (!tabState.value[currentTab].selectedKbId) {
+    uni.showToast({ title: '请先选择一个知识库', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pagesMember/knowledge/addNode/addNode?kbId=${tabState.value[currentTab].selectedKbId}`,
+  })
+}
+
+const toNodeDetail = (id: string) => {
+  uni.navigateTo({
+    url: `/pagesMember/knowledge/showNode/showNode?id=${id}&type=detail`,
+  })
+}
+
+const toEditNode = (id: string) => {
+  uni.navigateTo({
+    url: `/pagesMember/knowledge/editNode/editNode?id=${id}&type=edit`,
+  })
+}
+
+const deleteNode = async (id: string) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '是否删除该文章？',
+    async success(res) {
+      if (res.confirm) {
+        isLoading.value = true
+        try {
+          await deleteKnowledgeNode(id)
+          uni.showToast({ title: '删除成功', icon: 'success' })
+          const currentTab = activeTab.value
+          await selectKb(tabState.value[currentTab].selectedKbId, true)
+        } catch (error) {
+          console.error('删除文章失败：', error)
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        } finally {
+          isLoading.value = false
+        }
+      }
+    },
+  })
+}
+
+const deleteKnowledgeBaseHandle = async (kbId: string) => {
+  uni.showModal({
+    title: '危险操作',
+    content: '删除知识库将同时删除其下所有文章，是否确认删除？',
+    confirmText: '确认删除',
+    cancelText: '取消',
+    confirmColor: '#ff4d4f',
+    async success(res) {
+      if (res.confirm) {
+        isLoading.value = true
+        try {
+          await deleteKnowledgeBase(kbId)
+          uni.showToast({ title: '删除成功', icon: 'success' })
+
+          // 清空right标签页中该知识库的选中状态
+          if (tabState.value.right.selectedKbId === kbId) {
+            tabState.value.right.selectedKbId = ''
+            tabState.value.right.nodeList = []
+            uni.setStorageSync('selectedKbId_right', '')
+          }
+
+          await refreshKnowledgeBaseList(true)
+        } catch (error) {
+          console.error('删除知识库失败：', error)
+          const errMsg = (error as Error).message.includes('403')
+            ? '无删除权限'
+            : '删除失败，请重试'
+          uni.showToast({ title: errMsg, icon: 'none' })
+        } finally {
+          isLoading.value = false
+        }
+      }
+    },
+  })
+}
+</script>
+
+<style scoped lang="scss">
+// Apple-inspired Knowledge Management Design (Light Blue Theme)
+$primary-color: #ffffff; // 按钮主题色改为白色
+$secondary-color: #ff4500; // 线条主题色改为橙红色
+$accent-color: #93c5fd; // 更浅的蓝色
+$success-color: #31e8ab; // 绿色保持
+$danger-color: #ef4444; // 红色保持
+$text-primary: #1f2937; // 深黑
+$text-secondary: #6b7280; // 中灰
+$text-tertiary: #9ca3af; // 浅灰
+$white: #ffffff; // 白
+$gray-light: #f0f9ff; // 极浅蓝色
+$gray-lighter: #e0f2fe; // 浅蓝色
+$shadow-light: 0 2rpx 12rpx rgba(59, 130, 246, 0.06);
+$shadow-medium: 0 4rpx 24rpx rgba(59, 130, 246, 0.08);
+$shadow-strong: 0 8rpx 32rpx rgba(59, 130, 246, 0.12);
+$border-radius-large: 20rpx;
+$border-radius-medium: 16rpx;
+$border-radius-small: 12rpx;
+$white: #ffffff;
+
+.knowledge-page {
+  min-height: 100vh;
+  background: $white;
+  padding: 16rpx;
+}
+
+.loading-container {
+  padding: 80rpx 0;
+  text-align: center;
+  background: $white;
+  border-radius: $border-radius-large;
+  margin: 24rpx;
+  box-shadow: $shadow-medium;
+}
+
+// ==========  分栏样式 ==========
+.kb-container {
+  width: 100%;
+}
+
+.kb-tab-header {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.tab-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-secondary;
+  background: $gray-light;
+  border-radius: $border-radius-medium;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
+
+  &::after {
+    border: none !important;
+  }
+
+  &.active {
+    color: $white;
+    background: linear-gradient(135deg, $secondary-color 0%, #ff6733 100%);
+  }
+}
+
+.kb-columns {
+  width: 100%;
+}
+
+.kb-column {
+  width: 100%;
+}
+
+.kb-section {
+  background: $white;
+  border-radius: $border-radius-large;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+  box-shadow: $shadow-medium;
+}
+
+// ========== 原有样式 ==========
+.kb-list,
+.node-list {
+  background: $white;
+  border-radius: $border-radius-large;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+  box-shadow: $shadow-medium;
+}
+
+/* Enhanced Header Design */
+.kb-header,
+.node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16rpx;
+  margin-bottom: 16rpx;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1rpx;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 122, 255, 0.1) 50%,
+      transparent 100%
+    );
+  }
+}
+
+//  知识库头部操作区样式
+.kb-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.node-subheader {
+  padding-bottom: 12rpx;
+  margin-bottom: 16rpx;
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.02) 0%, rgba(88, 86, 214, 0.02) 100%);
+  padding: 12rpx 16rpx;
+  border-radius: $border-radius-medium;
+  // flex布局，让文字左对齐，按钮右对齐
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  //确保容器宽度100%
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.subheader-text {
+  font-size: 26rpx;
+  color: $text-secondary;
+  font-weight: 500;
+  // 文字左对齐，占据剩余空间
+  flex: 1;
+  text-align: left;
+}
+
+// 折叠按钮样式（通用）
+.fold-button {
+  width: 40rpx;
+  height: 40rpx;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.9);
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  &::after {
+    border: none !important;
+  }
+}
+
+// 文章列表折叠按钮专属样式 - 强制靠右
+.node-fold-button {
+  flex: none !important;
+  margin-left: auto !important;
+}
+
+// 折叠图标样式（通用）
+.fold-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: none;
+  display: block;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.5rpx;
+}
+
+/* Add Button Sections */
+.add-kb-section {
+  position: static !important; // 取消绝对定位，改为静态布局
+  transform: none !important; // 取消位移
+}
+
+.add-node-section {
+  position: absolute;
+  right: 3%; // 靠右3%
+  top: 50%; // 垂直居中
+  transform: translateY(-50%); // 精准垂直居中（抵消自身高度）
+}
+
+.add-button {
+  width: 40rpx;
+  height: 40rpx;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  // 彻底移除所有边框相关样式
+  border: none !important; // 移除默认边框（加!important确保覆盖小程序默认样式）
+  border-radius: 0 !important; // 可选：移除默认圆角（如需圆形按钮可设50%）
+  outline: none !important; // 移除聚焦态外边框
+  box-shadow: none !important; // 移除默认阴影
+  // 移除小程序button的默认样式污染
+  appearance: none;
+  -webkit-appearance: none;
+  // 移除点击高亮
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.9);
+    // 确保点击态也无边框
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  // 兼容不同端的button默认样式
+  &::after {
+    border: none !important; // 移除小程序button伪元素生成的边框
+  }
+}
+
+.add-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: none;
+  display: block; // 防止基线对齐偏移
+}
+
+/* Action Icons */
+.action-icon {
+  width: 30rpx;
+  height: 30rpx;
+  border: none; // 去掉默认边框
+}
+
+/* Enhanced Knowledge Base Items */
+.kb-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx;
+  border-radius: $border-radius-medium;
+  margin-bottom: 12rpx;
+  background: linear-gradient(135deg, $white 0%, $gray-light 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    transition: width 0.3s ease;
+  }
+
+  &:active {
+    transform: translateX(4rpx);
+    box-shadow: $shadow-strong;
+  }
+
+  &.active {
+    background: linear-gradient(
+      135deg,
+      rgba(243, 108, 12, 0.05) 0%,
+      rgba(102, 102, 102, 0.05) 100%
+    );
+    box-shadow: 0 4rpx 20rpx rgba(51, 51, 51, 0.2);
+
+    &::before {
+      width: 6rpx;
+    }
+  }
+}
+
+.kb-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+// 核心新增：名称行容器，实现标签和名称同行显示
+.kb-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 6rpx;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.kb-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-primary;
+  letter-spacing: -0.2rpx;
+  flex: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.kb-desc {
+  font-size: 24rpx;
+  color: $text-secondary;
+  font-weight: 400;
+  display: block;
+  line-height: 1.4;
+  display: -webkit-box;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kb-public {
+  font-size: 20rpx;
+  color: $success-color;
+  background: linear-gradient(135deg, rgba(85, 85, 85, 0.1) 0%, rgba(85, 85, 85, 0.05) 100%);
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kb-private {
+  font-size: 20rpx;
+  color: $accent-color;
+  background: linear-gradient(135deg, rgba(153, 153, 153, 0.1) 0%, rgba(153, 153, 153, 0.05) 100%);
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kb-actions {
+  margin-left: 16rpx;
+}
+
+// 新增：关注/取消关注按钮样式
+.follow-kb-btn,
+.unfollow-kb-btn {
+  color: $secondary-color;
+  font-size: 24rpx;
+  padding: 6rpx 10rpx;
+  border-radius: 20rpx;
+  font-weight: 600;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    background: $secondary-color;
+    color: $white;
+    transform: scale(0.95);
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  &::after {
+    border: none !important;
+  }
+}
+
+.delete-kb-btn {
+  color: $secondary-color;
+  font-size: 24rpx;
+  padding: 6rpx 10rpx;
+  border-radius: 20rpx;
+  font-weight: 600;
+  // 彻底移除所有边框相关样式（加!important确保覆盖默认样式）
+  border: none !important;
+  outline: none !important; // 移除聚焦态外边框
+  box-shadow: none !important; // 移除默认阴影/高光
+  // 移除浏览器/小程序的默认按钮样式渲染
+  appearance: none;
+  -webkit-appearance: none;
+  // 移除移动端点击高亮背景（非边框，但优化体验）
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    background: $danger-color;
+    color: $white;
+    transform: scale(0.95);
+    // 确保点击态也无任何边框/阴影
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  //移除小程序button伪元素生成的默认边框（90%的边框问题来自这里）
+  &::after {
+    border: none !important;
+  }
+}
+
+/* Enhanced Node Items */
+.node-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx;
+  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+
+  &:active {
+    transform: translateX(4rpx) scale(0.98);
+    box-shadow: $shadow-strong;
+  }
+}
+
+.node-name {
+  font-size: 26rpx;
+  color: $text-primary;
+  flex: 1;
+  font-weight: 500;
+  cursor: pointer;
+  transition: none;
+}
+
+.node-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.edit-btn {
+  background: white;
+  color: $primary-color;
+  font-size: 24rpx;
+  padding: 6rpx 10rpx;
+  border-radius: 20rpx;
+  font-weight: 600;
+  // 彻底移除所有边框相关样式（加!important确保覆盖默认样式）
+  border: none !important;
+  outline: none !important; // 移除聚焦态虚线外边框
+  box-shadow: none !important; // 移除默认阴影/高光
+  // 移除浏览器/小程序的默认按钮样式渲染
+  appearance: none;
+  -webkit-appearance: none;
+  // 移除移动端点击高亮背景（优化体验，无视觉干扰）
+  -webkit-tap-highlight-color: transparent;
+  // 原有样式保留
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    background: $primary-color;
+    color: $white;
+    transform: scale(0.95);
+    // 确保点击态也无任何边框/阴影
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  //移除小程序button伪元素生成的默认边框（这是边框残留的核心原因）
+  &::after {
+    border: none !important;
+  }
+}
+
+.delete-btn {
+  background: white;
+  color: $secondary-color;
+  font-size: 30rpx;
+  padding: 6rpx 10rpx;
+  border-radius: 20rpx;
+  font-weight: 600;
+  // 移除所有边框相关样式（加!important确保覆盖默认样式）
+  border: none !important;
+  outline: none !important; // 移除聚焦态外边框
+  box-shadow: none !important; // 移除默认阴影
+  // 移除浏览器/小程序的默认按钮样式
+  appearance: none;
+  -webkit-appearance: none;
+  // 移除点击高亮背景
+  -webkit-tap-highlight-color: transparent;
+  // 原有样式保留
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    background: $danger-color;
+    color: $white;
+    transform: scale(0.95);
+    // 确保点击态也无任何边框
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  //移除小程序button伪元素生成的默认边框（很多时候边框是这里来的）
+  &::after {
+    border: none !important;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 750rpx) {
+  .knowledge-page {
+    padding: 12rpx;
+  }
+
+  .kb-list,
+  .node-list {
+    padding: 16rpx;
+    margin-bottom: 12rpx;
+  }
+
+  .kb-header,
+  .node-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12rpx;
+  }
+
+  .kb-header-actions {
+    align-self: flex-end;
+  }
+
+  .kb-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12rpx;
+  }
+
+  .kb-actions {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  .node-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12rpx;
+  }
+
+  .node-actions {
+    align-self: flex-end;
+  }
+
+  .title {
+    font-size: 28rpx;
+  }
+
+  .kb-name {
+    font-size: 24rpx;
+  }
+
+  .node-name {
+    font-size: 22rpx;
+  }
+
+  // 响应式调整名称行
+  .kb-name-row {
+    width: 100%;
+  }
+}
+</style>
