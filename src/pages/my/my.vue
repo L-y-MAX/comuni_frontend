@@ -115,7 +115,7 @@
             />
           </view>
         </view>
-        <!-- 原有表单项保留，调整会员权益和宣讲活动位置 -->
+        <!-- 原有表单项保留，调整会员权益和岗位招聘位置 -->
         <view
           class="form-item"
           :class="{ active: activeItemId === 'follow' }"
@@ -134,7 +134,7 @@
             />
           </view>
         </view>
-        <!-- 宣讲活动（移至会员权益上方） -->
+        <!-- 岗位招聘 -->
         <view
           class="form-item"
           :class="{ active: activeItemId === 'recruitment' }"
@@ -143,7 +143,7 @@
           @touchend="() => clearActiveItem()"
         >
           <view class="form-label">
-            <text class="label-text">宣讲活动</text>
+            <text class="label-text">岗位招聘</text>
           </view>
           <view class="form-control">
             <image
