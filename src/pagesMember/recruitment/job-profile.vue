@@ -54,8 +54,46 @@
           正在加载校招岗位…
         </text>
 
+        <!-- 搜索：按岗位名称 / 企业 / 行业过滤候选项 -->
+        <view class="pick-search">
+          <text class="pick-search-icon">🔍</text>
+          <input
+            v-model="pickerKeyword"
+            class="pick-search-input"
+            type="text"
+            placeholder="搜索岗位名称、企业或行业"
+            placeholder-class="pick-search-ph"
+            confirm-type="search"
+          />
+          <view
+            v-if="pickerKeyword"
+            class="pick-search-clear"
+            @tap="pickerKeyword = ''"
+          >
+            <text class="pick-search-clear-icon">✕</text>
+          </view>
+        </view>
+
+        <text
+          v-if="pickerKeyword"
+          class="pick-hit"
+        >
+          命中 {{ filteredPickerItems.length }} / {{ pickerItems.length }} 个岗位
+        </text>
+
+        <!-- 空状态 -->
         <view
-          v-for="item in pickerItems"
+          v-if="pickerKeyword && !filteredPickerItems.length"
+          class="pick-empty"
+        >
+          <text class="pick-empty-title">没有匹配的岗位</text>
+          <text class="pick-empty-desc">
+            换个关键词，或点搜索框右侧的 ✕ 清空后查看全部 {{ pickerItems.length }} 个岗位。
+          </text>
+        </view>
+
+        <view
+          v-for="item in filteredPickerItems"
           :key="item.key"
           class="pick-item"
           @tap="chooseJob(item)"
@@ -458,6 +496,21 @@ interface PickJobItem {
 const pickerMode = ref(false);
 const pickerItems = ref<PickJobItem[]>([]);
 const pickerLoading = ref(false);
+
+/**
+ * 岗位搜索关键词。
+ * 只过滤「候选岗位列表」，不影响真实岗位 / 示例岗位的解析流程。
+ */
+const pickerKeyword = ref('');
+
+/** 过滤后的候选岗位；关键词为空时返回全部 */
+const filteredPickerItems = computed<PickJobItem[]>(() => {
+  const kw = pickerKeyword.value.trim().toLowerCase();
+  if (!kw) return pickerItems.value;
+  return pickerItems.value.filter((it) =>
+    [it.jobName, it.enterpriseName, it.industry].join(' ').toLowerCase().includes(kw)
+  );
+});
 
 /** 内置示例岗位：交出原始招聘输入，由同一套解析逻辑生成画像 */
 const buildSamplePicker = (): PickJobItem[] =>
@@ -1181,5 +1234,82 @@ onShareTimeline(() => ({
     background: #fef3c7;
     color: #b45309;
   }
+}
+
+/* ====================== 选岗搜索 ====================== */
+.pick-search {
+  display: flex;
+  align-items: center;
+  height: 76rpx;
+  padding: 0 22rpx;
+  margin: 4rpx 0 16rpx;
+  background: #f7f8fa;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 38rpx;
+  box-sizing: border-box;
+}
+
+.pick-search-icon {
+  font-size: 26rpx;
+  margin-right: 12rpx;
+}
+
+.pick-search-input {
+  flex: 1;
+  font-size: 27rpx;
+  color: #1f2937;
+}
+
+.pick-search-ph {
+  color: #9ca3af;
+  font-size: 25rpx;
+}
+
+.pick-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  background: #e5e7eb;
+  margin-left: 12rpx;
+
+  &:active {
+    background: #d1d5db;
+  }
+}
+
+.pick-search-clear-icon {
+  font-size: 20rpx;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.pick-hit {
+  display: block;
+  font-size: 22rpx;
+  color: #9ca3af;
+  margin-bottom: 14rpx;
+}
+
+.pick-empty {
+  padding: 48rpx 20rpx;
+  text-align: center;
+}
+
+.pick-empty-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 10rpx;
+}
+
+.pick-empty-desc {
+  display: block;
+  font-size: 23rpx;
+  color: #9ca3af;
+  line-height: 1.7;
 }
 </style>
