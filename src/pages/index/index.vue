@@ -62,7 +62,20 @@
       @tap="goRecruitmentList"
     >
       <view class="resource-entry-left">
-        <text class="resource-entry-icon">🏢</text>
+        <!-- 优先用 src/static/home/jobs.png；文件不存在时自动退回 emoji，不会出现破图 -->
+        <image
+          v-if="!jobsIconError"
+          class="resource-entry-icon-img"
+          src="/static/home/jobs.png"
+          mode="aspectFit"
+          @error="jobsIconError = true"
+        />
+        <text
+          v-else
+          class="resource-entry-icon"
+        >
+          🏢
+        </text>
         <view class="resource-entry-texts">
           <text class="resource-entry-title">岗位招聘</text>
           <text class="resource-entry-desc">浏览校招合作企业的岗位与企业信息</text>
@@ -78,7 +91,20 @@
       @tap="goCareerResources"
     >
       <view class="resource-entry-left">
-        <text class="resource-entry-icon">📚</text>
+        <!-- 优先用 src/static/home/policy.png；文件不存在时自动退回 emoji -->
+        <image
+          v-if="!policyIconError"
+          class="resource-entry-icon-img"
+          src="/static/home/policy.png"
+          mode="aspectFit"
+          @error="policyIconError = true"
+        />
+        <text
+          v-else
+          class="resource-entry-icon"
+        >
+          📚
+        </text>
         <view class="resource-entry-texts">
           <text class="resource-entry-title">就业政策与校招资源</text>
           <text class="resource-entry-desc">就业政策 · 校招企业名单 · 简历与面试指导</text>
@@ -411,7 +437,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增：导入分享生命周期函数
 import {
   isSearching,
@@ -450,6 +476,15 @@ import {
 } from './index'
 
 import { RESOURCE_KIND_LABEL, type ResourceKind } from '@/types/careerResource'
+
+/**
+ * 首页两张卡片的图标是否加载失败。
+ *
+ * 图标走「有图用图、缺图退回 emoji」：把图片放进 src/static/home/ 后重新构建就会生效，
+ * 没放也不会出现破图，更不需要为了换图标改代码。
+ */
+const jobsIconError = ref(false)
+const policyIconError = ref(false)
 
 // 跳转到「岗位招聘」页面（招聘信息列表）
 const goRecruitmentList = () => {
@@ -1137,6 +1172,15 @@ onMounted(() => {
 .resource-entry-icon {
   font-size: 40rpx;
   margin-right: 20rpx;
+}
+
+/* 图片版图标：与 emoji 版保持同样的占位与视觉大小 */
+.resource-entry-icon-img {
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  border-radius: 12rpx;
 }
 
 .resource-entry-texts {
