@@ -403,3 +403,48 @@ export const navigateToRecruitmentList = () => {
     },
   })
 }
+
+// ========== 新增：跳转到学生能力画像页面 ==========
+/**
+ * 跳转到「学生就业能力画像」页面。
+ *
+ * 注意：该页面现在是 **tabBar 页面**，必须用 `switchTab`，
+ * 用 `navigateTo` 会失败（小程序不允许 navigateTo 跳 tab 页）。
+ *
+ * 依然不做登录校验：数据来源是用户自己填写的表单，
+ * 本地规则解析即可产出完整画像，无需登录也能使用与演示。
+ */
+export const navigateToAbilityProfile = () => {
+  uni.switchTab({
+    url: '/pages/abilityProfile/abilityProfile',
+    fail: (err) => {
+      console.error('跳转能力画像页面失败：', err)
+      uni.showToast({
+        title: '页面跳转失败',
+        icon: 'none',
+        duration: 2000,
+      })
+    },
+  })
+}
+
+// ========== 知识库入口（原 tabBar 位置已让给「能力画像」） ==========
+/**
+ * 跳转到知识库页面。
+ *
+ * 知识库已从 tabBar 移出，但**仍留在主包 pages 里**，
+ * 所以可以直接用 navigateTo（不是 switchTab）。
+ */
+export const navigateToKnowledge = () => {
+  uni.navigateTo({
+    url: '/pages/knowledge/knowledge',
+    fail: (err) => {
+      console.error('跳转知识库页面失败：', err)
+      uni.showToast({
+        title: '页面跳转失败',
+        icon: 'none',
+        duration: 2000,
+      })
+    },
+  })
+}

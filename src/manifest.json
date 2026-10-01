@@ -54,7 +54,11 @@
     "setting": {
       "urlCheck": true,
       "minified": true,
-      "postcss": true
+      "postcss": true,
+      "es6": false,
+      "enhance": false,
+      "swc": false,
+      "disableSWC": true
     },
     "usingComponents": true,
     "lazyCodeLoading": "requiredComponents",
@@ -62,7 +66,7 @@
       "subPackages": true
     },
     "networkTimeout": {
-      "request": 5000
+      "request": 10000
     }
   },
   "mp-alipay": {

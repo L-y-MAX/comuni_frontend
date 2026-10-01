@@ -180,6 +180,33 @@
         </view>
       </view>
 
+      <!-- 岗位能力画像 - 跳转岗位画像页 -->
+      <view class="collapse-container">
+        <view
+          class="collapse-trigger effect-btn"
+          @click="toggleCollapse('profileInfo')"
+        >
+          <text class="btn-text">岗位能力画像</text>
+        </view>
+        <view
+          class="collapse-content"
+          :class="{ collapsed: !collapseStates.profileInfo }"
+        >
+          <view class="profile-card card-style">
+            <text class="profile-intro">
+              对岗位文本做结构化解析，输出专业技能、证书要求、创新能力、学习能力等十大维度的能力要求画像，
+              可直接用于人岗匹配与生涯发展报告生成。
+            </text>
+            <button
+              class="profile-entry-btn"
+              @click="goJobProfile"
+            >
+              查看岗位能力画像
+            </button>
+          </view>
+        </view>
+      </view>
+
       <!-- 联系方式 - 通用折叠 -->
       <view class="collapse-container">
         <view
@@ -326,6 +353,7 @@ const collapseStates = ref<Record<string, boolean>>({
   baseInfo: true, // 企业基本信息默认展开
   introInfo: true, // 企业简介默认展开
   jobInfo: true, // 招聘岗位信息默认展开
+  profileInfo: true, // 岗位能力画像默认展开
   contactInfo: true, // 联系方式默认展开
   otherInfo: true, // 其他信息默认展开
 })
@@ -380,6 +408,7 @@ const fetchDetailById = async (creditCode: string) => {
         baseInfo: true,
         introInfo: true,
         jobInfo: true,
+        profileInfo: true,
         contactInfo: true,
         otherInfo: true,
       }
@@ -411,6 +440,29 @@ const refreshDetail = async () => {
     title: '刷新成功',
     icon: 'none',
     duration: 2000,
+  })
+}
+
+// 跳转到岗位能力画像页（携带信用代码作为岗位标识）
+const goJobProfile = () => {
+  if (!currentCreditCode.value) {
+    uni.showToast({
+      title: '岗位信息未就绪',
+      icon: 'none',
+      duration: 2000,
+    })
+    return
+  }
+  uni.navigateTo({
+    url: `/pagesMember/recruitment/job-profile?id=${encodeURIComponent(currentCreditCode.value)}`,
+    fail: (err) => {
+      console.error('跳转岗位画像失败：', err)
+      uni.showToast({
+        title: '跳转失败，请重试',
+        icon: 'none',
+        duration: 2000,
+      })
+    },
   })
 }
 
@@ -815,6 +867,34 @@ onShareTimeline(() => {
   border: none;
   -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
+
+  &::after {
+    border: none;
+  }
+}
+
+// ========== 岗位能力画像入口样式 ==========
+.profile-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-intro {
+  font-size: 25rpx;
+  color: #6b7280;
+  line-height: 1.7;
+  display: block;
+}
+
+.profile-entry-btn {
+  margin: 24rpx 0 0;
+  height: 76rpx;
+  line-height: 76rpx;
+  background: #ff4500;
+  color: #fff;
+  border-radius: 14rpx;
+  font-size: 28rpx;
+  font-weight: 600;
 
   &::after {
     border: none;

@@ -261,7 +261,8 @@ const handleLogin = async (): Promise<void> => {
     uni.showToast({ title: '登录成功', icon: 'success' })
     setTimeout(() => {
       syncLoginState() // 同步登录状态到 my 页面
-      uni.switchTab({ url: '/pages/knowledge/knowledge' })
+      // 知识库已不再是 tabBar 页面，登录后回到首页
+      uni.switchTab({ url: '/pages/index/index' })
     }, 1500)
   } catch (err) {
     console.error('登录失败：', err)
@@ -347,8 +348,9 @@ const wxLogin = async (): Promise<void> => {
     setTimeout(async () => {
       syncLoginState() // 同步登录状态到 my 页面
       try {
+        // 知识库已不再是 tabBar 页面，登录后回到首页
         await uni.switchTab({
-          url: '/pages/knowledge/knowledge',
+          url: '/pages/index/index',
           fail: (jumpErr) => {
             console.error('页面跳转失败：', jumpErr)
             uni.redirectTo({ url: '/pages/index/index' })

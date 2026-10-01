@@ -26,6 +26,12 @@
 			"style": {
 				"navigationBarTitleText": "知识库"
 			}
+		},
+		{
+			"path": "pages/abilityProfile/abilityProfile",
+			"style": {
+				"navigationBarTitleText": "能力画像"
+			}
 		}
 	],
 	"tabBar": {
@@ -40,10 +46,10 @@
 				"text": "首页"
 			},
 			{
-				"pagePath": "pages/knowledge/knowledge",
-				"iconPath": "static/tabs/knowledge_default.png",
-				"selectedIconPath": "static/tabs/knowledge_selected.png",
-				"text": "知识库"
+				"pagePath": "pages/abilityProfile/abilityProfile",
+				"iconPath": "static/tabs/ability_default.png",
+				"selectedIconPath": "static/tabs/ability_selected.png",
+				"text": "能力画像"
 			},
 			{
 				"pagePath": "pages/ai/ai",
@@ -242,6 +248,12 @@
 					"style": {
 						"navigationBarTitleText": "企业信息"
 					}
+				},
+				{
+					"path": "job-profile",
+					"style": {
+						"navigationBarTitleText": "岗位能力画像"
+					}
 				}
 			]
 		},
@@ -252,6 +264,39 @@
 					"path": "instruction",
 					"style": {
 						"navigationBarTitleText": "功能说明"
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesMember/jobMatch",
+			"pages": [
+				{
+					"path": "jobMatch",
+					"style": {
+						"navigationBarTitleText": "人岗匹配"
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesMember/careerReport",
+			"pages": [
+				{
+					"path": "careerReport",
+					"style": {
+						"navigationBarTitleText": "生涯发展报告"
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesMember/reportHistory",
+			"pages": [
+				{
+					"path": "reportHistory",
+					"style": {
+						"navigationBarTitleText": "历史报告"
 					}
 				}
 			]
