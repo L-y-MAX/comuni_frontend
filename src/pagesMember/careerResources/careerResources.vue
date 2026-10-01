@@ -25,19 +25,7 @@
       </view>
     </view>
 
-    <!-- ========== 主题切换 ========== -->
-    <view class="cr-tabs">
-      <view
-        v-for="t in themeList"
-        :key="t.key"
-        class="cr-tab"
-        :class="{ active: activeTheme === t.key }"
-        @tap="switchTheme(t.key)"
-      >
-        <text class="cr-tab-icon">{{ t.icon }}</text>
-        <text class="cr-tab-label">{{ t.label }}</text>
-      </view>
-    </view>
+    <!-- 当前分类的辅助说明（分类改由右侧抽屉选择，入口是「政策类型速查」标题行右侧的筛选按钮） -->
     <text class="cr-theme-desc">{{ currentThemeMeta.desc }}</text>
 
     <!-- ========== 检索 ========== -->
@@ -67,7 +55,14 @@
     >
       <view class="cr-cats-head">
         <text class="cr-section-title">政策类型速查</text>
-        <text class="cr-section-note">点标签筛选相关文件</text>
+        <!-- 原「点标签筛选相关文件」小字改为筛选按钮，点击唤起右侧抽屉 -->
+        <view
+          class="cr-filter-btn"
+          @tap="openDrawer"
+        >
+          <text class="cr-filter-btn-icon">≡</text>
+          <text class="cr-filter-btn-text">筛选</text>
+        </view>
       </view>
       <view class="cr-cat-list">
         <view
@@ -208,6 +203,71 @@
         </text>
       </view>
     </view>
+
+    <!-- ====================== 分类筛选抽屉（右侧滑入） ====================== -->
+    <!-- 遮罩：半透明黑色，点击关闭；阻止滚动穿透 -->
+    <view
+      v-if="drawerOpen"
+      class="cr-mask"
+      @tap="closeDrawer"
+      @touchmove.stop.prevent
+    ></view>
+
+    <!-- 抽屉本体：常驻 DOM，靠 transform 做右滑入场 / 退场 -->
+    <view
+      class="cr-drawer"
+      :class="{ open: drawerOpen }"
+    >
+      <!-- 1. 头部：标题 + 关闭叉号 -->
+      <view class="cr-drawer-head">
+        <text class="cr-drawer-title">资源分类筛选</text>
+        <text
+          class="cr-drawer-close"
+          @tap="closeDrawer"
+        >
+          ✕
+        </text>
+      </view>
+
+      <!-- 2. 选项区：单选互斥、纵向排列；选项变多时面板内部纵向滚动 -->
+      <scroll-view
+        class="cr-drawer-body"
+        scroll-y
+      >
+        <view
+          v-for="t in themeList"
+          :key="t.key"
+          class="cr-opt"
+          :class="{ active: draftTheme === t.key }"
+          @tap="pickDraftTheme(t.key)"
+        >
+          <text
+            class="cr-opt-check"
+            :class="{ on: draftTheme === t.key }"
+          >
+            {{ draftTheme === t.key ? '✓' : '○' }}
+          </text>
+          <text class="cr-opt-icon">{{ t.icon }}</text>
+          <text class="cr-opt-label">{{ t.label }}</text>
+        </view>
+      </scroll-view>
+
+      <!-- 3. 底部操作区：重置 / 确认 -->
+      <view class="cr-drawer-foot">
+        <view
+          class="cr-btn-reset"
+          @tap="resetDrawer"
+        >
+          <text class="cr-btn-reset-text">重置</text>
+        </view>
+        <view
+          class="cr-btn-confirm"
+          @tap="confirmDrawer"
+        >
+          <text class="cr-btn-confirm-text">确认</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -290,6 +350,47 @@ const toggleTag = (tag: ResourceTag) => {
 const resetFilter = () => {
   activeTag.value = '';
   keyword.value = '';
+};
+
+// ====================== 分类筛选抽屉 ======================
+
+/** 抽屉是否打开 */
+const drawerOpen = ref(false);
+
+/**
+ * 抽屉里的「草稿」选择。
+ * 点【确认】才真正生效；直接关闭抽屉（遮罩 / 叉号）则丢弃草稿，
+ * 这样用户误触分类不会立刻打乱正在看的列表。
+ */
+const draftTheme = ref<ResourceTheme>('policy');
+
+/** 打开抽屉：自动读取当前分类并勾选（选中态记忆） */
+const openDrawer = () => {
+  draftTheme.value = activeTheme.value;
+  drawerOpen.value = true;
+};
+
+/** 关闭抽屉（不保存草稿） */
+const closeDrawer = () => {
+  drawerOpen.value = false;
+};
+
+/** 抽屉内选择分类：单选互斥，点谁选谁 */
+const pickDraftTheme = (key: ResourceTheme) => {
+  draftTheme.value = key;
+};
+
+/** 确认：保存选择 → 关闭抽屉 → 主列表随之刷新为对应分类 */
+const confirmDrawer = () => {
+  switchTheme(draftTheme.value);
+  drawerOpen.value = false;
+};
+
+/** 重置：恢复默认分类「就业政策」并关闭抽屉（按规格，重置也会关闭抽屉） */
+const resetDrawer = () => {
+  draftTheme.value = 'policy';
+  switchTheme('policy');
+  drawerOpen.value = false;
 };
 
 const kindLabel = (kind: ResourceKind): string => RESOURCE_KIND_LABEL[kind] ?? '';
@@ -409,47 +510,7 @@ $bg: #f7f8fa;
   background: rgba(255, 255, 255, 0.3);
 }
 
-// ========== 主题切换 ==========
-.cr-tabs {
-  display: flex;
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 10rpx;
-  margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-}
-
-.cr-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16rpx 4rpx;
-  border-radius: 14rpx;
-  transition: background-color 0.2s ease;
-
-  &.active {
-    background: $primary-soft;
-  }
-}
-
-.cr-tab-icon {
-  font-size: 32rpx;
-  margin-bottom: 4rpx;
-}
-
-.cr-tab-label {
-  font-size: 24rpx;
-  color: $text-2;
-  font-weight: 500;
-
-  .cr-tab.active & {
-    color: $primary;
-    font-weight: 600;
-  }
-}
-
+// ========== 当前分类辅助说明 ==========
 .cr-theme-desc {
   display: block;
   font-size: 22rpx;
@@ -514,6 +575,202 @@ $bg: #f7f8fa;
 .cr-section-note {
   font-size: 22rpx;
   color: $text-3;
+}
+
+/* ========== 筛选按钮（速查标题行右侧） ========== */
+.cr-filter-btn {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 22rpx;
+  border-radius: 30rpx;
+  background: $primary-soft;
+  border: 2rpx solid $primary-light;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.cr-filter-btn-icon {
+  font-size: 26rpx;
+  color: $primary;
+  margin-right: 8rpx;
+  line-height: 1;
+}
+
+.cr-filter-btn-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: $primary;
+}
+
+/* ====================== 分类筛选抽屉 ====================== */
+/* 遮罩：半透明黑，淡入 */
+.cr-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  animation: cr-mask-in 0.3s ease;
+}
+
+@keyframes cr-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 抽屉本体：右侧滑入，圆角只在左上/左下 */
+.cr-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 70%;
+  max-width: 420rpx;
+  background: #ffffff;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  border-radius: 28rpx 0 0 28rpx;
+  box-shadow: -8rpx 0 32rpx rgba(0, 0, 0, 0.16);
+  transform: translateX(104%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+/* 头部 */
+.cr-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 28rpx 24rpx;
+  border-bottom: 1rpx solid $line;
+  flex-shrink: 0;
+}
+
+.cr-drawer-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.cr-drawer-close {
+  font-size: 30rpx;
+  color: $text-3;
+  padding: 8rpx 12rpx;
+  line-height: 1;
+}
+
+/* 选项区 */
+.cr-drawer-body {
+  flex: 1;
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.cr-opt {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 18rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  border: 2rpx solid transparent;
+  margin-bottom: 14rpx;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  /* 选中态：浅橙底 + 橙色文字 + 橙色对勾 */
+  &.active {
+    background: $primary-soft;
+    border-color: $primary-light;
+
+    .cr-opt-label {
+      color: $primary;
+      font-weight: 600;
+    }
+  }
+
+  &:active {
+    background: #fafbfc;
+  }
+}
+
+.cr-opt-check {
+  width: 34rpx;
+  font-size: 26rpx;
+  color: #d1d5db;
+  line-height: 1;
+
+  &.on {
+    color: $primary;
+    font-weight: 700;
+  }
+}
+
+.cr-opt-icon {
+  font-size: 32rpx;
+  margin-right: 14rpx;
+}
+
+.cr-opt-label {
+  flex: 1;
+  font-size: 28rpx;
+  color: $text-2;
+}
+
+/* 底部操作区：固定在抽屉底部 */
+.cr-drawer-foot {
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid $line;
+  flex-shrink: 0;
+}
+
+.cr-btn-reset,
+.cr-btn-confirm {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  border-radius: 38rpx;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.cr-btn-reset {
+  background: #ffffff;
+  border: 2rpx solid #e5e7eb;
+}
+
+.cr-btn-reset-text {
+  font-size: 28rpx;
+  color: $text-2;
+}
+
+.cr-btn-confirm {
+  background: $primary;
+}
+
+.cr-btn-confirm-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .cr-cat-list {
