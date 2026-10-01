@@ -1,196 +1,158 @@
 <template>
-  <view
-    class="cr-page"
-    :style="{ paddingTop: navTotalHeight + 'px' }"
-  >
-    <!-- ============================================================
-         1. 顶部导航栏
-         - 左上角：返回箭头
-         - 中间：页面标题
-         - 右上角：留出与微信原生胶囊（三个点 + 圆形按钮）等宽的空位，
-           这样标题在视觉上仍然居中，且不会被胶囊压住
-         ============================================================ -->
-    <view
-      class="custom-nav"
-      :style="{ paddingTop: statusBarHeight + 'px' }"
-    >
-      <view
-        class="nav-inner"
-        :style="{ height: navBarHeight + 'px' }"
-      >
-        <view
-          class="nav-left"
-          :style="{ width: sideWidth + 'px' }"
-          @tap="goBack"
-        >
-          <text class="nav-back">‹</text>
-        </view>
-
-        <text class="nav-title">就业政策与校招资源</text>
-
-        <!-- 右侧仅占位：微信胶囊由原生渲染在这里 -->
-        <view
-          class="nav-right"
-          :style="{ width: sideWidth + 'px' }"
-        ></view>
-      </view>
-    </view>
-
-    <!-- ============================================================
-         2. 橙色顶部大卡片：主标题 + 描述 + 三栏统计
-         ============================================================ -->
-    <view class="hero">
-      <text class="hero-title">就业政策与校招资源</text>
-      <text class="hero-desc">
-        结构化整理的离线资源库：官方来源、定位说明、一键复制官方链接。不转载原文，不确定的条款一律不写。
+  <view class="cr-page">
+    <!-- ========== 头部说明 ========== -->
+    <view class="cr-hero">
+      <text class="cr-hero-title">就业政策与校招资源</text>
+      <text class="cr-hero-sub">
+        结构化整理的离线资源库：官方来源、定位说明、一键复制官方链接。
+        不转载原文，不确定的条款一律不写。
       </text>
-
-      <view class="hero-stats">
-        <view
-          v-for="s in heroStats"
-          :key="s.label"
-          class="hero-stat"
-        >
-          <text class="hero-stat-num">{{ s.value }}</text>
-          <text class="hero-stat-label">{{ s.label }}</text>
+      <view class="cr-hero-stats">
+        <view class="cr-stat">
+          <text class="cr-stat-num">{{ CAREER_RESOURCES.length }}</text>
+          <text class="cr-stat-label">条资源</text>
+        </view>
+        <view class="cr-stat-divider"></view>
+        <view class="cr-stat">
+          <text class="cr-stat-num">{{ officialCount }}</text>
+          <text class="cr-stat-label">官方来源</text>
+        </view>
+        <view class="cr-stat-divider"></view>
+        <view class="cr-stat">
+          <text class="cr-stat-num">{{ themeList.length }}</text>
+          <text class="cr-stat-label">个主题</text>
         </view>
       </view>
     </view>
 
-    <!-- ============================================================
-         3. 分类标签横向卡片组（3 个）
-         选中态：浅橙底 + 橙色文字；未选中：白底 + 灰色文字
-         ============================================================ -->
-    <view class="theme-row">
+    <!-- ========== 主题切换 ========== -->
+    <view class="cr-tabs">
       <view
         v-for="t in themeList"
         :key="t.key"
-        class="theme-card"
+        class="cr-tab"
         :class="{ active: activeTheme === t.key }"
         @tap="switchTheme(t.key)"
       >
-        <text class="theme-icon">{{ t.icon }}</text>
-        <text class="theme-label">{{ t.label }}</text>
+        <text class="cr-tab-icon">{{ t.icon }}</text>
+        <text class="cr-tab-label">{{ t.label }}</text>
       </view>
     </view>
+    <text class="cr-theme-desc">{{ currentThemeMeta.desc }}</text>
 
-    <!-- 选中分类的辅助说明（浅灰小字） -->
-    <text class="theme-desc">{{ currentThemeMeta.desc }}</text>
-
-    <!-- ============================================================
-         4. 搜索框：放大镜 + 输入 + 清除叉号
-         ============================================================ -->
-    <view class="search-box">
-      <text class="search-icon">🔍</text>
+    <!-- ========== 检索 ========== -->
+    <view class="cr-search">
+      <text class="cr-search-icon">🔍</text>
       <input
         v-model="keyword"
-        class="search-input"
+        class="cr-search-input"
         type="text"
-        placeholder="搜索关键词，如：补贴"
-        placeholder-class="search-ph"
+        placeholder="搜索标题、发布机构或标签"
+        placeholder-class="cr-search-ph"
         confirm-type="search"
       />
-      <view
+      <text
         v-if="keyword"
-        class="search-clear"
-        @tap="clearKeyword"
+        class="cr-search-clear"
+        @tap="keyword = ''"
       >
-        <text class="search-clear-icon">✕</text>
-      </view>
+        ✕
+      </text>
     </view>
 
-    <!-- ============================================================
-         5. 政策类型速查（仅「就业政策」分类下展示）
-         标题行：左标题 + 右提示；卡片点击 = 按标签筛选（mock 交互，不跳详情页）
-         ============================================================ -->
+    <!-- ========== 政策类型速查（仅政策主题） ========== -->
     <view
       v-if="activeTheme === 'policy'"
-      class="section"
+      class="cr-card cr-cats"
     >
-      <view class="section-head">
-        <text class="section-title">政策类型速查</text>
-        <text class="section-hint">点标签筛选相关文件</text>
+      <view class="cr-cats-head">
+        <text class="cr-section-title">政策类型速查</text>
+        <text class="cr-section-note">点标签筛选相关文件</text>
       </view>
-
-      <view
-        v-for="c in POLICY_CATEGORIES"
-        :key="c.name"
-        class="cat-card"
-        :class="{ active: activeTag === c.tag }"
-        @tap="onCategoryTap(c)"
-      >
-        <text class="cat-name">{{ c.name }}</text>
-        <text class="cat-audience">面向：{{ c.audience }}</text>
-        <text class="cat-desc">{{ c.desc }}</text>
+      <view class="cr-cat-list">
+        <view
+          v-for="c in POLICY_CATEGORIES"
+          :key="c.name"
+          class="cr-cat"
+          :class="{ active: activeTag === c.tag }"
+          @tap="toggleTag(c.tag)"
+        >
+          <text class="cr-cat-name">{{ c.name }}</text>
+          <text class="cr-cat-audience">面向：{{ c.audience }}</text>
+          <text class="cr-cat-desc">{{ c.desc }}</text>
+        </view>
       </view>
-
-      <text class="section-foot">
+      <text class="cr-cats-foot">
         以上为方向性归类，不含金额与时限数字。具体标准请以官方原文为准。
       </text>
     </view>
 
-    <!-- ============================================================
-         6. 资源列表（政策文件 / 校招渠道 / 求职指导）
-         ============================================================ -->
-    <view class="section">
-      <view class="section-head">
-        <text class="section-title">{{ listTitle }}</text>
-        <text class="section-hint">
-          {{ visibleList.length }} / {{ themeTotal }} 条
-        </text>
-      </view>
-
-      <!-- 当前筛选状态 -->
-      <view
-        v-if="filterText"
-        class="filter-bar"
+    <!-- ========== 筛选状态 ========== -->
+    <view
+      v-if="activeTag || keyword"
+      class="cr-filter-bar"
+    >
+      <text class="cr-filter-text">
+        筛选：{{ filterText }}　命中 {{ visibleList.length }} / {{ themeTotal }} 条
+      </text>
+      <text
+        class="cr-filter-reset"
+        @tap="resetFilter"
       >
-        <text class="filter-text">筛选：{{ filterText }}</text>
-        <text
-          class="filter-reset"
-          @tap="resetFilter"
-        >
-          清除
-        </text>
-      </view>
+        清除
+      </text>
+    </view>
 
+    <!-- ========== 资源列表 ========== -->
+    <view class="cr-list">
       <view
         v-for="item in visibleList"
         :key="item.id"
-        class="res-card"
-        @tap="onResourceTap(item)"
+        class="cr-card cr-item"
       >
-        <view class="res-head">
-          <text class="res-title">{{ item.title }}</text>
+        <view class="cr-item-head">
+          <text class="cr-item-title">{{ item.title }}</text>
           <text
-            class="res-kind"
+            class="cr-kind"
             :class="item.kind"
           >
             {{ kindLabel(item.kind) }}
           </text>
         </view>
 
-        <text class="res-meta">
-          {{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
-        </text>
+        <view class="cr-meta">
+          <text class="cr-meta-source">{{ item.source }}</text>
+          <text
+            v-if="item.docNo"
+            class="cr-meta-docno"
+          >
+            {{ item.docNo }}
+          </text>
+          <text
+            v-if="item.date"
+            class="cr-meta-date"
+          >
+            {{ item.date }}
+          </text>
+        </view>
 
-        <text class="res-summary">{{ item.summary }}</text>
+        <text class="cr-summary">{{ item.summary }}</text>
 
         <view
           v-if="item.advice"
-          class="res-advice"
+          class="cr-advice"
         >
-          <text class="res-advice-label">怎么用</text>
-          <text class="res-advice-text">{{ item.advice }}</text>
+          <text class="cr-advice-label">怎么用</text>
+          <text class="cr-advice-text">{{ item.advice }}</text>
         </view>
 
-        <view class="res-tags">
+        <view class="cr-tags">
           <text
             v-for="g in item.tags"
             :key="g"
-            class="res-tag"
+            class="cr-tag"
             :class="{ active: activeTag === g }"
-            @tap.stop="toggleTag(g)"
+            @tap="toggleTag(g)"
           >
             {{ g }}
           </text>
@@ -198,45 +160,53 @@
 
         <view
           v-if="item.url"
-          class="res-actions"
+          class="cr-actions"
         >
           <view
-            class="copy-btn"
-            @tap.stop="copyLink(item)"
+            class="cr-btn"
+            @tap="copyLink(item)"
           >
-            <text class="copy-btn-text">复制官方链接</text>
+            <text class="cr-btn-text">复制官方链接</text>
           </view>
-          <text class="copy-hint">小程序内不能直接打开外部网页，复制后请在浏览器访问</text>
+          <text class="cr-action-hint">小程序内不能直接打开外部网页，复制后请在浏览器访问</text>
         </view>
       </view>
 
       <!-- 空状态 -->
       <view
         v-if="!visibleList.length"
-        class="empty-card"
+        class="cr-card cr-empty"
       >
-        <text class="empty-title">没有匹配的资源</text>
-        <text class="empty-desc">换个关键词，或点上面的「清除」看全部 {{ themeTotal }} 条。</text>
+        <text class="cr-empty-title">没有匹配的资源</text>
+        <text class="cr-empty-desc">换个关键词，或点上面的「清除」看全部 {{ themeTotal }} 条。</text>
       </view>
     </view>
 
-    <!-- ============================================================
-         7. 联动说明 + 来源与免责
-         ============================================================ -->
-    <view class="linkage-card">
-      <text class="linkage-title">怎么和本小程序的其他功能配合用</text>
-      <text class="linkage-text">{{ RESOURCE_LINKAGE_NOTE }}</text>
+    <!-- ========== 与求职闭环的联动 ========== -->
+    <view class="cr-card cr-linkage">
+      <text class="cr-section-title">怎么和本小程序的其他功能配合用</text>
+      <text class="cr-linkage-text">{{ RESOURCE_LINKAGE_NOTE }}</text>
     </view>
 
-    <view class="disclaimer-card">
-      <text class="disclaimer-title">来源与免责说明</text>
-      <text
-        v-for="(d, i) in DISCLAIMERS"
-        :key="i"
-        class="disclaimer-item"
-      >
-        · {{ d }}
-      </text>
+    <!-- ========== 来源与免责声明 ========== -->
+    <view class="cr-card cr-disclaimer">
+      <text class="cr-disclaimer-title">来源与免责说明</text>
+      <view class="cr-disclaimer-list">
+        <text class="cr-disclaimer-item">
+          · 本页为公开信息的结构化整理，只提供来源机构、定位说明与官方链接，
+          不转载政策与校方文件原文。
+        </text>
+        <text class="cr-disclaimer-item">
+          · 角标含义：「官方文件」为政府部门发文；「官方平台」为政府或学校官方站点；
+          「媒体报道」为公开新闻；「平台整理」为本平台原创的求职方法总结。
+        </text>
+        <text class="cr-disclaimer-item">
+          · 补贴标准、申领条件与申报时限可能调整，请以官方原文及受理部门答复为准。
+        </text>
+        <text class="cr-disclaimer-item">
+          · 校招企业与岗位以学校就业服务平台实时发布为准，本页不缓存企业名单。
+        </text>
+      </view>
     </view>
   </view>
 </template>
@@ -255,85 +225,12 @@ import {
   RESOURCE_KIND_LABEL,
   RESOURCE_THEMES,
   type CareerResource,
-  type PolicyCategory,
   type ResourceKind,
   type ResourceTag,
   type ResourceTheme,
 } from '@/types/careerResource';
 
-// ====================== 静态文案 ======================
-
-/**
- * 来源与免责说明。
- * 本页只做「来源 + 定位 + 官方链接」，不转载原文，因此免责说明必须常驻页面。
- */
-const DISCLAIMERS = [
-  '本页为公开信息的结构化整理，只提供来源机构、定位说明与官方链接，不转载政策与校方文件原文。',
-  '角标含义：「官方文件」为政府部门发文；「官方平台」为政府或学校官方站点；「媒体报道」为公开新闻；「平台整理」为本平台原创的求职方法总结。',
-  '补贴标准、申领条件与申报时限可能调整，请以官方原文及受理部门答复为准。',
-  '校招企业与岗位以学校就业服务平台实时发布为准，本页不缓存企业名单。',
-];
-
-// ====================== 顶部导航栏尺寸 ======================
-
-const statusBarHeight = ref(20); // 状态栏高度（px）
-const navBarHeight = ref(44); // 标题栏高度（px）
-const sideWidth = ref(88); // 左右占位宽度（px），右侧用于避开微信原生胶囊
-
-/** 导航栏占用的总高度，页面内容据此下移，避免被固定导航栏遮住 */
-const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value);
-
-/**
- * 读取状态栏与胶囊位置。
- *
- * 小程序无法隐藏右上角原生胶囊（三个点 + 圆形按钮），
- * 只能把标题栏的左右占位设成与胶囊等宽，让标题在视觉上保持居中且不被遮挡。
- * 任何一步取不到值都用默认值兜底，绝不让页面因此报错。
- */
-const initNavMetrics = () => {
-  try {
-    const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
-      statusBarHeight?: number;
-      windowWidth?: number;
-    };
-    if (typeof win.statusBarHeight === 'number' && win.statusBarHeight > 0) {
-      statusBarHeight.value = win.statusBarHeight;
-    }
-
-    const rect = (
-      uni as unknown as {
-        getMenuButtonBoundingClientRect?: () => {
-          top: number;
-          height: number;
-          left: number;
-          width: number;
-        };
-      }
-    ).getMenuButtonBoundingClientRect?.();
-
-    if (rect && rect.height > 0 && rect.top > 0) {
-      // 标题栏高度 = 胶囊上下留白 × 2 + 胶囊高度（微信官方推荐的算法）
-      navBarHeight.value = (rect.top - statusBarHeight.value) * 2 + rect.height;
-      const windowWidth = win.windowWidth ?? 375;
-      // 从胶囊左边缘到屏幕右边缘 = 胶囊宽度 + 右侧留白
-      sideWidth.value = Math.max(60, windowWidth - rect.left);
-    }
-  } catch {
-    // 取不到就用默认值，不影响页面可用性
-  }
-};
-
-/** 返回上一页；没有上一页时（例如从分享卡片直接进入）回到首页 */
-const goBack = () => {
-  const pages = getCurrentPages();
-  if (pages.length > 1) {
-    uni.navigateBack();
-  } else {
-    uni.switchTab({ url: '/pages/index/index' });
-  }
-};
-
-// ====================== 主题（分类标签） ======================
+// ====================== 主题 ======================
 
 const themeList = RESOURCE_THEMES;
 const activeTheme = ref<ResourceTheme>('policy');
@@ -345,44 +242,20 @@ const currentThemeMeta = computed(
 /** 该主题下的全部条目数（未筛选） */
 const themeTotal = computed(() => resourcesByTheme(activeTheme.value).length);
 
-/** 列表标题随分类变化 */
-const LIST_TITLES: Record<ResourceTheme, string> = {
-  policy: '政策文件与官方来源',
-  campus: '校招渠道与企业线索',
-  guide: '求职实务指导',
-};
-const listTitle = computed(() => LIST_TITLES[activeTheme.value] ?? '资源列表');
-
-// ====================== 三栏统计 ======================
-
-/** 官方来源 = 非「平台整理」的条目（官方文件 / 官方平台 / 媒体报道之外的都算） */
+/** 官方来源条数（官方文件 + 官方平台），用于头部统计 */
 const officialCount = computed(
   () => CAREER_RESOURCES.filter((r) => r.kind === 'gov-doc' || r.kind === 'official-platform').length
 );
 
-/** 顶部统计：数字在上、文字在下 */
-const heroStats = computed(() => [
-  { value: CAREER_RESOURCES.length, label: '条资源' },
-  { value: officialCount.value, label: '官方来源' },
-  { value: themeList.length, label: '个主题' },
-]);
+// ====================== 检索 ======================
 
-// ====================== 搜索与筛选 ======================
-
-/**
- * 搜索关键词。
- * 按设计稿预填「就业」——它命中全部 8 条政策文件，所以看起来仍是完整列表，
- * 只是想演示「输入框有内容 + 右侧有清除叉号」的状态。清空后即为全部资源。
- */
-const keyword = ref('就业');
-
-/** 当前标签筛选（跨分类共用） */
+const keyword = ref('');
 const activeTag = ref<ResourceTag | ''>('');
 
 /**
- * 当前展示的资源列表。
- * 口径：先按分类取，再按标签收窄，最后按关键词过滤；
- * 标签与关键词是「与」的关系，避免出现「筛了标签却混进无关条目」。
+ * 当前展示的列表。
+ * 口径：先按主题取，再按标签收窄，最后按关键词过滤。
+ * 标签与关键词是「与」的关系，避免出现「筛了标签却仍混进无关条目」。
  */
 const visibleList = computed<CareerResource[]>(() => {
   let list = resourcesByTheme(activeTheme.value);
@@ -390,7 +263,6 @@ const visibleList = computed<CareerResource[]>(() => {
   return filterResources(list, keyword.value);
 });
 
-/** 筛选状态文案，无筛选时为空串（界面据此隐藏筛选条） */
 const filterText = computed(() => {
   const parts: string[] = [];
   if (activeTag.value) parts.push(`标签「${activeTag.value}」`);
@@ -400,81 +272,33 @@ const filterText = computed(() => {
 
 // ====================== 交互 ======================
 
-/** 切换分类：同时清掉标签筛选（标签跨分类共用，带着筛选跳过去会得到空列表） */
 const switchTheme = (key: ResourceTheme) => {
   activeTheme.value = key;
+  // 切换主题时清掉标签筛选：标签是跨主题共用的，
+  // 带着「补贴」跳到「简历与面试指导」会得到空列表，容易让人以为页面坏了。
   activeTag.value = '';
 };
 
-/** 点标签：再点一次取消 */
 const toggleTag = (tag: ResourceTag) => {
   activeTag.value = activeTag.value === tag ? '' : tag;
+  if (activeTheme.value === 'policy' && activeTag.value) {
+    // 政策主题下点标签后滚到列表，方便马上看到结果
+    setTimeout(() => uni.pageScrollTo({ scrollTop: 600, duration: 200 }), 50);
+  }
 };
 
-/** 清空搜索关键词（搜索框右侧叉号） */
-const clearKeyword = () => {
-  keyword.value = '';
-};
-
-/** 清除全部筛选条件 */
 const resetFilter = () => {
   activeTag.value = '';
   keyword.value = '';
 };
 
-/**
- * 政策类型速查卡片点击。
- *
- * 按设计稿这里只要一个「简单点击事件」，不写真实详情页：
- * 实现为「按该类型标签筛选下方文件 + 轻提示」，比纯粹弹 toast 更有用，
- * 也正好对应标题行右侧的「点标签筛选相关文件」。
- */
-const onCategoryTap = (c: PolicyCategory) => {
-  const willFilter = activeTag.value !== c.tag;
-  activeTag.value = willFilter ? c.tag : '';
-  uni.showToast({
-    title: willFilter ? `已按「${c.name}」筛选文件` : '已取消筛选',
-    icon: 'none',
-    duration: 1500,
-  });
-};
-
-/** 资源卡片点击：有链接就复制，没有链接给出说明（同样不跳详情页） */
-const onResourceTap = (item: CareerResource) => {
-  if (item.url) {
-    copyLink(item);
-    return;
-  }
-  uni.showToast({ title: '这是平台整理的指导内容', icon: 'none', duration: 1500 });
-};
-
 const kindLabel = (kind: ResourceKind): string => RESOURCE_KIND_LABEL[kind] ?? '';
 
-/** 复制官方链接（小程序不能直接打开外部网页） */
-const copyLink = (item: CareerResource) => {
-  if (!item.url) return;
-  uni.setClipboardData({
-    data: item.url,
-    success: () => {
-      uni.showToast({ title: '官方链接已复制', icon: 'none', duration: 2000 });
-    },
-    fail: () => {
-      // 复制失败时把链接直接显示出来，保证用户仍能拿到
-      uni.showModal({
-        title: '复制失败',
-        content: item.url as string,
-        showCancel: false,
-      });
-    },
-  });
-};
-
-// ====================== 页面加载 ======================
-
+/**
+ * 支持从首页搜索结果带 ?focus=<id> 直接定位到某一条：
+ * 切到它所属主题并把关键词设成它的标题，列表里就只剩这一条。
+ */
 onLoad((options) => {
-  initNavMetrics();
-
-  // 支持从首页搜索结果带 ?focus=<id> 直接定位到某一条
   const focus = options?.focus ? decodeURIComponent(options.focus) : '';
   if (!focus) return;
   const hit = CAREER_RESOURCES.find((r) => r.id === focus);
@@ -483,10 +307,27 @@ onLoad((options) => {
   activeTag.value = '';
   keyword.value = hit.title;
 });
+
+const copyLink = (item: CareerResource) => {
+  if (!item.url) return;
+  uni.setClipboardData({
+    data: item.url,
+    success: () => {
+      uni.showToast({ title: '官方链接已复制', icon: 'none', duration: 2000 });
+    },
+    fail: () => {
+      // 复制失败时把链接显示出来，保证用户仍能拿到
+      uni.showModal({
+        title: '复制失败',
+        content: item.url as string,
+        showCancel: false,
+      });
+    },
+  });
+};
 </script>
 
 <style scoped lang="scss">
-/* ====================== 主题变量 ====================== */
 $primary: #ff4500;
 $primary-light: #ff9a7a;
 $primary-soft: #fff3ef;
@@ -499,349 +340,296 @@ $bg: #f7f8fa;
 .cr-page {
   min-height: 100vh;
   background: $bg;
-  padding: 0 24rpx 60rpx;
+  padding: 24rpx 24rpx 60rpx;
   box-sizing: border-box;
 }
 
-/* ====================== 1. 顶部导航栏 ====================== */
-.custom-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 200;
-  background: #ffffff;
-  border-bottom: 1rpx solid $line;
+.cr-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
 
-.nav-inner {
-  display: flex;
-  align-items: center;
-  padding: 0 12rpx;
-}
-
-.nav-left {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  height: 100%;
-}
-
-.nav-back {
-  font-size: 56rpx;
-  line-height: 1;
-  color: $text-1;
-  padding: 0 16rpx 8rpx;
-}
-
-.nav-title {
-  flex: 1;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: $text-1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.nav-right {
-  height: 100%;
-}
-
-/* ====================== 2. 橙色顶部大卡片 ====================== */
-.hero {
-  margin-top: 24rpx;
-  padding: 40rpx 32rpx 28rpx;
-  border-radius: 26rpx;
+// ========== 头部 ==========
+.cr-hero {
   background: linear-gradient(135deg, #ff7a4d 0%, $primary 100%);
-  box-shadow: 0 10rpx 30rpx rgba(255, 69, 0, 0.22);
+  border-radius: 24rpx;
+  padding: 36rpx 28rpx 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 10rpx 28rpx rgba(255, 69, 0, 0.22);
 }
 
-.hero-title {
+.cr-hero-title {
   display: block;
-  font-size: 42rpx;
+  font-size: 40rpx;
   font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 14rpx;
+  color: #fff;
+  margin-bottom: 12rpx;
 }
 
-.hero-desc {
+.cr-hero-sub {
   display: block;
   font-size: 24rpx;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.hero-stats {
+.cr-hero-stats {
   display: flex;
   align-items: center;
-  margin-top: 28rpx;
-  padding-top: 24rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.32);
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
-.hero-stat {
+.cr-stat {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.hero-stat-num {
-  font-size: 42rpx;
+.cr-stat-num {
+  font-size: 36rpx;
   font-weight: 700;
-  color: #ffffff;
-  line-height: 1.1;
+  color: #fff;
 }
 
-.hero-stat-label {
+.cr-stat-label {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.88);
-  margin-top: 8rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4rpx;
 }
 
-/* ====================== 3. 分类标签横向卡片组 ====================== */
-.theme-row {
+.cr-stat-divider {
+  width: 1rpx;
+  height: 48rpx;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+// ========== 主题切换 ==========
+.cr-tabs {
   display: flex;
-  margin-top: 24rpx;
-  gap: 16rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 10rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
-.theme-card {
+.cr-tab {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24rpx 8rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-  border: 2rpx solid transparent;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+  padding: 16rpx 4rpx;
+  border-radius: 14rpx;
+  transition: background-color 0.2s ease;
 
-  /* 选中态：浅橙底 + 橙色文字 */
   &.active {
     background: $primary-soft;
-    border-color: $primary-light;
-
-    .theme-label {
-      color: $primary;
-      font-weight: 700;
-    }
   }
 }
 
-.theme-icon {
-  font-size: 36rpx;
-  margin-bottom: 10rpx;
+.cr-tab-icon {
+  font-size: 32rpx;
+  margin-bottom: 4rpx;
 }
 
-.theme-label {
-  font-size: 23rpx;
+.cr-tab-label {
+  font-size: 24rpx;
   color: $text-2;
   font-weight: 500;
-  text-align: center;
-  line-height: 1.3;
+
+  .cr-tab.active & {
+    color: $primary;
+    font-weight: 600;
+  }
 }
 
-/* 分类辅助说明 */
-.theme-desc {
+.cr-theme-desc {
   display: block;
   font-size: 22rpx;
   color: $text-3;
   line-height: 1.6;
-  padding: 16rpx 8rpx 0;
+  padding: 0 8rpx 20rpx;
 }
 
-/* ====================== 4. 搜索框 ====================== */
-.search-box {
+// ========== 检索 ==========
+.cr-search {
   display: flex;
   align-items: center;
-  height: 84rpx;
-  margin-top: 20rpx;
+  background: #fff;
+  border-radius: 40rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-radius: 42rpx;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
+  height: 80rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
-.search-icon {
-  font-size: 28rpx;
-  margin-right: 14rpx;
+.cr-search-icon {
+  font-size: 26rpx;
+  margin-right: 12rpx;
 }
 
-.search-input {
+.cr-search-input {
   flex: 1;
   font-size: 28rpx;
   color: $text-1;
 }
 
-.search-ph {
+.cr-search-ph {
   color: $text-3;
   font-size: 26rpx;
 }
 
-.search-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: #e5e7eb;
-  margin-left: 12rpx;
-
-  &:active {
-    background: #d1d5db;
-  }
+.cr-search-clear {
+  font-size: 28rpx;
+  color: $text-3;
+  padding: 10rpx;
 }
 
-.search-clear-icon {
-  font-size: 22rpx;
-  color: #6b7280;
-  line-height: 1;
+// ========== 政策速查 ==========
+.cr-cats {
+  margin-bottom: 24rpx;
 }
 
-/* ====================== 通用区块 ====================== */
-.section {
-  margin-top: 36rpx;
-}
-
-.section-head {
+.cr-cats-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 18rpx;
-  padding: 0 4rpx;
+  margin-bottom: 20rpx;
 }
 
-.section-title {
+.cr-section-title {
+  display: block;
   font-size: 30rpx;
   font-weight: 700;
   color: $text-1;
 }
 
-.section-hint {
+.cr-section-note {
   font-size: 22rpx;
   color: $text-3;
 }
 
-.section-foot {
-  display: block;
-  font-size: 22rpx;
-  color: $text-3;
-  line-height: 1.7;
-  margin-top: 16rpx;
-  padding: 0 4rpx;
+.cr-cat-list {
+  display: flex;
+  flex-direction: column;
 }
 
-/* ====================== 5. 政策类型速查卡片 ====================== */
-.cat-card {
-  padding: 26rpx 24rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
+.cr-cat {
+  padding: 20rpx;
+  border-radius: 14rpx;
+  background: #fafbfc;
   border: 2rpx solid transparent;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 16rpx;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+  margin-bottom: 12rpx;
 
   &.active {
     background: $primary-soft;
     border-color: $primary-light;
-
-    .cat-name {
-      color: $primary;
-    }
   }
 
-  &:active {
-    background: #fafbfc;
+  &:last-child {
+    margin-bottom: 0;
   }
 }
 
-.cat-name {
+.cr-cat-name {
   display: block;
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: 28rpx;
+  font-weight: 600;
   color: $text-1;
-  margin-bottom: 10rpx;
+  margin-bottom: 6rpx;
+
+  .cr-cat.active & {
+    color: $primary;
+  }
 }
 
-.cat-audience {
+.cr-cat-audience {
   display: block;
-  font-size: 23rpx;
-  color: $primary;
-  margin-bottom: 10rpx;
+  font-size: 22rpx;
+  color: $primary-light;
+  margin-bottom: 6rpx;
 }
 
-.cat-desc {
+.cr-cat-desc {
   display: block;
   font-size: 24rpx;
   color: $text-2;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
-/* ====================== 筛选状态条 ====================== */
-.filter-bar {
+.cr-cats-foot {
+  display: block;
+  font-size: 22rpx;
+  color: $text-3;
+  line-height: 1.6;
+  margin-top: 18rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid $line;
+}
+
+// ========== 筛选条 ==========
+.cr-filter-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: $primary-soft;
   border-radius: 14rpx;
   padding: 16rpx 24rpx;
-  margin-bottom: 18rpx;
+  margin-bottom: 20rpx;
 }
 
-.filter-text {
-  flex: 1;
-  font-size: 23rpx;
+.cr-filter-text {
+  font-size: 24rpx;
   color: $primary;
+  flex: 1;
 }
 
-.filter-reset {
-  font-size: 23rpx;
+.cr-filter-reset {
+  font-size: 24rpx;
   color: $text-2;
   padding-left: 20rpx;
   text-decoration: underline;
 }
 
-/* ====================== 6. 资源卡片 ====================== */
-.res-card {
-  padding: 28rpx 24rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 16rpx;
+// ========== 资源列表 ==========
+.cr-list {
+  display: flex;
+  flex-direction: column;
 }
 
-.res-head {
+.cr-item {
+  margin-bottom: 20rpx;
+}
+
+.cr-item-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 10rpx;
+  margin-bottom: 12rpx;
 }
 
-.res-title {
+.cr-item-title {
   flex: 1;
-  font-size: 29rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: $text-1;
   line-height: 1.5;
-  padding-right: 14rpx;
+  padding-right: 16rpx;
 }
 
-.res-kind {
+.cr-kind {
   flex-shrink: 0;
   font-size: 20rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
-  background: $line;
+  background: #f1f5f9;
   color: $text-2;
 
   &.gov-doc {
@@ -865,30 +653,42 @@ $bg: #f7f8fa;
   }
 }
 
-.res-meta {
-  display: block;
-  font-size: 21rpx;
-  color: $text-3;
-  margin-bottom: 12rpx;
-}
-
-.res-summary {
-  display: block;
-  font-size: 25rpx;
-  color: #374151;
-  line-height: 1.75;
+.cr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   margin-bottom: 14rpx;
 }
 
-.res-advice {
+.cr-meta-source {
+  font-size: 22rpx;
+  color: $text-2;
+}
+
+.cr-meta-docno,
+.cr-meta-date {
+  font-size: 22rpx;
+  color: $text-3;
+  margin-left: 16rpx;
+}
+
+.cr-summary {
+  display: block;
+  font-size: 26rpx;
+  color: #374151;
+  line-height: 1.75;
+  margin-bottom: 16rpx;
+}
+
+.cr-advice {
   background: #f8fafc;
   border-left: 6rpx solid $primary-light;
   border-radius: 10rpx;
   padding: 16rpx 20rpx;
-  margin-bottom: 14rpx;
+  margin-bottom: 16rpx;
 }
 
-.res-advice-label {
+.cr-advice-label {
   display: block;
   font-size: 22rpx;
   font-weight: 600;
@@ -896,39 +696,39 @@ $bg: #f7f8fa;
   margin-bottom: 6rpx;
 }
 
-.res-advice-text {
+.cr-advice-text {
   display: block;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: $text-2;
   line-height: 1.7;
 }
 
-.res-tags {
+.cr-tags {
   display: flex;
   flex-wrap: wrap;
 }
 
-.res-tag {
-  font-size: 21rpx;
+.cr-tag {
+  font-size: 22rpx;
   color: $text-2;
-  background: $line;
-  border-radius: 22rpx;
-  padding: 5rpx 18rpx;
+  background: #f1f5f9;
+  border-radius: 24rpx;
+  padding: 6rpx 18rpx;
   margin: 0 12rpx 10rpx 0;
 
   &.active {
     background: $primary;
-    color: #ffffff;
+    color: #fff;
   }
 }
 
-.res-actions {
-  margin-top: 10rpx;
+.cr-actions {
+  margin-top: 8rpx;
   padding-top: 20rpx;
   border-top: 1rpx solid $line;
 }
 
-.copy-btn {
+.cr-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -941,13 +741,13 @@ $bg: #f7f8fa;
   }
 }
 
-.copy-btn-text {
-  font-size: 25rpx;
+.cr-btn-text {
+  font-size: 26rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #fff;
 }
 
-.copy-hint {
+.cr-action-hint {
   display: block;
   font-size: 20rpx;
   color: $text-3;
@@ -955,15 +755,13 @@ $bg: #f7f8fa;
   line-height: 1.6;
 }
 
-/* ====================== 空状态 ====================== */
-.empty-card {
+// ========== 空状态 ==========
+.cr-empty {
+  align-items: center;
   padding: 60rpx 28rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
 }
 
-.empty-title {
+.cr-empty-title {
   display: block;
   font-size: 28rpx;
   font-weight: 600;
@@ -972,7 +770,7 @@ $bg: #f7f8fa;
   margin-bottom: 10rpx;
 }
 
-.empty-desc {
+.cr-empty-desc {
   display: block;
   font-size: 24rpx;
   color: $text-3;
@@ -980,38 +778,26 @@ $bg: #f7f8fa;
   line-height: 1.7;
 }
 
-/* ====================== 7. 联动 / 免责 ====================== */
-.linkage-card {
-  margin-top: 36rpx;
-  padding: 28rpx 24rpx;
+// ========== 联动 / 免责 ==========
+.cr-linkage {
+  margin-bottom: 20rpx;
   background: $primary-soft;
-  border-radius: 20rpx;
+  box-shadow: none;
 }
 
-.linkage-title {
+.cr-linkage-text {
   display: block;
-  font-size: 29rpx;
-  font-weight: 700;
-  color: $text-1;
-  margin-bottom: 12rpx;
-}
-
-.linkage-text {
-  display: block;
-  font-size: 24rpx;
+  font-size: 25rpx;
   color: #7c2d12;
   line-height: 1.8;
+  margin-top: 12rpx;
 }
 
-.disclaimer-card {
-  margin-top: 20rpx;
-  padding: 28rpx 24rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
+.cr-disclaimer {
+  background: #fff;
 }
 
-.disclaimer-title {
+.cr-disclaimer-title {
   display: block;
   font-size: 26rpx;
   font-weight: 700;
@@ -1019,9 +805,14 @@ $bg: #f7f8fa;
   margin-bottom: 14rpx;
 }
 
-.disclaimer-item {
+.cr-disclaimer-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cr-disclaimer-item {
   display: block;
-  font-size: 22rpx;
+  font-size: 23rpx;
   color: $text-3;
   line-height: 1.8;
   margin-bottom: 8rpx;
