@@ -13,56 +13,6 @@
         </text>
       </view>
 
-      <!-- ========== 快捷入口（常驻顶部，未生成画像时也能直达） ========== -->
-      <view class="quick-card card-style">
-        <view class="card-head">
-          <text class="section-title">快捷入口</text>
-          <text class="section-sub">常用功能一键直达</text>
-        </view>
-        <view class="quick-grid">
-          <view
-            class="quick-item"
-            @click="goCareerReport"
-          >
-            <view class="quick-icon icon-report">📄</view>
-            <view class="quick-text">
-              <text class="quick-label">生涯发展报告</text>
-              <text class="quick-desc">职业路径与成长计划</text>
-            </view>
-          </view>
-          <view
-            class="quick-item"
-            @click="goJobMatch"
-          >
-            <view class="quick-icon icon-match">🎯</view>
-            <view class="quick-text">
-              <text class="quick-label">人岗智能匹配</text>
-              <text class="quick-desc">看适合投哪些岗位</text>
-            </view>
-          </view>
-          <view
-            class="quick-item"
-            @click="goReportHistory"
-          >
-            <view class="quick-icon icon-history">🕘</view>
-            <view class="quick-text">
-              <text class="quick-label">历史报告</text>
-              <text class="quick-desc">回看与趋势对比</text>
-            </view>
-          </view>
-          <view
-            class="quick-item"
-            @click="goRecruitment"
-          >
-            <view class="quick-icon icon-job">💼</view>
-            <view class="quick-text">
-              <text class="quick-label">招聘信息</text>
-              <text class="quick-desc">校招企业与岗位</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
       <!-- ========== 录入表单 ========== -->
       <view class="form-card card-style">
         <view class="card-head">
@@ -599,6 +549,29 @@
           <text class="summary-text">{{ profile.summary }}</text>
         </view>
 
+        <!-- 人岗匹配 / 生涯报告入口（恢复为原有结构） -->
+        <view class="match-entry card-style">
+          <text class="match-entry-title">接下来做什么？</text>
+          <text class="match-entry-desc">
+            用你的能力画像与校招岗位逐一比对，输出综合匹配度与十维差距；
+            并据此生成含职业路径与分阶段成长计划的生涯发展报告。
+          </text>
+          <view class="action-row">
+            <button
+              class="ghost-btn"
+              @click="goJobMatch"
+            >
+              查看岗位匹配
+            </button>
+            <button
+              class="primary-btn"
+              @click="goCareerReport"
+            >
+              生涯发展报告
+            </button>
+          </view>
+        </view>
+
         <!-- 结果区操作 -->
         <view class="action-row">
           <button
@@ -766,22 +739,7 @@ const scrollToForm = () => {
   uni.pageScrollTo({ scrollTop: 0, duration: 200 });
 };
 
-/** 统一的页面跳转（带失败提示，避免点了没反应） */
-const navTo = (url: string, label: string) => {
-  uni.navigateTo({
-    url,
-    fail: (err) => {
-      console.error(`跳转${label}失败：`, err);
-      uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 });
-    },
-  });
-};
 
-/** 历史报告列表 */
-const goReportHistory = () => navTo('/pagesMember/reportHistory/reportHistory', '历史报告');
-
-/** 招聘信息列表 */
-const goRecruitment = () => navTo('/pagesMember/recruitment/recruitment-list', '招聘信息');
 
 /** 跳转到人岗匹配页（复用本地已保存的画像，离线可用） */
 const goJobMatch = () => {
@@ -1562,78 +1520,26 @@ onShareTimeline(() => ({
   display: block;
 }
 
-// ========== 快捷入口四宫格 ==========
-.quick-card {
-  background: linear-gradient(135deg, #f8fbff 0%, #fff 100%);
-  border-color: #dbeafe;
+// ========== 人岗匹配入口（原有结构，已恢复） ==========
+.match-entry {
+  background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%);
+  border-color: #bbf7d0;
 }
 
-.quick-grid {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 18rpx;
-}
-
-.quick-item {
-  width: 50%;
-  display: flex;
-  align-items: center;
-  padding: 18rpx 8rpx 18rpx 0;
-  box-sizing: border-box;
-  transition: opacity 0.2s ease;
-
-  &:active {
-    opacity: 0.6;
-  }
-}
-
-.quick-icon {
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 38rpx;
-  flex-shrink: 0;
-  margin-right: 16rpx;
-
-  &.icon-report {
-    background: linear-gradient(135deg, #fff1eb 0%, #ffd9c7 100%);
-  }
-
-  &.icon-match {
-    background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
-  }
-
-  &.icon-history {
-    background: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%);
-  }
-
-  &.icon-job {
-    background: linear-gradient(135deg, #fefce8 0%, #fde68a 100%);
-  }
-}
-
-.quick-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.quick-label {
-  font-size: 25rpx;
-  font-weight: 600;
-  color: #1f2937;
+.match-entry-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #15803d;
   display: block;
 }
 
-.quick-desc {
-  font-size: 19rpx;
-  color: #9ca3af;
-  margin-top: 4rpx;
+.match-entry-desc {
+  font-size: 23rpx;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 10rpx 0 20rpx;
   display: block;
 }
-
 // ========== 底部 ==========
 .page-footer-source {
   text-align: center;
