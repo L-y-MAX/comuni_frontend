@@ -1,8 +1,29 @@
 <template>
   <view class="ability-page">
+    <!-- 结果区吸顶分段导航：只有生成画像后出现，点击滚动定位 -->
+    <view
+      v-if="profile && !loading"
+      class="anchor-nav"
+    >
+      <view
+        v-for="t in ANCHOR_TABS"
+        :key="t.id"
+        class="anchor-item"
+        :class="{ active: activeAnchor === t.id }"
+        @tap="goAnchor(t.id)"
+      >
+        <text class="anchor-text">{{ t.label }}</text>
+      </view>
+    </view>
+
     <scroll-view
+      id="ability-scroll"
       scroll-y
       class="page-scroll"
+      :style="{ paddingTop: profile && !loading ? '108rpx' : '20rpx' }"
+      :scroll-top="scrollTop"
+      :scroll-with-animation="true"
+      @scroll="onListScroll"
     >
       <!-- ========== 顶部说明 ========== -->
       <view class="intro-card card-style">
@@ -238,14 +259,17 @@
       <!-- ========== 画像结果 ========== -->
       <block v-if="profile && !loading">
         <!-- 双评分 -->
-        <view class="score-card card-style">
+        <view
+          id="sec-score"
+          class="score-card card-style"
+        >
           <view class="score-item">
-            <text class="score-num completeness">{{ profile.completeness }}</text>
+            <text class="score-num completeness">{{ displayCompleteness }}</text>
             <text class="score-label">信息完整度</text>
             <view class="score-bar">
               <view
                 class="score-bar-fill completeness"
-                :style="{ width: `${profile.completeness}%` }"
+                :style="{ width: `${displayCompleteness}%` }"
               />
             </view>
           </view>
@@ -255,14 +279,14 @@
               class="score-num"
               :style="{ color: levelColor(profile.competitiveness_level) }"
             >
-              {{ profile.competitiveness }}
+              {{ displayCompetitiveness }}
             </text>
             <text class="score-label">综合就业竞争力</text>
             <view class="score-bar">
               <view
                 class="score-bar-fill"
                 :style="{
-                  width: `${profile.competitiveness}%`,
+                  width: `${displayCompetitiveness}%`,
                   backgroundColor: levelColor(profile.competitiveness_level),
                 }"
               />
@@ -295,7 +319,10 @@
         </view>
 
         <!-- 能力总览：星球图与十维明细合并为一张卡，用分段控件切换（内容一个不少） -->
-        <view class="chart-card card-style">
+        <view
+          id="sec-ability"
+          class="chart-card card-style"
+        >
           <view class="card-head">
             <text class="section-title">{{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}</text>
             <text class="section-sub">{{ abilityView === 'planet' ? '星球越大越亮 = 该项能力越强' : '点击可查看解析依据' }}</text>
@@ -334,7 +361,7 @@
               class="planet-core"
               :style="{ width: `${layout.coreSizeRpx}rpx`, height: `${layout.coreSizeRpx}rpx` }"
             >
-              <text class="core-score">{{ profile.competitiveness }}</text>
+              <text class="core-score">{{ displayCompetitiveness }}</text>
               <text class="core-label">综合竞争力</text>
             </view>
 
@@ -404,7 +431,7 @@
                 <view
                   class="bar-fill"
                   :style="{
-                    width: `${dim.score}%`,
+                    width: `${Math.round(dim.score * animRatio)}%`,
                     backgroundColor: levelColor(dim.level),
                   }"
                 />
@@ -471,7 +498,10 @@
         </view>
 
         <!-- 徽章墙 -->
-        <view class="badge-card card-style">
+        <view
+          id="sec-badge"
+          class="badge-card card-style"
+        >
           <view class="card-head">
             <text class="section-title">职业徽章墙</text>
             <text class="section-sub">
@@ -498,7 +528,10 @@
         </view>
 
         <!-- 优势 / 短板 -->
-        <view class="advice-card card-style">
+        <view
+          id="sec-conclusion"
+          class="advice-card card-style"
+        >
           <view class="card-head">
             <text class="section-title">优势与短板</text>
           </view>
@@ -689,7 +722,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onLoad, onUnload, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import {
   GRADE_LABEL,
@@ -761,11 +794,150 @@ const degradedReason = ref('');
 const profile = ref<StudentProfile | null>(null);
 const expandedKey = ref<AbilityDimensionKey | null>(null);
 
+// ====================== 能力卡片视图切换 ======================
+
+/**
+ * 能力卡片当前展示哪一档。
+ * 星球图与十维明细合并成一张卡后用分段控件切换；
+ * 两档共用同一份 profile.dimensions，只是一个画成图、一个列成表。
+ */
+const abilityView = ref<'planet' | 'list'>('planet')
+
+// ====================== 结果区锚点导航（吸顶） ======================
+
+/** 结果区分段导航项：id 与模板里各卡片的 id 一一对应 */
+const ANCHOR_TABS = [
+  { id: 'sec-score', label: '评分' },
+  { id: 'sec-ability', label: '能力' },
+  { id: 'sec-badge', label: '徽章' },
+  { id: 'sec-conclusion', label: '结论' },
+]
+
+/** 当前高亮的导航项 */
+const activeAnchor = ref('sec-score')
+
+/**
+ * 滚动位置绑定值。
+ * 页面主体在 <scroll-view> 内部滚动（.page-scroll 高 100vh），
+ * 所以页面级的 uni.pageScrollTo 对它无效，必须用 scroll-top 定位。
+ */
+const scrollTop = ref(0)
+
+/** 由 @scroll 记录的真实滚动位置（不参与绑定，避免回写引起抖动） */
+let currentScrollTop = 0
+
+const onListScroll = (e: { detail?: { scrollTop?: number } }) => {
+  currentScrollTop = e?.detail?.scrollTop ?? 0
+}
+
+/** 吸顶导航高度（px）：88rpx 按屏宽换算，跳转时用它避开遮挡 */
+const navHeightPx = (): number => {
+  try {
+    const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
+      windowWidth?: number
+    }
+    return ((win.windowWidth ?? 375) * 88) / 750
+  } catch {
+    return 44
+  }
+}
+
+/** 点击导航项：滚动到对应卡片并高亮 */
+const goAnchor = (id: string) => {
+  activeAnchor.value = id
+
+  // 取不到选择器 API 时静默跳过——只是不能跳转，不影响任何内容的展示
+  const query = (uni as unknown as { createSelectorQuery?: () => unknown }).createSelectorQuery
+  if (typeof query !== 'function') return
+
+  try {
+    const q = uni.createSelectorQuery()
+    q.select(`#${id}`).boundingClientRect()
+    q.select('#ability-scroll').boundingClientRect()
+    q.select('#ability-scroll').scrollOffset()
+    q.exec((res: unknown[]) => {
+      const target = res[0] as { top?: number } | null
+      const box = res[1] as { top?: number } | null
+      const offset = res[2] as { scrollTop?: number } | null
+      if (target?.top === undefined || box?.top === undefined || offset?.scrollTop === undefined) {
+        return
+      }
+      const delta = target.top - box.top
+      scrollTop.value = Math.max(0, Math.round(currentScrollTop + delta - navHeightPx()))
+    })
+  } catch {
+    // 定位失败不影响内容
+  }
+}
+
+// ====================== 入场动画 ======================
+
+/**
+ * 入场动画进度 0 → 1。
+ *
+ * 所有数字与进度条都由它算出来，而不是各自维护一份状态——
+ * 默认值取 1、收尾强制为 1，所以即使动画没跑起来，显示的也是精确值。
+ */
+const animRatio = ref(1)
+
+const displayCompleteness = computed(() =>
+  Math.round((profile.value?.completeness ?? 0) * animRatio.value)
+)
+const displayCompetitiveness = computed(() =>
+  Math.round((profile.value?.competitiveness ?? 0) * animRatio.value)
+)
+
+let animTimer: ReturnType<typeof setInterval> | null = null
+
+const stopScoreAnimation = () => {
+  if (animTimer !== null) {
+    clearInterval(animTimer)
+    animTimer = null
+  }
+}
+
+/** 数字滚动 + 进度条生长：24 步、约 600ms、easeOutCubic 收尾 */
+const runScoreAnimation = () => {
+  stopScoreAnimation()
+  animRatio.value = 0
+  const STEPS = 24
+  const INTERVAL = 25
+  let step = 0
+  animTimer = setInterval(() => {
+    step += 1
+    const ratio = Math.min(1, step / STEPS)
+    animRatio.value = 1 - Math.pow(1 - ratio, 3)
+    if (ratio >= 1) {
+      animRatio.value = 1
+      stopScoreAnimation()
+    }
+  }, INTERVAL)
+}
+
+// 画像一变就播一次（生成、读缓存、重新解析三种入口都覆盖）
+watch(
+  () => profile.value,
+  (p) => {
+    if (p) {
+      activeAnchor.value = 'sec-score'
+      currentScrollTop = 0
+      scrollTop.value = 0
+      runScoreAnimation()
+    } else {
+      stopScoreAnimation()
+      animRatio.value = 1
+    }
+  },
+  { immediate: true }
+)
+
 let inFlight = false;
 let unloaded = false;
 
 onUnload(() => {
   unloaded = true;
+  // 离开页面时清掉动画定时器，避免后台空转
+  stopScoreAnimation();
 });
 
 const STORAGE_KEY = 'studentAbilityProfile';
@@ -1900,6 +2072,46 @@ onShareTimeline(() => ({
 }
 
 .seg-text {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+// ========== 结果区吸顶分段导航 ==========
+.anchor-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 12rpx;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-bottom: 1rpx solid #e5e7eb;
+}
+
+.anchor-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  border-radius: 30rpx;
+  transition: background-color 0.2s ease;
+
+  &.active {
+    background: #fff1ec;
+
+    .anchor-text {
+      color: #ff4500;
+      font-weight: 600;
+    }
+  }
+}
+
+.anchor-text {
   font-size: 26rpx;
   color: #6b7280;
 }
