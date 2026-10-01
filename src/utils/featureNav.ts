@@ -8,9 +8,10 @@
  * 两条硬约束（都踩过坑）：
  * 1. **tabBar 页面只能用 switchTab**，用 navigateTo 会静默失败；
  *    非 tabBar 页面只能用 navigateTo。所以每项都显式标了 `type`。
- * 2. **需要参数的页面不能直接挂入口**。岗位能力画像页（job-profile）的 onLoad
- *    必须拿到 `options.id`（招聘记录信用代码）才能加载，直接跳会白屏，
- *    因此这一项的入口指向「就业招聘」列表，由用户选岗后再进入。
+ * 2. **需要参数的页面要能在缺参数时自洽**。岗位能力画像页（job-profile）的 onLoad
+ *    原本必须拿到 `options.id`（招聘记录信用代码），缺参数就报「参数错误」。
+ *    现在它缺参数时会进入「岗位选择」模式（真实校招岗位 + 内置示例岗位），
+ *    因此可以直接挂入口。新增需要参数的页面时，请同样先保证缺参数不白屏。
  */
 
 /** 打开方式：tabBar 页面 vs 普通页面 */
@@ -51,10 +52,10 @@ export const FEATURE_NAV_GROUPS: FeatureNavGroup[] = [
       {
         key: 'jobProfile',
         name: '岗位能力画像',
-        desc: '从就业招聘中选择岗位，查看它的十维要求',
+        desc: '查看岗位在十个能力维度上的要求（进页后选岗位）',
         icon: '💼',
         type: 'page',
-        path: '/pagesMember/recruitment/recruitment-list',
+        path: '/pagesMember/recruitment/job-profile',
       },
       {
         key: 'jobMatch',

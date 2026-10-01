@@ -46,6 +46,15 @@
       </view>
     </view>
 
+    <!-- 退出搜索：一键回到首页初始状态 -->
+    <view
+      v-if="isSearching"
+      class="exit-search"
+      @tap="exitSearch"
+    >
+      <text class="exit-search-text">✕ 退出搜索</text>
+    </view>
+
     <!-- 就业政策与校招资源入口（只在首页初始态显示，进入搜索或出现结果后自动隐藏） -->
     <view
       v-if="!isSearching && !searchResult"
@@ -60,6 +69,70 @@
         </view>
       </view>
       <text class="resource-entry-arrow">›</text>
+    </view>
+
+    <!-- 本地检索结果：就业政策与校招资源（离线可用，不需要登录） -->
+    <view
+      v-if="isSearching && localResources.length"
+      class="local-results"
+    >
+      <view class="local-head">
+        <text class="local-title">就业政策与校招资源</text>
+        <text class="local-count">命中 {{ localResources.length }} 条</text>
+      </view>
+
+      <view
+        v-for="item in localResources"
+        :key="item.id"
+        class="local-card"
+        @tap="goCareerResources(item)"
+      >
+        <view class="local-card-head">
+          <text class="local-card-title">{{ item.title }}</text>
+          <text
+            class="local-card-kind"
+            :class="item.kind"
+          >
+            {{ kindLabel(item.kind) }}
+          </text>
+        </view>
+        <text class="local-card-meta">
+          {{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
+        </text>
+        <text class="local-card-summary">{{ item.summary }}</text>
+        <view class="local-tags">
+          <text
+            v-for="g in item.tags"
+            :key="g"
+            class="local-tag"
+          >
+            {{ g }}
+          </text>
+        </view>
+      </view>
+
+      <view
+        class="local-more"
+        @tap="goCareerResources()"
+      >
+        <text class="local-more-text">查看全部资源 →</text>
+      </view>
+    </view>
+
+    <!-- 站内搜索需要登录；本地资源检索不需要 -->
+    <view
+      v-if="isSearching && needLoginForSiteSearch"
+      class="site-login-tip"
+    >
+      <text class="site-login-text">
+        站内搜索（知识库 / 文档 / 用户）需要登录；此处展示的是本地资源检索结果。
+      </text>
+      <view
+        class="site-login-btn"
+        @tap="goLogin"
+      >
+        <text class="site-login-btn-text">去登录</text>
+      </view>
     </view>
 
     <!-- 搜索结果提示 -->
@@ -328,6 +401,9 @@ import {
   isSearching,
   searchKeyword,
   handleSearch,
+  exitSearch,
+  localResources,
+  needLoginForSiteSearch,
   handleInputFocus,
   handleInputBlur,
   isLoading,
@@ -357,10 +433,15 @@ import {
   getShareTimelineParams, // 新增：导入分享到朋友圈参数生成方法
 } from './index'
 
-// 新增：跳转到「就业政策与校招资源」页面
-const goCareerResources = () => {
+import { RESOURCE_KIND_LABEL, type ResourceKind } from '@/types/careerResource'
+
+// 跳转到「就业政策与校招资源」页面；传 item 时定位到具体那一条
+const goCareerResources = (item?: { id?: string }) => {
+  const url = item?.id
+    ? `/pagesMember/careerResources/careerResources?focus=${encodeURIComponent(item.id)}`
+    : '/pagesMember/careerResources/careerResources'
   uni.navigateTo({
-    url: '/pagesMember/careerResources/careerResources',
+    url,
     fail: (err) => {
       console.error('跳转就业政策与校招资源页面失败：', err)
       uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
@@ -375,6 +456,14 @@ const navigateToKnowledgeBase = (kb: any) => {
     url: `/pagesMember/knowledge/baseDetail/baseDetail?id=${encodeURIComponent(kb.id as string)}`,
   })
 }
+
+// 跳转到登录页（站内搜索需要登录时使用）
+const goLogin = () => {
+  uni.navigateTo({ url: '/pagesMember/login/login' })
+}
+
+// 资源来源角标文案：官方文件 / 官方平台 / 媒体报道 / 平台整理
+const kindLabel = (kind: ResourceKind): string => RESOURCE_KIND_LABEL[kind] ?? ''
 
 // 新增：分享给好友（微信小程序胶囊按钮分享触发）
 onShareAppMessage(() => {
@@ -1048,4 +1137,186 @@ onMounted(() => {
   line-height: 1;
 }
 
+
+/* ========== 退出搜索快捷操作 ========== */
+.exit-search {
+  margin-top: 24rpx;
+  padding: 12rpx 32rpx;
+  background: #ffffff;
+  border: 2rpx solid #ff4500;
+  border-radius: 40rpx;
+  transition: background-color 0.2s ease;
+
+  &:active {
+    background: #fff3ef;
+  }
+}
+
+.exit-search-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #ff4500;
+}
+
+/* ========== 本地检索结果（就业政策与校招资源） ========== */
+.local-results {
+  width: 90%;
+  max-width: 680rpx;
+  margin-top: 28rpx;
+}
+
+.local-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.local-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.local-count {
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.local-card {
+  background: #ffffff;
+  border-radius: 18rpx;
+  padding: 24rpx 22rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
+  text-align: left;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: translateY(2rpx);
+  }
+}
+
+.local-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.local-card-title {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.5;
+  padding-right: 14rpx;
+}
+
+.local-card-kind {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  background: #f1f5f9;
+  color: #6b7280;
+
+  &.gov-doc {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  &.official-platform {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  &.media {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  &.own {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+}
+
+.local-card-meta {
+  display: block;
+  font-size: 21rpx;
+  color: #9ca3af;
+  margin-bottom: 12rpx;
+}
+
+.local-card-summary {
+  display: block;
+  font-size: 24rpx;
+  color: #4b5563;
+  line-height: 1.7;
+  margin-bottom: 14rpx;
+}
+
+.local-tags {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.local-tag {
+  font-size: 20rpx;
+  color: #6b7280;
+  background: #f1f5f9;
+  border-radius: 20rpx;
+  padding: 4rpx 16rpx;
+  margin: 0 10rpx 8rpx 0;
+}
+
+.local-more {
+  padding: 16rpx 0;
+  text-align: center;
+}
+
+.local-more-text {
+  font-size: 25rpx;
+  color: #ff4500;
+  font-weight: 600;
+}
+
+/* ========== 未登录提示 ========== */
+.site-login-tip {
+  width: 90%;
+  max-width: 680rpx;
+  margin-top: 24rpx;
+  padding: 24rpx;
+  background: #f8fafc;
+  border-radius: 16rpx;
+  border-left: 6rpx solid #cbd5e1;
+}
+
+.site-login-text {
+  display: block;
+  font-size: 23rpx;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 16rpx;
+}
+
+.site-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b82f6;
+  border-radius: 32rpx;
+  padding: 12rpx 36rpx;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.site-login-btn-text {
+  font-size: 25rpx;
+  font-weight: 600;
+  color: #ffffff;
+}
 </style>

@@ -213,6 +213,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import {
   CAREER_RESOURCES,
   POLICY_CATEGORIES,
@@ -292,6 +293,20 @@ const resetFilter = () => {
 };
 
 const kindLabel = (kind: ResourceKind): string => RESOURCE_KIND_LABEL[kind] ?? '';
+
+/**
+ * 支持从首页搜索结果带 ?focus=<id> 直接定位到某一条：
+ * 切到它所属主题并把关键词设成它的标题，列表里就只剩这一条。
+ */
+onLoad((options) => {
+  const focus = options?.focus ? decodeURIComponent(options.focus) : '';
+  if (!focus) return;
+  const hit = CAREER_RESOURCES.find((r) => r.id === focus);
+  if (!hit) return;
+  activeTheme.value = hit.theme;
+  activeTag.value = '';
+  keyword.value = hit.title;
+});
 
 const copyLink = (item: CareerResource) => {
   if (!item.url) return;

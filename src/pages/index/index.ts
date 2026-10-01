@@ -1,4 +1,6 @@
 import { baseURL } from '@/utils/request';
+import { CAREER_RESOURCES, filterResources } from '@/utils/careerResources';
+import type { CareerResource } from '@/types/careerResource';
 import { debounce } from 'lodash'
 import { ref } from 'vue'
 
@@ -89,6 +91,28 @@ export const searchKeyword = ref<string>('')
 export const searchResult = ref<SearchResponse | null>(null)
 export const isLoading = ref<boolean>(false)
 export const isSearching = ref<boolean>(false)
+
+/**
+ * 本地「就业政策与校招资源」检索结果。
+ *
+ * 这部分数据打包在小程序里，检索**不依赖网络、也不需要登录**，
+ * 因此与站内搜索（知识库 / 文档 / 用户）是两条独立路径。
+ */
+export const localResources = ref<CareerResource[]>([])
+
+/** 本地资源在首页最多展示几条，更多请进资源库页 */
+export const MAX_LOCAL_RESULTS = 6
+
+/** 站内搜索需要登录；未登录时置 true，页面据此给出登录引导 */
+export const needLoginForSiteSearch = ref<boolean>(false)
+
+/**
+ * 搜索会话号。
+ *
+ * 「退出搜索」会把它 +1，用于丢弃退出之后才返回的旧请求结果；
+ * 否则会出现「已经退出了，结果又自己弹回来」。
+ */
+let searchSession = 0
 
 // 半屏弹窗相关
 export const showKnowledgeModal = ref<boolean>(false) // 半屏弹窗显示状态
@@ -320,9 +344,17 @@ export const openKnowledgeModal = (doc: SearchResultNode) => {
 // 7. 核心搜索逻辑（完整适配新数据结构 + 修复赋值问题）
 export const handleSearch = debounce(async () => {
   const keyword = searchKeyword.value.trim()
+  // 记住本次搜索的会话号：期间用户点「退出搜索」就丢弃本次结果
+  const session = searchSession
+
+  // 1) 本地资源检索：纯本地、离线可用、不需要登录，先算出来
+  localResources.value = keyword
+    ? filterResources(CAREER_RESOURCES, keyword).slice(0, MAX_LOCAL_RESULTS)
+    : []
 
   // 空关键词处理（补全缺失的count/next/previous字段，避免类型报错）
   if (!keyword) {
+    needLoginForSiteSearch.value = false
     searchResult.value = {
       code: 400,
       msg: '搜索关键词不能为空',
@@ -346,11 +378,17 @@ export const handleSearch = debounce(async () => {
     const accessToken = uni.getStorageSync('accessToken')
 
     if (!userInfo || !accessToken) {
-      console.warn('请登录进行站内搜索')
-      uni.navigateTo({ url: '/pagesMember/login/login' })
+      // 站内搜索（知识库 / 文档 / 用户）需要登录，但本地资源检索不需要。
+      // 这里不再强制跳登录页——否则「搜就业政策」这种纯本地功能会被登录墙挡住。
+      // 改为只展示本地结果，并在页面上给出登录引导。
+      console.warn('未登录：仅展示本地资源检索结果')
+      needLoginForSiteSearch.value = true
+      searchResult.value = null
+      isLoading.value = false
       return
     }
 
+    needLoginForSiteSearch.value = false
     isLoading.value = true
     isSearching.value = true
 
@@ -377,11 +415,14 @@ export const handleSearch = debounce(async () => {
     }
 
     const result = res.data as SearchResponse
+    // 期间用户点了「退出搜索」：丢弃这次结果，别把它弹回界面
+    if (session !== searchSession) return
     // 修复核心：将接口返回结果赋值给响应式数据，页面才能获取到数据
     searchResult.value = result
 
   } catch (error: any) {
     console.error('搜索失败：', error)
+    if (session !== searchSession) return
     // 错误返回补全所有必填字段，避免页面渲染报错
     searchResult.value = {
       code: 500,
@@ -398,9 +439,33 @@ export const handleSearch = debounce(async () => {
       },
     }
   } finally {
-    isLoading.value = false
+    if (session === searchSession) isLoading.value = false
   }
 }, 500)
+
+/**
+ * 退出搜索，回到首页初始状态。
+ *
+ * 为什么需要：进入搜索态后品牌图和右侧 sign 会位移、结果区展开，
+ * 但如果关键词为空、或后端一直不返回，用户没有明确的出口，
+ * 只能杀掉小程序重进。这里提供一个一键复位。
+ *
+ * 注意要 `cancel()` 掉还在 500ms 防抖等待中的那次搜索，
+ * 并让 session 失效，否则退出之后结果会自己弹回来（已用测试覆盖）。
+ */
+export const exitSearch = () => {
+  searchSession += 1
+  ;(handleSearch as unknown as { cancel?: () => void }).cancel?.()
+
+  searchKeyword.value = ''
+  searchResult.value = null
+  localResources.value = []
+  needLoginForSiteSearch.value = false
+  isLoading.value = false
+  isSearching.value = false
+
+  uni.pageScrollTo({ scrollTop: 0, duration: 200 })
+}
 
 // 8. 统计结果数（支持多维度统计，兼容新旧结构）
 export const getResultCount = (result: SearchResponse): number => {

@@ -394,6 +394,39 @@ interface RecruitmentListResponse {
 }
 
 /**
+ * 拉取校招岗位列表（供「岗位能力画像」页在未指定岗位时让用户选择）。
+ *
+ * 与 fetchRecruitmentByCreditCode 同样用原生 uni.request：
+ * 本模块需要「静默失败 + 回退到内置示例岗位」，走 @/utils/request 的拦截器会弹错误提示。
+ *
+ * 未登录或接口不可用时返回空数组，由调用方回退，不抛错。
+ */
+export const fetchRecruitmentList = (): Promise<RecruitmentRecord[]> =>
+  new Promise((resolve) => {
+    const accessToken = uni.getStorageSync('accessToken');
+    if (!accessToken) {
+      resolve([]);
+      return;
+    }
+    uni.request({
+      url: `${baseURL}/api/v1/employment/recruitments/`,
+      method: 'GET',
+      header: {
+        Authorization: `JWT ${accessToken}`,
+      },
+      success: (res) => {
+        const body = res.data as RecruitmentListResponse;
+        if (res.statusCode === 200 && Array.isArray(body?.results)) {
+          resolve(body.results);
+        } else {
+          resolve([]);
+        }
+      },
+      fail: () => resolve([]),
+    });
+  });
+
+/**
  * 按信用代码读取招聘原始记录。
  *
  * 说明：后端目前没有「按信用代码取单条」的接口，

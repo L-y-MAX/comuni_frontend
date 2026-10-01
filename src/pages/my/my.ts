@@ -448,3 +448,25 @@ export const navigateToKnowledge = () => {
     },
   })
 }
+
+// ========== 新增：跳转到「岗位能力画像」 ==========
+/**
+ * 跳转到岗位能力画像页。
+ *
+ * **不带岗位参数**：该页在缺参数时会进入「岗位选择」模式
+ * （真实校招岗位 + 内置示例岗位），所以这里可以直接 navigateTo，
+ * 不需要先绕到招聘列表。
+ */
+export const navigateToJobProfile = () => {
+  uni.navigateTo({
+    url: '/pagesMember/recruitment/job-profile',
+    fail: (err) => {
+      console.error('跳转岗位能力画像页面失败：', err)
+      uni.showToast({
+        title: '页面跳转失败',
+        icon: 'none',
+        duration: 2000,
+      })
+    },
+  })
+}

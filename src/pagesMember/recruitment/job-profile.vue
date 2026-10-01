@@ -30,6 +30,54 @@
       </view>
     </view>
 
+    <!-- ========== 未指定岗位：先在页内选一个岗位 ========== -->
+    <scroll-view
+      v-else-if="pickerMode"
+      scroll-y
+      class="profile-scroll"
+    >
+      <view class="header-card card-style">
+        <text class="job-name">岗位能力画像</text>
+        <text class="enterprise-name">选定一个岗位，查看它在十个能力维度上的要求</text>
+      </view>
+
+      <view class="card-style">
+        <text class="pick-title">可查看的岗位</text>
+        <text class="pick-desc">
+          登录后这里会列出校招合作企业的真实岗位；未登录也可以用下面的内置示例岗位体验完整画像，
+          两者使用同一套解析逻辑。
+        </text>
+        <text
+          v-if="pickerLoading"
+          class="pick-loading"
+        >
+          正在加载校招岗位…
+        </text>
+
+        <view
+          v-for="item in pickerItems"
+          :key="item.key"
+          class="pick-item"
+          @tap="chooseJob(item)"
+        >
+          <view class="pick-item-main">
+            <text class="pick-item-name">{{ item.jobName }}</text>
+            <text class="pick-item-meta">{{ item.enterpriseName }}<text v-if="item.industry"> · {{ item.industry }}</text></text>
+          </view>
+          <text
+            class="pick-item-badge"
+            :class="item.source"
+          >
+            {{ item.source === 'real' ? '校招' : '示例' }}
+          </text>
+        </view>
+      </view>
+
+      <view class="page-footer-source">
+        <text class="source-text">示例岗位仅用于离线演示，来源会在画像页如实标注</text>
+      </view>
+    </scroll-view>
+
     <!-- ========== 画像内容 ========== -->
     <!-- 必须显式判断 profile 存在：模板下方大量 `profile.xxx` 取值，
          若 profile 为 null 会在渲染期抛 TypeError 导致白屏 -->
@@ -268,8 +316,11 @@
         </button>
       </view>
 
-      <!-- 操作区 -->
-      <view class="action-row">
+      <!-- 操作区：示例岗位没有 credit_code，无法按岗位重新拉取，因此不显示重解析按钮 -->
+      <view
+        v-if="currentCreditCode"
+        class="action-row"
+      >
         <button
           class="primary-btn"
           @click="regenerate"
@@ -322,9 +373,12 @@ import {
 } from '@/types/jobProfile';
 import {
   fetchRecruitmentByCreditCode,
+  fetchRecruitmentList,
   generateJobProfile,
   type RecruitmentRecord,
 } from '@/api/jobProfile';
+import { SAMPLE_RECRUITMENTS } from '@/utils/jobProfileSamples';
+import { parseJobProfileByRules } from '@/utils/jobProfileParser';
 
 // 招聘原始记录的类型与读取函数统一由 @/api/jobProfile 提供
 // （RecruitmentRecord / fetchRecruitmentByCreditCode），此处不再重复定义。
@@ -387,11 +441,98 @@ const toggleDim = (key: JobDimensionKey) => {
 
 // ====================== 数据加载 ======================
 
+// ====================== 岗位选择（未带岗位参数进入时） ======================
+
+/** 岗位候选项 */
+interface PickJobItem {
+  key: string;
+  jobName: string;
+  enterpriseName: string;
+  industry: string;
+  /** real = 校招真实岗位（需登录）；sample = 内置示例岗位（离线可用） */
+  source: 'real' | 'sample';
+  creditCode?: string;
+  sampleIndex?: number;
+}
+
+const pickerMode = ref(false);
+const pickerItems = ref<PickJobItem[]>([]);
+const pickerLoading = ref(false);
+
+/** 内置示例岗位：交出原始招聘输入，由同一套解析逻辑生成画像 */
+const buildSamplePicker = (): PickJobItem[] =>
+  SAMPLE_RECRUITMENTS.map((r, i) => ({
+    key: `sample-${i}`,
+    jobName: r.job_name ?? '未知岗位',
+    enterpriseName: r.enterprise_name ?? '',
+    industry: r.industry ?? '',
+    source: 'sample' as const,
+    sampleIndex: i,
+  }));
+
+/**
+ * 载入岗位候选。
+ *
+ * 顺序：真实校招岗位在前（同名时优先保留真实岗位），内置示例岗位补在后面。
+ * 示例岗位始终存在，保证未登录、无网络时这一页也可用——否则「岗位能力画像」
+ * 这个入口在未登录状态下等于死路。
+ */
+const loadPicker = async () => {
+  pickerLoading.value = true;
+  const samples = buildSamplePicker();
+  pickerItems.value = samples;
+  try {
+    const real = await fetchRecruitmentList();
+    const realItems: PickJobItem[] = real
+      .filter((r) => r.credit_code && r.job_name)
+      .map((r) => ({
+        key: `real-${r.credit_code}`,
+        jobName: r.job_name,
+        enterpriseName: r.enterprise_name ?? '',
+        industry: r.industry ?? '',
+        source: 'real' as const,
+        creditCode: r.credit_code,
+      }));
+    const realNames = new Set(realItems.map((i) => i.jobName));
+    pickerItems.value = [...realItems, ...samples.filter((s) => !realNames.has(s.jobName))];
+  } catch {
+    // 拉不到真实岗位不是错误：内置示例足够演示
+    pickerItems.value = samples;
+  } finally {
+    pickerLoading.value = false;
+  }
+};
+
+/** 选中岗位：真实岗位走原有流程，示例岗位直接用本地规则解析 */
+const chooseJob = async (item: PickJobItem) => {
+  if (item.source === 'real' && item.creditCode) {
+    pickerMode.value = false;
+    currentCreditCode.value = item.creditCode;
+    await loadAll();
+    return;
+  }
+
+  if (item.sampleIndex === undefined) return;
+  const raw = SAMPLE_RECRUITMENTS[item.sampleIndex];
+  if (!raw) return;
+
+  pickerMode.value = false;
+  expandedKey.value = null;
+  // 如实标注这是内置示例 + 本地规则解析，不伪装成真实岗位或大模型结果
+  degradedReason.value =
+    '当前展示的是内置示例岗位，由本地关键词规则解析生成；登录后可从校招招聘信息中解析真实岗位文本。';
+  profile.value = parseJobProfileByRules(raw);
+  uni.pageScrollTo({ scrollTop: 0, duration: 200 });
+};
+
 onLoad((options) => {
   const creditCode = options?.id;
   if (!creditCode) {
+    // 未带岗位参数进入（例如从侧边栏或「我的」直接点「岗位能力画像」）：
+    // 不报参数错误，改为进入岗位选择模式，由用户在本页内选岗位。
     loading.value = false;
-    errorMsg.value = '参数错误：缺少岗位标识';
+    pickerMode.value = true;
+    void loadPicker();
     return;
   }
   currentCreditCode.value = creditCode;
@@ -966,5 +1107,79 @@ onShareTimeline(() => ({
   color: #9ca3af;
   font-style: italic;
   line-height: 1.5;
+}
+
+/* ====================== 岗位选择（未指定岗位时） ====================== */
+.pick-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 12rpx;
+}
+
+.pick-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 20rpx;
+}
+
+.pick-loading {
+  display: block;
+  font-size: 23rpx;
+  color: #ff4500;
+  margin-bottom: 16rpx;
+}
+
+.pick-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 20rpx;
+  background: #fafbfc;
+  border-radius: 16rpx;
+  margin-bottom: 12rpx;
+  transition: background-color 0.2s ease;
+
+  &:active {
+    background: #f1f5f9;
+  }
+}
+
+.pick-item-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pick-item-name {
+  font-size: 29rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6rpx;
+}
+
+.pick-item-meta {
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.pick-item-badge {
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+
+  &.real {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  &.sample {
+    background: #fef3c7;
+    color: #b45309;
+  }
 }
 </style>

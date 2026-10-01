@@ -15,8 +15,14 @@
 import type { JobProfile } from '@/types/jobProfile';
 import { parseJobProfileByRules, type RuleParseInput } from '@/utils/jobProfileParser';
 
-/** 示例招聘原始数据（模拟聊城大学校招合作企业的真实招聘文本） */
-const SAMPLE_RECRUITMENTS: RuleParseInput[] = [
+/**
+ * 示例招聘原始数据（模拟聊城大学校招合作企业的真实招聘文本）。
+ *
+ * 导出原因：「岗位能力画像」页在未带岗位参数进入时需要让用户挑一个岗位，
+ * 示例岗位必须与真实岗位走**同一套解析逻辑**，所以这里交出的是原始输入，
+ * 而不是预先算好的解析结果。
+ */
+export const SAMPLE_RECRUITMENTS: RuleParseInput[] = [
   {
     recruitment_id: 'SAMPLE-JAVA-001',
     job_name: 'Java开发工程师',
