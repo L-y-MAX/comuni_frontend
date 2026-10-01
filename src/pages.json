@@ -307,7 +307,8 @@
 				{
 					"path": "careerResources",
 					"style": {
-						"navigationBarTitleText": "就业政策与校招资源"
+						"navigationBarTitleText": "就业政策与校招资源",
+						"navigationStyle": "custom"
 					}
 				}
 			]
