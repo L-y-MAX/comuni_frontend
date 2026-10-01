@@ -55,6 +55,22 @@
       <text class="exit-search-text">✕ 退出搜索</text>
     </view>
 
+    <!-- 岗位招聘入口（原在「我的」里叫「宣讲活动」，按要求移到首页；只在首页初始态显示） -->
+    <view
+      v-if="!isSearching && !searchResult"
+      class="resource-entry"
+      @tap="goRecruitmentList"
+    >
+      <view class="resource-entry-left">
+        <text class="resource-entry-icon">🏢</text>
+        <view class="resource-entry-texts">
+          <text class="resource-entry-title">岗位招聘</text>
+          <text class="resource-entry-desc">浏览校招合作企业的岗位与企业信息</text>
+        </view>
+      </view>
+      <text class="resource-entry-arrow">›</text>
+    </view>
+
     <!-- 就业政策与校招资源入口（只在首页初始态显示，进入搜索或出现结果后自动隐藏） -->
     <view
       v-if="!isSearching && !searchResult"
@@ -434,6 +450,17 @@ import {
 } from './index'
 
 import { RESOURCE_KIND_LABEL, type ResourceKind } from '@/types/careerResource'
+
+// 跳转到「岗位招聘」页面（招聘信息列表）
+const goRecruitmentList = () => {
+  uni.navigateTo({
+    url: '/pagesMember/recruitment/recruitment-list',
+    fail: (err) => {
+      console.error('跳转岗位招聘页面失败：', err)
+      uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
+    },
+  })
+}
 
 // 跳转到「就业政策与校招资源」页面；传 item 时定位到具体那一条
 const goCareerResources = (item?: { id?: string }) => {

@@ -134,25 +134,7 @@
             />
           </view>
         </view>
-        <!-- 岗位招聘 -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'recruitment' }"
-          @click="navigateToRecruitmentList"
-          @touchstart="() => setActiveItem('recruitment')"
-          @touchend="() => clearActiveItem()"
-        >
-          <view class="form-label">
-            <text class="label-text">岗位招聘</text>
-          </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
-        </view>
+        <!-- 岗位招聘入口已移到首页，此处不再保留 -->
         <!-- 功能说明（替换原会员权益） -->
         <view
           class="form-item"
@@ -292,7 +274,6 @@ import {
   copyContactEmail,
   wxQuickLogin,
   navigateToLoginPage,
-  navigateToRecruitmentList, // 新增导入
   navigateToAbilityProfile, // 能力画像（tabBar 页，内部用 switchTab）
   navigateToKnowledge, // 知识库（已从 tabBar 移出，改从「我的」进入）
   navigateToJobProfile, // 岗位能力画像（缺参数时会进入岗位选择模式）
