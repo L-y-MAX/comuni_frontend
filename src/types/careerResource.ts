@@ -31,7 +31,7 @@ export const RESOURCE_THEMES: ResourceThemeMeta[] = [
     key: 'policy',
     label: '就业政策',
     desc: '国家、山东省与聊城市的毕业生就业创业政策文件',
-    icon: '📜',
+    icon: '📄',
   },
   {
     key: 'campus',
