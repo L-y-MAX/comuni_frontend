@@ -595,6 +595,79 @@
         </text>
       </view>
     </scroll-view>
+
+    <!-- ====================== 隐藏式功能侧边栏 ====================== -->
+    <!-- 触发器固定在右侧中部，不占布局；点开后才显示抽屉 -->
+    <view
+      class="side-trigger"
+      :class="{ hidden: drawerOpen }"
+      @tap="openDrawer"
+    >
+      <text class="side-trigger-icon">☰</text>
+      <text class="side-trigger-label">功能</text>
+    </view>
+
+    <!-- 遮罩：点击关闭 -->
+    <view
+      v-if="drawerOpen"
+      class="drawer-mask"
+      @tap="closeDrawer"
+    ></view>
+
+    <!-- 抽屉本体：始终在 DOM 里，靠 transform 做滑入动画 -->
+    <view
+      class="drawer"
+      :class="{ open: drawerOpen }"
+    >
+      <view class="drawer-head">
+        <view class="drawer-head-texts">
+          <text class="drawer-title">功能总览</text>
+          <text class="drawer-sub">本小程序的全部功能入口</text>
+        </view>
+        <text
+          class="drawer-close"
+          @tap="closeDrawer"
+        >
+          ✕
+        </text>
+      </view>
+
+      <scroll-view
+        class="drawer-body"
+        scroll-y
+      >
+        <view
+          v-for="group in FEATURE_NAV_GROUPS"
+          :key="group.title"
+          class="drawer-group"
+        >
+          <text class="drawer-group-title">{{ group.title }}</text>
+
+          <view
+            v-for="item in group.items"
+            :key="item.key"
+            class="drawer-item"
+            :class="{ current: item.key === CURRENT_FEATURE_KEY }"
+            @tap="openFeature(item)"
+          >
+            <text class="drawer-item-icon">{{ item.icon }}</text>
+            <view class="drawer-item-texts">
+              <text class="drawer-item-name">{{ item.name }}</text>
+              <text class="drawer-item-desc">{{ item.desc }}</text>
+            </view>
+            <text class="drawer-item-arrow">
+              {{ item.key === CURRENT_FEATURE_KEY ? '当前' : '›' }}
+            </text>
+          </view>
+        </view>
+
+        <view class="drawer-foot">
+          <text class="drawer-foot-text">
+            能力画像的数据保存在本机，不需要登录即可使用与演示。
+          </text>
+        </view>
+      </scroll-view>
+    </view>
   </view>
 </template>
 
@@ -613,6 +686,12 @@ import { LEVEL_LABEL, PARSE_SOURCE_LABEL, type AbilityDimensionKey } from '@/typ
 import { buildPlanetLayout, type PlanetNode } from '@/utils/abilityPlanet';
 import { generateStudentProfile, fetchSavedStudentProfile } from '@/api/studentProfile';
 import { STUDENT_PROFILE_SAMPLE } from '@/utils/studentProfileParser';
+import {
+  CURRENT_FEATURE_KEY,
+  FEATURE_NAV_GROUPS,
+  openFeatureNav,
+  type FeatureNavItem,
+} from '@/utils/featureNav';
 
 // ====================== 表单 ======================
 
@@ -749,6 +828,30 @@ const goJobMatch = () => {
 /** 跳转到生涯发展报告页 */
 const goCareerReport = () => {
   uni.navigateTo({ url: '/pagesMember/careerReport/careerReport' });
+};
+
+// ====================== 功能侧边栏 ======================
+
+const drawerOpen = ref(false);
+
+const openDrawer = () => {
+  drawerOpen.value = true;
+};
+
+const closeDrawer = () => {
+  drawerOpen.value = false;
+};
+
+/**
+ * 打开侧边栏里的某个功能。
+ *
+ * 点「当前所在功能」只关抽屉、不再跳转：
+ * tabBar 页面 switchTab 到自己会闪一下，体验很差。
+ */
+const openFeature = (item: FeatureNavItem) => {
+  closeDrawer();
+  if (item.key === CURRENT_FEATURE_KEY) return;
+  openFeatureNav(item);
 };
 
 // ====================== 表单操作 ======================
@@ -1551,5 +1654,201 @@ onShareTimeline(() => ({
   color: #9ca3af;
   font-style: italic;
   line-height: 1.5;
+}
+
+/* ====================== 功能侧边栏 ====================== */
+
+/* 触发器：贴右侧边缘、垂直中部，不占文档流 */
+.side-trigger {
+  position: fixed;
+  right: 0;
+  top: 46%;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 14rpx;
+  background: rgba(255, 69, 0, 0.92);
+  border-radius: 20rpx 0 0 20rpx;
+  box-shadow: -4rpx 4rpx 18rpx rgba(255, 69, 0, 0.28);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+
+  &.hidden {
+    opacity: 0;
+    transform: translateX(110%);
+    pointer-events: none;
+  }
+}
+
+.side-trigger-icon {
+  font-size: 30rpx;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.side-trigger-label {
+  font-size: 22rpx;
+  color: #ffffff;
+  margin-top: 6rpx;
+}
+
+/* 遮罩 */
+.drawer-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+}
+
+/* 抽屉本体：常驻 DOM，靠 transform 滑入滑出 */
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 80%;
+  max-width: 620rpx;
+  background: #ffffff;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 28rpx 28rpx 0;
+  box-shadow: 8rpx 0 32rpx rgba(0, 0, 0, 0.16);
+  transform: translateX(-104%);
+  transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 36rpx 28rpx 24rpx;
+  background: linear-gradient(135deg, #ff7a4d 0%, #ff4500 100%);
+  border-radius: 0 28rpx 0 0;
+}
+
+.drawer-head-texts {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.drawer-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8rpx;
+}
+
+.drawer-sub {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.drawer-close {
+  font-size: 30rpx;
+  color: #ffffff;
+  padding: 4rpx 8rpx;
+  line-height: 1;
+}
+
+.drawer-body {
+  flex: 1;
+  padding: 20rpx 20rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.drawer-group {
+  margin-bottom: 24rpx;
+}
+
+.drawer-group-title {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 2rpx;
+  padding: 0 8rpx 12rpx;
+}
+
+.drawer-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 16rpx;
+  border-radius: 16rpx;
+  margin-bottom: 8rpx;
+  background: #fafbfc;
+  transition: background-color 0.2s ease;
+
+  &.current {
+    background: #fff3ef;
+    border: 2rpx solid #ff9a7a;
+  }
+
+  &:active {
+    background: #f1f5f9;
+  }
+}
+
+.drawer-item-icon {
+  font-size: 34rpx;
+  margin-right: 18rpx;
+}
+
+.drawer-item-texts {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.drawer-item-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4rpx;
+
+  .drawer-item.current & {
+    color: #ff4500;
+  }
+}
+
+.drawer-item-desc {
+  font-size: 21rpx;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.drawer-item-arrow {
+  font-size: 24rpx;
+  color: #d1d5db;
+  margin-left: 12rpx;
+  flex-shrink: 0;
+
+  .drawer-item.current & {
+    color: #ff4500;
+    font-size: 20rpx;
+  }
+}
+
+.drawer-foot {
+  padding: 20rpx 16rpx 10rpx;
+  border-top: 1rpx solid #f1f5f9;
+  margin-top: 8rpx;
+}
+
+.drawer-foot-text {
+  font-size: 21rpx;
+  color: #9ca3af;
+  line-height: 1.7;
 }
 </style>
