@@ -46,6 +46,22 @@
       </view>
     </view>
 
+    <!-- 就业政策与校招资源入口（只在首页初始态显示，进入搜索或出现结果后自动隐藏） -->
+    <view
+      v-if="!isSearching && !searchResult"
+      class="resource-entry"
+      @tap="goCareerResources"
+    >
+      <view class="resource-entry-left">
+        <text class="resource-entry-icon">📚</text>
+        <view class="resource-entry-texts">
+          <text class="resource-entry-title">就业政策与校招资源</text>
+          <text class="resource-entry-desc">就业政策 · 校招企业名单 · 简历与面试指导</text>
+        </view>
+      </view>
+      <text class="resource-entry-arrow">›</text>
+    </view>
+
     <!-- 搜索结果提示 -->
     <view
       v-if="searchResult"
@@ -340,6 +356,17 @@ import {
   getShareAppMessageParams, // 新增：导入分享给好友参数生成方法
   getShareTimelineParams, // 新增：导入分享到朋友圈参数生成方法
 } from './index'
+
+// 新增：跳转到「就业政策与校招资源」页面
+const goCareerResources = () => {
+  uni.navigateTo({
+    url: '/pagesMember/careerResources/careerResources',
+    fail: (err) => {
+      console.error('跳转就业政策与校招资源页面失败：', err)
+      uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
+    },
+  })
+}
 
 // 跳转到知识库详情（新增）
 const navigateToKnowledgeBase = (kb: any) => {
@@ -963,4 +990,62 @@ onMounted(() => {
     }
   }
 }
+
+/* ========== 就业政策与校招资源入口（首页初始态） ========== */
+.resource-entry {
+  width: 90%;
+  max-width: 680rpx;
+  margin-top: 40rpx;
+  padding: 28rpx 24rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 24rpx rgba(255, 69, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: translateY(2rpx);
+  }
+}
+
+.resource-entry-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.resource-entry-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.resource-entry-texts {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.resource-entry-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6rpx;
+}
+
+.resource-entry-desc {
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.resource-entry-arrow {
+  font-size: 40rpx;
+  color: #d1d5db;
+  margin-left: 12rpx;
+  line-height: 1;
+}
+
 </style>

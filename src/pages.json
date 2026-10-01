@@ -300,6 +300,17 @@
 					}
 				}
 			]
+		},
+		{
+			"root": "pagesMember/careerResources",
+			"pages": [
+				{
+					"path": "careerResources",
+					"style": {
+						"navigationBarTitleText": "就业政策与校招资源"
+					}
+				}
+			]
 		}
 	]
 }
