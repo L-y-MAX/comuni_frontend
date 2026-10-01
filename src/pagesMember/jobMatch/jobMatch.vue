@@ -191,8 +191,14 @@
                     </text>
                   </view>
 
+                  <!-- 岗位未提要求：不参与评分，因此不画进度条，
+                       避免出现「覆盖率 100%」配绿色满格条这种看起来像"已达标"的误导 -->
+                  <block v-if="g.noRequirement">
+                    <text class="cmp-num">岗位未对该维度提出可判定的要求，不参与评分</text>
+                  </block>
+
                   <!-- 专业技能 / 证书：按岗位要求条目的覆盖率展示 -->
-                  <block v-if="g.basis === 'coverage'">
+                  <block v-else-if="g.basis === 'coverage'">
                     <view class="cmp-bars">
                       <view class="cmp-track">
                         <view
@@ -202,9 +208,7 @@
                         />
                       </view>
                     </view>
-                    <text class="cmp-num">
-                      岗位要求条目覆盖率 {{ g.fitPercent }}%{{ g.noRequirement ? '（岗位未提要求）' : '' }}
-                    </text>
+                    <text class="cmp-num">岗位要求条目覆盖率 {{ g.fitPercent }}%</text>
                   </block>
 
                   <!-- 其余维度：我的水平 vs 岗位要求 -->

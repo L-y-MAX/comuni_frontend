@@ -219,7 +219,9 @@ const SKILL_DICTIONARY: Record<string, string[]> = {
     '养殖',
     '食品检测',
     '食品安全',
-    '农产品',
+    // 已移除「农产品」：它在招聘文本里是行业/产品名词
+    //（「对农业品牌与农产品行业有一定认知」），不是可衡量的技能。
+    // 保留会让数据分析、市场运营类岗位凭空多出一项虚假的技能缺口。
     '温室大棚',
     '种植',
     '农业技术',
@@ -275,6 +277,36 @@ const SKILL_DICTIONARY: Record<string, string[]> = {
 };
 
 // ====================== 证书词典 ======================
+
+// ====================== 复合词误命中保护 ======================
+
+/**
+ * 复合词排除表。
+ *
+ * 中文没有词边界，纯子串匹配会把更长词语里的一段当成独立技能：
+ * 实测某中学信息技术教师岗位的「熟悉 Python 或 Scratch 等编程教学工具」中，
+ * 「教学」被识别成一项**必须**技能，于是技能缺口里出现「教学」，
+ * 提升建议还写着「补齐「教学」：岗位将其列为硬性要求」——
+ * 对计算机专业的学生来说这是没有意义的建议。
+ *
+ * 处理方式：命中关键词后，若其后紧跟这些后缀，说明该次命中只是更长词的一部分，丢弃它。
+ * 这是**针对已观察到的误命中**做的最小修补，不是通用分词方案；
+ * 接入千问大模型解析后，这套规则连同整个本地解析器都会退居兜底。
+ */
+const COMPOUND_SUFFIX_BLOCK: Record<string, string[]> = {
+  教学: ['工具'],
+};
+
+/** 过滤掉「只是更长词语一部分」的命中位置 */
+const filterCompoundFalsePositives = (
+  text: string,
+  word: string,
+  positions: number[]
+): number[] => {
+  const suffixes = COMPOUND_SUFFIX_BLOCK[word];
+  if (!suffixes || !positions.length) return positions;
+  return positions.filter((p) => !suffixes.some((sfx) => text.startsWith(sfx, p + word.length)));
+};
 
 const CERT_KEYWORDS: string[] = [
   '计算机二级',
@@ -605,6 +637,76 @@ const strongestStrength = (
 ): RequirementStrength =>
   positions.some((p) => judgeStrength(text, p, keywordLength) === 'must') ? 'must' : 'preferred';
 
+// ====================== 语料切分 ======================
+
+/**
+ * 「任职要求」段的起始标志词。
+ *
+ * 招聘文本通常把「干什么」和「要什么」分开写。技能必须在要求段里找，
+ * 因为职责段写的是工作任务，里面的名词不都是「技能要求」。
+ */
+const REQUIREMENT_MARKERS = [
+  '任职要求',
+  '任职资格',
+  '岗位要求',
+  '职位要求',
+  '招聘要求',
+  '用人要求',
+  '能力要求',
+  '我们希望',
+  '你需要',
+];
+
+/** 「岗位职责」段的起始标志词 */
+const DUTY_MARKERS = [
+  '岗位职责',
+  '工作职责',
+  '主要职责',
+  '职责描述',
+  '职位描述',
+  '工作内容',
+  '你将负责',
+];
+
+/**
+ * 把岗位正文切成「要求段」与「职责段」。
+ *
+ * 为什么要切：技能词典是在整段文本上做关键词匹配的，而职责段里全是任务描述。
+ * 实测一条数据分析岗的职责写着「负责农产品市场数据的采集、清洗与分析建模」，
+ * 「农产品」就被当成了一项要求技能，进了技能缺口列表——
+ * 这条噪声会一路污染覆盖率 → 达成度 → 匹配度 → 提升建议。
+ *
+ * 找不到任何标志词时按「整段都是要求段」处理（宁可宽松，
+ * 也不能因为切不出来就丢掉全部要求）。
+ */
+export const splitJobBody = (body: string): { requirement: string; duty: string } => {
+  if (!body) return { requirement: '', duty: '' };
+
+  const firstIndexOf = (markers: string[]): number => {
+    let hit = -1;
+    for (const m of markers) {
+      const i = body.indexOf(m);
+      if (i >= 0 && (hit < 0 || i < hit)) hit = i;
+    }
+    return hit;
+  };
+
+  const reqIdx = firstIndexOf(REQUIREMENT_MARKERS);
+  const dutyIdx = firstIndexOf(DUTY_MARKERS);
+
+  // 两种标志词都没有：无法切分，整段当作要求段
+  if (reqIdx < 0 && dutyIdx < 0) return { requirement: body, duty: '' };
+  // 只有要求段
+  if (dutyIdx < 0) return { requirement: body.slice(reqIdx), duty: '' };
+  // 只有职责段
+  if (reqIdx < 0) return { requirement: '', duty: body.slice(dutyIdx) };
+  // 两段都有：按实际出现顺序切
+  if (reqIdx < dutyIdx) {
+    return { requirement: body.slice(reqIdx, dutyIdx), duty: body.slice(dutyIdx) };
+  }
+  return { requirement: body.slice(reqIdx), duty: body.slice(dutyIdx, reqIdx) };
+};
+
 // ====================== 打分曲线 ======================
 
 /** 通用「命中数 → 分值」映射（软性维度） */
@@ -660,7 +762,8 @@ const extractSkills = (text: string): { skills: JobSkillItem[]; evidence: string
 
   Object.entries(SKILL_DICTIONARY).forEach(([category, words]) => {
     words.forEach((word) => {
-      const positions = findOccurrences(text, word);
+      const rawPositions = findOccurrences(text, word);
+      const positions = filterCompoundFalsePositives(text, word, rawPositions);
       if (!positions.length) return;
       // 避免同名技能重复（如 SQL 与 SQL Server 同时命中）
       if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return;
@@ -678,6 +781,37 @@ const extractSkills = (text: string): { skills: JobSkillItem[]; evidence: string
   });
 
   return { skills, evidence };
+};
+
+/**
+ * 分段抽取技能。
+ *
+ * 两段的语义不同，强度处理也不同：
+ *   - 要求段：按句内标记判定「必须 / 优先」；
+ *   - 职责段：只作为补充，强度**一律降级为「优先」**。
+ *     职责里写的是「你会用到什么」，不等于「入职前必须会」，
+ *     把它判成硬性要求会凭空抬高岗位门槛。
+ *
+ * 另外，岗位名称、招聘专业、行业名都不参与技能抽取（见 parseJobProfileByRules）：
+ * 「网络工程」是专业名、「智能制造」是行业名，都不是要求条目。
+ */
+const extractSkillsBySection = (
+  requirementText: string,
+  dutyText: string
+): { skills: JobSkillItem[]; evidence: string[] } => {
+  const primary = extractSkills(requirementText);
+  const secondary = dutyText ? extractSkills(dutyText) : { skills: [], evidence: [] };
+
+  const merged: JobSkillItem[] = [...primary.skills];
+  secondary.skills.forEach((s) => {
+    if (merged.some((m) => m.name.toLowerCase() === s.name.toLowerCase())) return;
+    merged.push({ ...s, requirement: 'preferred' });
+  });
+
+  return {
+    skills: merged,
+    evidence: [...primary.evidence, ...secondary.evidence].slice(0, 6),
+  };
 };
 
 /** 抽取证书清单 */
@@ -819,8 +953,21 @@ export const parseJobProfileByRules = (input: RuleParseInput): JobProfile => {
       .join('\n')
   );
 
-  const { skills, evidence: skillEvidence } = extractSkills(corpus);
-  const { certificates, evidence: certEvidence } = extractCerts(corpus);
+  // 技能 / 证书的语料与软性维度**分开**：
+  //   - 只取岗位正文（enterprise_intro / job_description），
+  //     排除 job_name、recruit_major、industry 这三个已单独解析的结构化字段：
+  //     岗位名称里的技术词是岗位名，招聘专业里的「网络工程」是专业名，
+  //     行业名「智能制造」是行业——它们都不是要求条目，
+  //     混进来会虚增岗位技能清单，进而虚高覆盖率、压低学生的达成度。
+  //   - 再把正文切成要求段与职责段，职责段技能降级为「优先」。
+  const bodyText = clampText(
+    [input.enterprise_intro, input.job_description].filter(Boolean).join('\n')
+  );
+  const { requirement: requirementText, duty: dutyText } = splitJobBody(bodyText);
+
+  const { skills, evidence: skillEvidence } = extractSkillsBySection(requirementText, dutyText);
+  // 证书是显式关键词，在整段正文里找即可（不限要求段，避免漏掉写在职责里的证书）
+  const { certificates, evidence: certEvidence } = extractCerts(bodyText);
 
   const mustSkillCount = skills.filter((s) => s.requirement === 'must').length;
 
