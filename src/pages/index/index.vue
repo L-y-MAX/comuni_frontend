@@ -113,6 +113,64 @@
       <text class="resource-entry-arrow">›</text>
     </view>
 
+    <!-- 岗位能力画像入口（原在「我的」里，按要求移到首页；只在首页初始态显示） -->
+    <view
+      v-if="!isSearching && !searchResult"
+      class="resource-entry"
+      @tap="goJobProfile"
+    >
+      <view class="resource-entry-left">
+        <!-- 优先用 src/static/home/jobprofile.png；缺图自动退回 emoji -->
+        <image
+          v-if="!jobProfileIconError"
+          class="resource-entry-icon-img"
+          src="/static/home/jobprofile.png"
+          mode="aspectFit"
+          @error="jobProfileIconError = true"
+        />
+        <text
+          v-else
+          class="resource-entry-icon"
+        >
+          💼
+        </text>
+        <view class="resource-entry-texts">
+          <text class="resource-entry-title">岗位能力画像</text>
+          <text class="resource-entry-desc">查看岗位在十个能力维度上的要求</text>
+        </view>
+      </view>
+      <text class="resource-entry-arrow">›</text>
+    </view>
+
+    <!-- 知识库入口（原在「我的」里，按要求移到首页） -->
+    <view
+      v-if="!isSearching && !searchResult"
+      class="resource-entry"
+      @tap="goKnowledge"
+    >
+      <view class="resource-entry-left">
+        <!-- 优先用 src/static/home/knowledge.png；缺图自动退回 emoji -->
+        <image
+          v-if="!knowledgeIconError"
+          class="resource-entry-icon-img"
+          src="/static/home/knowledge.png"
+          mode="aspectFit"
+          @error="knowledgeIconError = true"
+        />
+        <text
+          v-else
+          class="resource-entry-icon"
+        >
+          📝
+        </text>
+        <view class="resource-entry-texts">
+          <text class="resource-entry-title">知识库</text>
+          <text class="resource-entry-desc">收藏与管理 Markdown 文档</text>
+        </view>
+      </view>
+      <text class="resource-entry-arrow">›</text>
+    </view>
+
     <!-- 本地检索结果：就业政策与校招资源（离线可用，不需要登录） -->
     <view
       v-if="isSearching && localResources.length"
@@ -485,6 +543,30 @@ import { RESOURCE_KIND_LABEL, type ResourceKind } from '@/types/careerResource'
  */
 const jobsIconError = ref(false)
 const policyIconError = ref(false)
+const jobProfileIconError = ref(false)
+const knowledgeIconError = ref(false)
+
+// 跳转到「岗位能力画像」页面（页内可直接选岗位）
+const goJobProfile = () => {
+  uni.navigateTo({
+    url: '/pagesMember/recruitment/job-profile',
+    fail: (err) => {
+      console.error('跳转岗位能力画像页面失败：', err)
+      uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
+    },
+  })
+}
+
+// 跳转到「知识库」页面
+const goKnowledge = () => {
+  uni.navigateTo({
+    url: '/pages/knowledge/knowledge',
+    fail: (err) => {
+      console.error('跳转知识库页面失败：', err)
+      uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
+    },
+  })
+}
 
 // 跳转到「岗位招聘」页面（招聘信息列表）
 const goRecruitmentList = () => {

@@ -77,44 +77,7 @@
     <!-- 设置表单区域 - 悬浮效果调整 -->
     <view class="forms-section">
       <view class="form-card">
-        <!-- 岗位能力画像（核心功能，放在最前） -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'jobProfile' }"
-          @click="navigateToJobProfile"
-          @touchstart="() => setActiveItem('jobProfile')"
-          @touchend="() => clearActiveItem()"
-        >
-          <view class="form-label">
-            <text class="label-text">岗位能力画像</text>
-          </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
-        </view>
-        <!-- 知识库（能力画像已上移到 tabBar，此处改为知识库入口） -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'knowledge' }"
-          @click="navigateToKnowledge"
-          @touchstart="() => setActiveItem('knowledge')"
-          @touchend="() => clearActiveItem()"
-        >
-          <view class="form-label">
-            <text class="label-text">知识库</text>
-          </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
-        </view>
+        <!-- 岗位能力画像与知识库入口已按要求移到首页，此处不再保留 -->
         <!-- 原有表单项保留，调整会员权益和岗位招聘位置 -->
         <view
           class="form-item"
@@ -275,8 +238,6 @@ import {
   wxQuickLogin,
   navigateToLoginPage,
   navigateToAbilityProfile, // 能力画像（tabBar 页，内部用 switchTab）
-  navigateToKnowledge, // 知识库（已从 tabBar 移出，改从「我的」进入）
-  navigateToJobProfile, // 岗位能力画像（缺参数时会进入岗位选择模式）
 } from './my'
 
 // 修改：打开功能说明手册的函数 - 直接跳转分包页面，移除接口请求逻辑
