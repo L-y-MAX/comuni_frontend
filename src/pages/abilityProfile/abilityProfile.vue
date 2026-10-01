@@ -294,14 +294,35 @@
           </text>
         </view>
 
-        <!-- 能力星球图 -->
+        <!-- 能力总览：星球图与十维明细合并为一张卡，用分段控件切换（内容一个不少） -->
         <view class="chart-card card-style">
           <view class="card-head">
-            <text class="section-title">能力星球图</text>
-            <text class="section-sub">星球越大越亮 = 该项能力越强</text>
+            <text class="section-title">{{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}</text>
+            <text class="section-sub">{{ abilityView === 'planet' ? '星球越大越亮 = 该项能力越强' : '点击可查看解析依据' }}</text>
           </view>
 
-          <view class="planet-chart">
+          <!-- 分段控件：切换「星球图 / 十维明细」 -->
+          <view class="seg">
+            <view
+              class="seg-item"
+              :class="{ active: abilityView === 'planet' }"
+              @tap="abilityView = 'planet'"
+            >
+              <text class="seg-text">星球图</text>
+            </view>
+            <view
+              class="seg-item"
+              :class="{ active: abilityView === 'list' }"
+              @tap="abilityView = 'list'"
+            >
+              <text class="seg-text">十维明细</text>
+            </view>
+          </view>
+
+          <view
+            v-if="abilityView === 'planet'"
+            class="planet-chart"
+          >
             <view
               v-for="(ring, ri) in layout.rings"
               :key="`ring-${ri}`"
@@ -342,115 +363,111 @@
               </text>
             </view>
           </view>
-        </view>
 
-        <!-- 十维明细 -->
-        <view class="dim-card card-style">
-          <view class="card-head">
-            <text class="section-title">十大维度明细</text>
-            <text class="section-sub">点击可查看解析依据</text>
-          </view>
+          <!-- 十维明细：与星球图展示同一份数据，切到这一档时渲染 -->
+          <block v-else>
 
-          <view
-            v-for="dim in profile.dimensions"
-            :key="dim.key"
-            class="dim-item"
-            @click="toggleDim(dim.key)"
-          >
-            <view class="dim-head">
-              <view class="dim-title-wrap">
-                <text class="dim-label">{{ dim.label }}</text>
-                <text
-                  v-if="dim.confidence < 0.35"
-                  class="dim-hint"
-                >
-                  信息不足
-                </text>
+            <view
+              v-for="dim in profile.dimensions"
+              :key="dim.key"
+              class="dim-item"
+              @click="toggleDim(dim.key)"
+            >
+              <view class="dim-head">
+                <view class="dim-title-wrap">
+                  <text class="dim-label">{{ dim.label }}</text>
+                  <text
+                    v-if="dim.confidence < 0.35"
+                    class="dim-hint"
+                  >
+                    信息不足
+                  </text>
+                </view>
+                <view class="dim-value-wrap">
+                  <text
+                    class="dim-level"
+                    :style="{ color: levelColor(dim.level) }"
+                  >
+                    {{ levelLabel(dim.level) }}
+                  </text>
+                  <text class="dim-score">{{ dim.score }}</text>
+                  <text
+                    class="dim-arrow"
+                    :class="{ expanded: expandedKey === dim.key }"
+                  >
+                    ▶
+                  </text>
+                </view>
               </view>
-              <view class="dim-value-wrap">
-                <text
-                  class="dim-level"
-                  :style="{ color: levelColor(dim.level) }"
-                >
-                  {{ levelLabel(dim.level) }}
-                </text>
-                <text class="dim-score">{{ dim.score }}</text>
-                <text
-                  class="dim-arrow"
-                  :class="{ expanded: expandedKey === dim.key }"
-                >
-                  ▶
-                </text>
-              </view>
-            </view>
 
-            <view class="bar-track">
+              <view class="bar-track">
+                <view
+                  class="bar-fill"
+                  :style="{
+                    width: `${dim.score}%`,
+                    backgroundColor: levelColor(dim.level),
+                  }"
+                />
+              </view>
+
+              <!-- 专业技能清单 -->
               <view
-                class="bar-fill"
-                :style="{
-                  width: `${dim.score}%`,
-                  backgroundColor: levelColor(dim.level),
-                }"
-              />
-            </view>
+                v-if="dim.key === 'professional_skill' && dim.skills && dim.skills.length"
+                class="chip-group"
+              >
+                <text
+                  v-for="(s, i) in dim.skills"
+                  :key="`${s.name}-${i}`"
+                  class="chip"
+                  :class="s.proficiency"
+                >
+                  {{ s.name }}<text v-if="s.proficiency === 'proficient'"> ·熟练</text>
+                </text>
+              </view>
 
-            <!-- 专业技能清单 -->
-            <view
-              v-if="dim.key === 'professional_skill' && dim.skills && dim.skills.length"
-              class="chip-group"
-            >
-              <text
-                v-for="(s, i) in dim.skills"
-                :key="`${s.name}-${i}`"
-                class="chip"
-                :class="s.proficiency"
+              <!-- 证书清单 -->
+              <view
+                v-if="dim.key === 'certificate'"
+                class="chip-group"
               >
-                {{ s.name }}<text v-if="s.proficiency === 'proficient'"> ·熟练</text>
-              </text>
-            </view>
+                <text
+                  v-if="!dim.certificates || !dim.certificates.length"
+                  class="empty-note"
+                >
+                  暂未识别到证书，建议补充
+                </text>
+                <text
+                  v-for="(c, i) in dim.certificates || []"
+                  :key="`${c.name}-${i}`"
+                  class="chip"
+                >
+                  {{ c.name }}
+                </text>
+              </view>
 
-            <!-- 证书清单 -->
-            <view
-              v-if="dim.key === 'certificate'"
-              class="chip-group"
-            >
-              <text
-                v-if="!dim.certificates || !dim.certificates.length"
-                class="empty-note"
+              <!-- 展开：依据 -->
+              <view
+                v-if="expandedKey === dim.key"
+                class="evidence-box"
               >
-                暂未识别到证书，建议补充
-              </text>
-              <text
-                v-for="(c, i) in dim.certificates || []"
-                :key="`${c.name}-${i}`"
-                class="chip"
-              >
-                {{ c.name }}
-              </text>
+                <text class="evidence-title">解析依据（置信度 {{ Math.round(dim.confidence * 100) }}%）</text>
+                <text
+                  v-if="!dim.evidence.length"
+                  class="empty-note"
+                >
+                  你填写的内容中未出现该维度的明确表述，当前为中性基准分。
+                  补充相关经历后重新生成即可。
+                </text>
+                <text
+                  v-for="(e, i) in dim.evidence"
+                  :key="i"
+                  class="evidence-line"
+                >
+                  · {{ e }}
+                </text>
+              </view>
             </view>
-
-            <!-- 展开：依据 -->
-            <view
-              v-if="expandedKey === dim.key"
-              class="evidence-box"
-            >
-              <text class="evidence-title">解析依据（置信度 {{ Math.round(dim.confidence * 100) }}%）</text>
-              <text
-                v-if="!dim.evidence.length"
-                class="empty-note"
-              >
-                你填写的内容中未出现该维度的明确表述，当前为中性基准分。
-                补充相关经历后重新生成即可。
-              </text>
-              <text
-                v-for="(e, i) in dim.evidence"
-                :key="i"
-                class="evidence-line"
-              >
-                · {{ e }}
-              </text>
-            </view>
-          </view>
+          </block>
         </view>
 
         <!-- 徽章墙 -->
@@ -1850,5 +1867,40 @@ onShareTimeline(() => ({
   font-size: 21rpx;
   color: #9ca3af;
   line-height: 1.7;
+}
+
+// ========== 分段控件（星球图 / 十维明细切换） ==========
+.seg {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 12rpx;
+  padding: 6rpx;
+  margin: 18rpx 0 8rpx;
+}
+
+.seg-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  border-radius: 9rpx;
+  transition: background-color 0.2s ease;
+
+  &.active {
+    background: #ffffff;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+
+    .seg-text {
+      color: #ff4500;
+      font-weight: 600;
+    }
+  }
+}
+
+.seg-text {
+  font-size: 26rpx;
+  color: #6b7280;
 }
 </style>
