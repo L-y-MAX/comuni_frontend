@@ -1541,7 +1541,7 @@ onShareTimeline(() => ({
 
 .planet-tab-text {
   font-size: 26rpx;
-  color: #888888;
+  color: #FF7239;
   transition: color 0.2s ease;
 }
 
@@ -1552,14 +1552,14 @@ onShareTimeline(() => ({
   width: 0;
   height: 4rpx;
   border-radius: 2rpx;
-  background: #FFB89E;
+  background: #FF7239;
   transform: translateX(-50%);
   opacity: 0;
   transition: width 0.22s ease, opacity 0.22s ease;
 }
 
 .planet-tab.active .planet-tab-text {
-  color: #FFB89E;
+  color: #FF7239;
   font-weight: 600;
 }
 
@@ -2597,7 +2597,7 @@ onShareTimeline(() => ({
   margin-bottom: 4rpx;
 
   .drawer-item.current & {
-    color: #FFB89E;
+    color: #FF7239;
   }
 }
 
@@ -2614,7 +2614,7 @@ onShareTimeline(() => ({
   flex-shrink: 0;
 
   .drawer-item.current & {
-    color: #FFB89E;
+    color: #FF7239;
     font-size: 20rpx;
   }
 }
@@ -2660,7 +2660,7 @@ onShareTimeline(() => ({
     background: #fff1ec;
 
     .anchor-text {
-      color: #FFB89E;
+      color: #FF7239;
       font-weight: 600;
     }
   }
@@ -2668,6 +2668,6 @@ onShareTimeline(() => ({
 
 .anchor-text {
   font-size: 26rpx;
-  color: #6b7280;
+  color: #FF7239;
 }
 </style>
