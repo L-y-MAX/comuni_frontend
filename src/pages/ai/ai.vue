@@ -8,8 +8,29 @@
       @scroll="onScroll"
       ref="scrollRef"
     >
-      <!-- 系统提示 -->
-      <view class="system-message">在文章内点击`问AI`即可提问</view>
+      <!-- 系统提示：根据是否已从文章进入，给出不同引导 -->
+      <view
+        v-if="hasArticle"
+        class="system-message"
+      >
+        正在针对《{{ articleTitle }}》回答。想换一篇文章，去知识库打开它，再点右上角「问 AI」
+      </view>
+      <view
+        v-else
+        class="ai-guide"
+      >
+        <view class="ai-guide-title">AI 助手怎么用</view>
+        <view class="ai-guide-text">这个助手是针对「知识库里的某篇文章」提问的，先选一篇文章：</view>
+        <view class="ai-guide-step">1. 去知识库，打开一篇文章</view>
+        <view class="ai-guide-step">2. 在文章详情页右上角点「问 AI」</view>
+        <view class="ai-guide-step">3. 回到这里，就能让它概括要点、解释代码、出面试题</view>
+        <button
+          class="ai-guide-btn"
+          @click="goKnowledge"
+        >
+          去知识库选一篇文章
+        </button>
+      </view>
 
       <!-- 聊天消息列表 -->
       <view
@@ -41,21 +62,23 @@
       <view class="arrow-down"></view>
     </view>
 
-    <!-- 新增：悬浮提示按钮区域（移到输入区域上方） -->
-    <view class="prompt-tips">
-      <view
-        class="prompt-item"
-        @click="fillPrompt('这篇文章讲了什么')"
-      >
-        这篇文章讲了什么?
+    <!-- 示例问题：横向滚动，问题变多也不会挤占聊天区域高度 -->
+    <scroll-view
+      v-if="hasArticle"
+      class="prompt-tips"
+      scroll-x
+    >
+      <view class="prompt-tips-inner">
+        <view
+          v-for="p in examplePrompts"
+          :key="p"
+          class="prompt-item"
+          @click="fillPrompt(p)"
+        >
+          {{ p }}
+        </view>
       </view>
-      <view
-        class="prompt-item"
-        @click="fillPrompt('总结一下这篇文章，控制在500字以内')"
-      >
-        总结一下这篇文章, 控制在500字以内
-      </view>
-    </view>
+    </scroll-view>
 
     <!-- 输入区域 -->
     <view class="input-area">
@@ -96,7 +119,7 @@ interface Message {
   isUser: boolean
 }
 
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useKnowledgeStore } from '@/stores/knowledge'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
 
@@ -171,6 +194,30 @@ const onScroll = (e: { detail: { scrollTop: number; scrollHeight: number } }) =>
 // 新增：填充提示语到输入框
 const fillPrompt = (promptText: string) => {
   inputContent.value = promptText
+}
+
+/**
+ * 是否已经带着文章进入
+ *
+ * 这个助手是针对知识库里的某篇文章提问的（请求时会带上 current_article），
+ * 没带文章时它没有上下文，所以先引导用户去选一篇文章。
+ */
+const hasArticle = computed(() => !!knowledgeStore.currentArticle?.content)
+const articleTitle = computed(() => knowledgeStore.currentArticle?.name || '未命名文章')
+
+/** 示例问题：让第一次使用的人知道可以问什么 */
+const examplePrompts = [
+  '这篇文章讲了什么',
+  '总结一下这篇文章，控制在500字以内',
+  '提炼 3 个最关键的结论',
+  '把文中的代码逐段解释一遍',
+  '根据这篇文章给我出 5 道面试题',
+  '用更简单的话重新讲一遍',
+]
+
+/** 没带文章时的引导：去知识库挑一篇 */
+const goKnowledge = () => {
+  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
 }
 
 // 轮询查询任务结果
@@ -469,16 +516,62 @@ onShareTimeline(() => {
   transform: rotate(45deg);
 }
 
-/* 悬浮提示按钮样式（移到输入区域上方后调整间距） */
+/* 未关联文章时的引导卡片 */
+.ai-guide {
+  margin: 10rpx 20rpx 30rpx;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, rgba(255, 90, 48, 0.06) 0%, rgba(255, 90, 48, 0.02) 100%);
+  border: 2rpx solid rgba(255, 90, 48, 0.18);
+}
+
+.ai-guide-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #ff5a30;
+  margin-bottom: 12rpx;
+}
+
+.ai-guide-text {
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #666666;
+  margin-bottom: 12rpx;
+}
+
+.ai-guide-step {
+  font-size: 26rpx;
+  line-height: 1.8;
+  color: #444444;
+  padding-left: 8rpx;
+}
+
+.ai-guide-btn {
+  margin-top: 20rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  font-size: 28rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff4500 0%, #ff6733 100%);
+  border-radius: 36rpx;
+  border: none;
+}
+/* 悬浮提示按钮样式：改为横向滚动，示例问题变多也不会挤占聊天区域高度 */
 .prompt-tips {
-  display: flex;
-  gap: 15rpx;
-  padding: 10rpx 20rpx;
   width: 100%;
   box-sizing: border-box;
+  padding: 10rpx 0;
+  white-space: nowrap;
+}
+
+.prompt-tips-inner {
+  display: inline-flex;
+  gap: 15rpx;
+  padding: 0 20rpx;
 }
 
 .prompt-item {
+  flex: none;
   padding: 8rpx 15rpx;
   background-color: #f0f8ff;
   color: #ff5a30;

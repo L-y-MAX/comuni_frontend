@@ -65,7 +65,15 @@
           </view>
 
           <!-- 编辑区标题 -->
-          <view class="content-section-title">编辑内容</view>
+          <view class="content-section-title">
+            <text>编辑内容</text>
+            <text
+              class="insert-sample-btn"
+              @click="insertSampleTemplate"
+            >
+              插入示例模板
+            </text>
+          </view>
           <!-- 编辑区容器：核心隔离滚动 -->
           <view class="editor-wrapper">
             <scroll-view
@@ -445,6 +453,96 @@ const renderMarkdownAsync = async () => {
 }
 
 /**
+ * 示例文章模板
+ *
+ * 让第一次写知识库文章的人知道 Markdown 能写成什么样。
+ * 这里用数组 join 拼接，而不是模板字符串——正文里含反引号（代码块），
+ * 用模板字符串会和外层的反引号冲突。
+ */
+const SAMPLE_ARTICLE_TEMPLATE = [
+  '# 我的第一篇知识库文章',
+  '',
+  '这是一篇**示例文章**，用来演示知识库里能怎么写。你可以直接改，把它换成自己的内容。',
+  '',
+  '## 一、为什么要把笔记放进知识库',
+  '',
+  '面试题、项目复盘、学习笔记放在一起，秋招前翻一遍，比重头找资料快得多。',
+  '',
+  '## 二、支持 Markdown 排版',
+  '',
+  '- **加粗**、*斜体*、`行内代码`',
+  '- 有序列表：',
+  '',
+  '1. 先把知识点拆成小标题',
+  '2. 每条都配一个自己的例子',
+  '3. 定期回来看，删掉已经掌握的',
+  '',
+  '> 引用块适合放结论、面试官原话，或者一句话总结。',
+  '',
+  '## 三、代码也能放进来',
+  '',
+  '```js',
+  '// 面试常问：手写防抖',
+  'function debounce(fn, delay = 300) {',
+  '  let timer = null',
+  '  return (...args) => {',
+  '    if (timer) clearTimeout(timer)',
+  '    timer = setTimeout(() => fn(...args), delay)',
+  '  }',
+  '}',
+  '```',
+  '',
+  '## 四、用表格做对比',
+  '',
+  '| 方案 | 优点 | 缺点 |',
+  '| --- | --- | --- |',
+  '| 直接读缓存 | 简单 | 多实例容易不一致 |',
+  '| 集中管理 | 一致性好 | 多一层封装 |',
+  '',
+  '## 五、写完还能做什么',
+  '',
+  '保存后回到文章详情页，点右上角「问 AI」，可以：',
+  '',
+  '- 让它**概括这篇的要点**',
+  '- 让它**逐段解释代码**',
+  '- 让它**出几道相关的面试题**',
+  '',
+  '---',
+  '',
+  '把上面这些删掉，换成你自己的内容就可以发布了。',
+].join('\n')
+
+/** 真正把示例内容写进编辑框，并立刻刷新预览 */
+const applySampleTemplate = () => {
+  formData.content = SAMPLE_ARTICLE_TEMPLATE
+  renderMarkdownAsync()
+}
+
+/**
+ * 一键插入示例模板
+ *
+ * 编辑框里已经有内容时先弹确认，避免直接覆盖掉用户写了一半的东西。
+ */
+const insertSampleTemplate = () => {
+  if (!formData.content.trim()) {
+    applySampleTemplate()
+    uni.showToast({ title: '已插入示例模板', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '插入示例模板',
+    content: '编辑框里已经有内容，插入示例会覆盖掉它们，确定继续吗？',
+    confirmText: '覆盖',
+    success: (res) => {
+      if (res.confirm) {
+        applySampleTemplate()
+        uni.showToast({ title: '已插入示例模板', icon: 'none' })
+      }
+    },
+  })
+}
+
+/**
  * 手动校验表单（兼容uni-forms的校验逻辑）
  */
 const validateForm = async (): Promise<boolean> => {
@@ -766,6 +864,24 @@ page {
       margin-right: 6px;
       border-radius: 2px;
     }
+  }
+
+  /* 插入示例模板按钮：让第一次写文章的人知道正文能写成什么样 */
+  .insert-sample-btn {
+    margin-left: auto;
+    flex: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: #e03c00;
+    padding: 6px 12px;
+    line-height: 1.2;
+    border: 1px solid rgba(224, 60, 0, 0.35);
+    border-radius: 20px;
+    background-color: rgba(224, 60, 0, 0.06);
+  }
+
+  .insert-sample-btn:active {
+    background-color: rgba(224, 60, 0, 0.16);
   }
 
   // 预览区样式

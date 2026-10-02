@@ -34,6 +34,47 @@
         </button>
       </view>
 
+      <!-- 使用引导：首次进入默认展开，用户收起后记住选择 -->
+      <view class="guide-card">
+        <view
+          class="guide-head"
+          @click="toggleGuide"
+        >
+          <text class="guide-title">📖 知识库怎么用</text>
+          <text class="guide-toggle">{{ guideCollapsed ? '展开' : '收起' }}</text>
+        </view>
+        <view
+          v-if="!guideCollapsed"
+          class="guide-body"
+        >
+          <view class="guide-step">
+            <text class="guide-num">1</text>
+            <text class="guide-text">在「我的知识库」点右上角 ＋ 新建一个知识库</text>
+          </view>
+          <view class="guide-step">
+            <text class="guide-num">2</text>
+            <text class="guide-text"
+              >选中这个知识库，点「新增文章」。正文支持 Markdown：标题、列表、表格、代码块</text
+            >
+          </view>
+          <view class="guide-step">
+            <text class="guide-num">3</text>
+            <text class="guide-text"
+              >保存后在文章详情页右上角点「问 AI」，可以让它概括要点、解释代码、出面试题</text
+            >
+          </view>
+          <view class="guide-step">
+            <text class="guide-num">4</text>
+            <text class="guide-text"
+              >把知识库分享给同学，也可以在别人的主页关注他的知识库</text
+            >
+          </view>
+          <view class="guide-tip"
+            >不知道写什么？「新增文章」页里有一键「插入示例模板」，会填好一段演示内容。</view
+          >
+        </view>
+      </view>
+
       <!-- 分栏内容区域 -->
       <view class="kb-columns">
         <!-- 左侧栏：关注的知识库 + 分享给我的知识库 -->
@@ -507,6 +548,15 @@ const tabState = ref<Record<string, TabState>>({
 const kbList = ref<any[]>([]) // 我的知识库列表（初始化空数组）
 const isLoading = ref(false) // 列表/文章级加载状态（局部 loading）
 const firstLoading = ref(true) // 仅首次进入时的整页加载状态
+
+/** 使用引导是否折叠：首次进入默认展开，用户收起后记住选择 */
+const GUIDE_COLLAPSED_KEY = 'kbGuideCollapsed'
+const guideCollapsed = ref(uni.getStorageSync(GUIDE_COLLAPSED_KEY) === true)
+
+const toggleGuide = () => {
+  guideCollapsed.value = !guideCollapsed.value
+  uni.setStorageSync(GUIDE_COLLAPSED_KEY, guideCollapsed.value)
+}
 let refreshTimer: number | null = null // 防抖定时器
 
 //先定义获取缓存状态的函数，再赋值给ref（正确的TS写法）
@@ -1525,6 +1575,74 @@ $border-radius-small: 12rpx;
   }
 }
 
+/* 使用引导卡片 */
+.guide-card {
+  background: linear-gradient(135deg, rgba(255, 69, 0, 0.05) 0%, rgba(255, 103, 51, 0.03) 100%);
+  border: 2rpx solid rgba(255, 69, 0, 0.18);
+  border-radius: $border-radius-large;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.guide-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: $secondary-color;
+}
+
+.guide-toggle {
+  font-size: 24rpx;
+  color: $text-secondary;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.guide-body {
+  margin-top: 16rpx;
+}
+
+.guide-step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12rpx;
+}
+
+.guide-num {
+  flex: none;
+  width: 32rpx;
+  height: 32rpx;
+  line-height: 32rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: $secondary-color;
+  color: #ffffff;
+  font-size: 22rpx;
+  margin-right: 12rpx;
+}
+
+.guide-text {
+  flex: 1;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: $text-secondary;
+}
+
+.guide-tip {
+  margin-top: 12rpx;
+  padding: 12rpx 16rpx;
+  border-radius: $border-radius-small;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: $text-tertiary;
+}
 /* 文章列表局部加载提示 */
 .node-loading {
   padding: 32rpx 0;
