@@ -645,9 +645,14 @@
                 class="badge-icon"
                 :class="{ unlocked: badge.unlocked }"
               >
-                <text class="badge-emoji">{{ badge.icon }}</text>
+                <image
+                  class="badge-img"
+                  :src="badge.icon"
+                  mode="aspectFit"
+                />
               </view>
               <text class="badge-name">{{ badge.name }}</text>
+                <text class="badge-name-en">{{ badge.name_en }}</text>
               <text class="badge-cond">{{ badge.condition }}</text>
             </view>
           </view>
@@ -2303,9 +2308,16 @@ onShareTimeline(() => ({
   }
 }
 
-.badge-emoji {
-  font-size: 42rpx;
-  line-height: 1;
+.badge-img {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.badge-name-en {
+  font-size: 18rpx;
+  color: #9ca3af;
+  margin-top: 2rpx;
+  text-align: center;
 }
 
 .badge-name {

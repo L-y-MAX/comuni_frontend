@@ -248,7 +248,7 @@ export const buildBadges = (dimensions: StudentDimension[]): StudentBadge[] => {
       return {
         id: def.id,
         name: def.name,
-        icon: def.icon,
+        icon: def.icon,        name_en: def.name_en,
         condition: def.condition,
         dimension: def.dimension,
         unlocked: score >= def.threshold,
@@ -262,7 +262,7 @@ export const buildBadges = (dimensions: StudentDimension[]): StudentBadge[] => {
     return {
       id: def.id,
       name: def.name,
-      icon: def.icon,
+      icon: def.icon,      name_en: def.name_en,
       condition: def.condition,
       unlocked: dimensions.length > 0 && passed === dimensions.length,
       progress: dimensions.length ? Number((passed / dimensions.length).toFixed(3)) : 0,

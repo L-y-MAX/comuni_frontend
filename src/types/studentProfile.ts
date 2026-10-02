@@ -212,9 +212,11 @@ export interface CompletenessDetail {
 /** 徽章定义 */
 export interface BadgeDefinition {
   id: string;
-  /** 徽章名，如「学习达人」 */
+  /** 徽章中文名，如「学习达人」 */
   name: string;
-  /** 图标（emoji，避免额外图片资源） */
+  /** 徽章英文名，如 Learning Star */
+  name_en: string;
+  /** 徽章图标：本地图片路径（/static/badges/<id>.png） */
   icon: string;
   /** 解锁条件说明 */
   condition: string;
@@ -234,7 +236,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'skill_master',
     name: '技能大师',
-    icon: '⚙️',
+    name_en: 'Skill Master',
+    icon: '/static/badges/skill_master.png',
     condition: '专业技能 ≥ 85',
     dimension: 'professional_skill',
     threshold: 85,
@@ -242,7 +245,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'certified',
     name: '持证上岗',
-    icon: '📜',
+    name_en: 'Certified Pro',
+    icon: '/static/badges/certified.png',
     condition: '证书资质 ≥ 75',
     dimension: 'certificate',
     threshold: 75,
@@ -250,7 +254,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'learning_star',
     name: '学习达人',
-    icon: '📚',
+    name_en: 'Learning Star',
+    icon: '/static/badges/learning_star.png',
     condition: '学习能力 ≥ 80',
     dimension: 'learning',
     threshold: 80,
@@ -258,7 +263,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'practice_expert',
     name: '实践能手',
-    icon: '🛠️',
+    name_en: 'Practice Expert',
+    icon: '/static/badges/practice_expert.png',
     condition: '实习能力 ≥ 80',
     dimension: 'internship',
     threshold: 80,
@@ -266,7 +272,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'team_star',
     name: '团队之星',
-    icon: '🤝',
+    name_en: 'Team Star',
+    icon: '/static/badges/team_star.png',
     condition: '团队协作 ≥ 80',
     dimension: 'teamwork',
     threshold: 80,
@@ -274,7 +281,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'communicator',
     name: '沟通高手',
-    icon: '💬',
+    name_en: 'Communicator',
+    icon: '/static/badges/communicator.png',
     condition: '沟通能力 ≥ 80',
     dimension: 'communication',
     threshold: 80,
@@ -282,7 +290,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'stress_warrior',
     name: '抗压战士',
-    icon: '🛡️',
+    name_en: 'Stress Warrior',
+    icon: '/static/badges/stress_warrior.png',
     condition: '抗压能力 ≥ 80',
     dimension: 'stress_resistance',
     threshold: 80,
@@ -290,7 +299,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'innovator',
     name: '创新先锋',
-    icon: '💡',
+    name_en: 'Innovator',
+    icon: '/static/badges/innovator.png',
     condition: '创新能力 ≥ 80',
     dimension: 'innovation',
     threshold: 80,
@@ -298,7 +308,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'logician',
     name: '逻辑思维者',
-    icon: '🧩',
+    name_en: 'Logician',
+    icon: '/static/badges/logician.png',
     condition: '逻辑思维 ≥ 80',
     dimension: 'logical_thinking',
     threshold: 80,
@@ -306,7 +317,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'industry_watcher',
     name: '行业观察家',
-    icon: '🔭',
+    name_en: 'Industry Watcher',
+    icon: '/static/badges/industry_watcher.png',
     condition: '行业认知 ≥ 80',
     dimension: 'industry_cognition',
     threshold: 80,
@@ -314,14 +326,16 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'all_rounder',
     name: '全能选手',
-    icon: '🏅',
+    name_en: 'All-Rounder',
+    icon: '/static/badges/all_rounder.png',
     condition: '十项维度全部 ≥ 70',
     allDimensionsAbove: 70,
   },
   {
     id: 'hexagon_warrior',
     name: '六边形战士',
-    icon: '💎',
+    name_en: 'Hexagon Warrior',
+    icon: '/static/badges/hexagon_warrior.png',
     condition: '十项维度全部 ≥ 80',
     allDimensionsAbove: 80,
   },
@@ -331,6 +345,9 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 export interface StudentBadge {
   id: string;
   name: string;
+  /** 徽章英文名 */
+  name_en: string;
+  /** 徽章图标：本地图片路径 */
   icon: string;
   condition: string;
   unlocked: boolean;
@@ -478,7 +495,16 @@ export const normalizeStudentProfile = (raw: Partial<StudentProfile>): StudentPr
     competitiveness_level: raw.competitiveness_level ?? scoreToLevel(raw.competitiveness ?? 0),
     strengths: raw.strengths ?? [],
     weaknesses: raw.weaknesses ?? [],
-    badges: raw.badges ?? [],
+    badges: (raw.badges ?? []).map((b) => {
+      const def = BADGE_DEFINITIONS.find((d) => d.id === b.id);
+      return {
+        ...b,
+        name: def?.name ?? b.name,
+        name_en: b.name_en ?? def?.name_en ?? '',
+        // 旧缓存里存的是 emoji，按 id 统一换成本地图片，否则会看到破图
+        icon: def?.icon ?? b.icon,
+      };
+    }),
     summary: raw.summary ?? '',
     parse_method: raw.parse_method ?? 'rule',
     confidence:
