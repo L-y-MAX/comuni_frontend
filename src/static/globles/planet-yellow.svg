@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!--
+    简笔卡通土星 · 黄色（70 ≤ 分值 < 80）
+    与橘色版同一套画法，只换配色，保证三种星球形状完全一致。
+  -->
+  <g transform="rotate(-20 32 32)">
+    <path d="M4 32a28 11 0 0 1 56 0" fill="none" stroke="#E5A93A" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="32" cy="32" r="15.5" fill="#FFD289" stroke="#E5A93A" stroke-width="5"/>
+    <path d="M4 32a28 11 0 0 0 56 0" fill="none" stroke="#E5A93A" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

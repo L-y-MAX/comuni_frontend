@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!--
+    简笔卡通土星 · 橘色（分值 ≥ 80）
+    画法：行星环拆成「后半圈 -> 球体 -> 前半圈」三段绘制，
+    这样环会自然地穿过球体背后，形成土星的立体感，全程不使用任何发光/滤镜。
+    viewBox 64×64，粗描边 5~6，缩放渲染时描边依然清晰。
+  -->
+  <g transform="rotate(-20 32 32)">
+    <!-- 行星环后半圈（在球体后面） -->
+    <path d="M4 32a28 11 0 0 1 56 0" fill="none" stroke="#E8703F" stroke-width="6" stroke-linecap="round"/>
+    <!-- 球体：扁平填充 + 粗描边 -->
+    <circle cx="32" cy="32" r="15.5" fill="#FF9771" stroke="#E8703F" stroke-width="5"/>
+    <!-- 行星环前半圈（压在球体上，形成环穿过球体的效果） -->
+    <path d="M4 32a28 11 0 0 0 56 0" fill="none" stroke="#E8703F" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>
