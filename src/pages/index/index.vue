@@ -641,6 +641,8 @@ onMounted(() => {
 /* 品牌文字/图片容器【关键修改2：适配图片样式，保留原动画和定位】 */
 .brand-text {
   /* 保留原定位、动画、层级等属性 */
+  /* 纯装饰：不参与命中测试，避免盖住下方可点元素 */
+  pointer-events: none;
   position: absolute;
   top: 33vh;
   left: 50%;
@@ -670,6 +672,8 @@ onMounted(() => {
 
 /* 品牌sign（非搜索状态：左橙右白各1/2渐变 + 影子效果） */
 .brand-sign {
+  /* 纯装饰：不参与命中测试 */
+  pointer-events: none;
   font-size: 48rpx;
   color: #ff4500;
   position: absolute;
@@ -725,6 +729,10 @@ onMounted(() => {
 
 /* 搜索框容器（橙红渐变边框） */
 .search-input-wrapper {
+  // 必须显式定位并给层级：页面里的 brand-text / brand-sign 是绝对定位 + z-index 1/2，
+  // 搜索框原来是流式元素、没有层级，布局动画后可能被装饰层盖住，导致右侧搜索图标点不到
+  position: relative;
+  z-index: 10;
   width: 90%;
   max-width: 680rpx;
   height: 80rpx;
@@ -770,7 +778,11 @@ onMounted(() => {
   border-radius: 0 38rpx 38rpx 0;
   color: #ff4500;
   font-size: 32rpx;
-}
+
+  // 按下反馈：能看出点击有没有落到这个元素上
+  &:active {
+    opacity: 0.6;
+  }}
 
 /* 搜索图标：优先用本地图片，缺图时模板会退回 ◯ */
 .search-icon {
