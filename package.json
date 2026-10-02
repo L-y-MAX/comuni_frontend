@@ -54,12 +54,16 @@
     "@dcloudio/uni-mp-xhs": "3.0.0-4080720251210001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4080720251210001",
     "@dcloudio/uni-ui": "^1.5.11",
+    "echarts": "^5.6.0",
     "highlight.js": "^11.11.1",
     "marked": "^17.0.1",
     "marked-highlight": "^2.2.3",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "vue": "^3.5.25"
+    "tslib": "2.3.0",
+    "uni-echarts": "^2.5.3",
+    "vue": "^3.5.25",
+    "zrender": "5.6.1"
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.19",

@@ -350,12 +350,26 @@
             </view>
           </view>
 
-          <!-- 雷达星球视图：底层雷达骨架 + 十维顶点能力气泡 -->
+          <!-- 雷达星球视图：默认用 ECharts canvas 渲染；纯 CSS 版作为一行可切换的回退 -->
           <view
             v-if="abilityView === 'planet'"
             class="radar-chart planet-fade"
+            :class="{ 'radar-square': !USE_ECHARTS_RADAR }"
             @tap="closeBubbleTip"
           >
+            <!-- ===== 方案 A（默认）：ECharts canvas =====
+                 高度必须通过 custom-style 传给组件内部根节点：
+                 组件里 canvas 是 width/height:100%，再靠 boundingClientRect 读尺寸，
+                 内部根节点没有明确高度时 canvas 会取到 0，图就是空白的。
+                 外层 class 只作用于宿主节点，进不到组件内部，所以这里不用 class 传尺寸。 -->
+            <UniEcharts
+              v-if="USE_ECHARTS_RADAR"
+              custom-style="width: 100%; height: 620rpx;"
+              canvas-type="2d"
+            />
+
+            <!-- ===== 方案 B：纯 CSS 雷达（把 USE_ECHARTS_RADAR 改成 false 即回退） ===== -->
+            <template v-else>
             <!-- ① 最底层：分割圈（浅灰，只做参考） -->
             <view
               v-for="(ring, ri) in radar.gridRings"
@@ -430,6 +444,7 @@
                 ✅已解锁【{{ activeBubbleBadge.name }}】徽章
               </text>
             </view>
+            </template>
           </view>
 
           <!-- 十维明细：与星球图展示同一份数据，切到这一档时渲染 -->
@@ -785,6 +800,11 @@ import {
   type RadarBubble,
   type RadarEdge,
 } from '@/utils/abilityPlanet';
+import { buildAbilityRadarOption } from '@/utils/abilityRadarOption';
+import echarts from '@/utils/echartsSetup';
+// uni-echarts 的组件与注入工具（echarts 本体由页面注入，组件自己不 import）
+import UniEcharts from 'uni-echarts';
+import { provideEcharts, provideEchartsOption } from 'uni-echarts/shared';
 import { generateStudentProfile, fetchSavedStudentProfile } from '@/api/studentProfile';
 import { STUDENT_PROFILE_SAMPLE } from '@/utils/studentProfileParser';
 import {
@@ -999,7 +1019,7 @@ const STORAGE_KEY = 'studentAbilityProfile';
 
 // ====================== 派生数据 ======================
 
-/** 雷达星球布局（纯函数计算，见 utils/abilityPlanet.ts） */
+/** 雷达星球布局（纯函数计算，见 utils/abilityPlanet.ts，供纯 CSS 回退方案使用） */
 const radar = computed(() =>
   buildRadarLayout(
     (profile.value?.dimensions ?? []).map((d) => ({
@@ -1010,6 +1030,38 @@ const radar = computed(() =>
     }))
   )
 );
+
+// ====================== 雷达星球视图渲染方式 ======================
+
+/**
+ * true  = 用 ECharts canvas 渲染（默认）
+ * false = 回退到纯 CSS 雷达（不依赖 ECharts）
+ *
+ * 万一真机上画布是空白（例如某个基础库版本对 canvas 2d 支持异常），
+ * 把这一行改成 false 就能立刻回到可用状态，不需要改动其它任何代码。
+ */
+const USE_ECHARTS_RADAR = true;
+
+/** 交给 ECharts 的 option（见 utils/abilityRadarOption.ts） */
+const radarOption = computed(() =>
+  buildAbilityRadarOption(
+    (profile.value?.dimensions ?? []).map((d) => ({
+      key: d.key,
+      label: d.label,
+      score: d.score,
+    }))
+  )
+);
+
+// 组件通过 provide/inject 拿 echarts 与 option，页面在 setup 里注入一次即可。
+//
+// ⚠️ option 必须走 provideEchartsOption 注入，**不能**写成 <UniEcharts :option="...">：
+//    uni-echarts 内部取值的顺序是 defaultTo(props.option, 注入值)，prop 优先；
+//    而小程序端组件 props 会被 setData 序列化，option 里的函数
+//    （symbolSize 缩放、tooltip.formatter 文案）会全部丢失，
+//    表现为星球大小不随分数变化、点击后 tooltip 没有内容。
+provideEcharts(echarts);
+provideEchartsOption(radarOption);
 
 const isDegraded = computed(() => !!degradedReason.value);
 
@@ -1696,10 +1748,18 @@ onShareTimeline(() => ({
 .radar-chart {
   position: relative;
   width: 100%;
-  height: 0;
-  padding-bottom: 100%;
   margin-top: 24rpx;
 }
+
+/* 纯 CSS 版：用 padding-bottom 撑成正方形，下面那套百分比定位才是正圆 */
+.radar-square {
+  height: 0;
+  padding-bottom: 100%;
+}
+
+/* ECharts 版：canvas 的高度写在组件的 custom-style 上（见模板注释），
+   这里不用再给容器加样式。
+   高度不必严格正方形 —— ECharts 的雷达按 min(宽, 高) 取半径，宽度富余时居中显示 */
 
 // ① 分割圈：浅灰细线，视觉最弱，只做参考
 .radar-ring {
