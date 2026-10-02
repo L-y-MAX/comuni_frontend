@@ -469,6 +469,31 @@ const runSearch = async () => {
   }
 }
 
+/**
+ * 搜索结果里**可以展示**的知识库。
+ *
+ * 只保留「公开的」或「我自己的」—— 别人私有的知识库不该出现在任何人的搜索结果里。
+ *
+ * 注意：这只是前端兜底，真正的权限必须在后端做（前端过滤拦不住直接调接口的人）。
+ * 判定口径沿用 api/knowledge.ts 里已有的写法。
+ */
+export const visibleSearchKbs = computed(() => {
+  const list = searchResult.value?.results?.knowledge_bases ?? []
+  const userInfo = (uni.getStorageSync('userInfo') || {}) as Record<string, unknown>
+  const myId = String(
+    userInfo.id || userInfo.user_id || userInfo.creator_id || userInfo.username || ''
+  )
+
+  return list.filter((kb) => {
+    // 公开的：所有人都能看
+    if (kb.is_public === true) return true
+    // 自己的：私有也能看
+    if (myId && String(kb.creator ?? '') === myId) return true
+    // 其余（别人的私有库）一律不展示
+    return false
+  })
+})
+
 /** 回车触发：保留 500ms debounce，避免连续输入时的重复请求 */
 export const handleSearch = debounce(runSearch, 500)
 

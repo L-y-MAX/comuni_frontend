@@ -245,13 +245,13 @@
         <!-- 知识库列表 -->
         <view
           class="result-section"
-          v-if="(searchResult?.results?.knowledge_bases?.length ?? 0) > 0"
+          v-if="visibleSearchKbs.length > 0"
         >
           <text class="section-title">知识库</text>
           <view class="result-cards">
             <view
               class="result-card kb-card"
-              v-for="kb in searchResult.results?.knowledge_bases"
+              v-for="kb in visibleSearchKbs"
               :key="kb.id"
             >
               <view class="card-header">
@@ -486,6 +486,7 @@ import {
   searchKeyword,
   handleSearch,
   searchNow,
+  visibleSearchKbs,
   exitSearch,
   localResources,
   needLoginForSiteSearch,
