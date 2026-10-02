@@ -38,6 +38,7 @@ import {
   type GradeKey,
   type StudentBadge,
   type StudentCertItem,
+  type DimensionParseDetail,
   type StudentDimension,
   type StudentProfile,
   type StudentProfileInput,
@@ -336,6 +337,123 @@ const buildCorpus = (input: StudentProfileInput): string =>
  *
  * @returns 归一化后的 StudentProfile（十维齐全，且含完整度、竞争力、徽章）
  */
+// ====================== 解析明细（把评分过程写清楚） ======================
+
+/** 命中 0 个信号词时的中性基准分与置信度（与 scoreByHits / confidenceByHits 保持一致） */
+const NEUTRAL_SCORE = 50;
+const NEUTRAL_CONFIDENCE = 0.25;
+
+/** 「信息不足」阈值（与界面 abilityProfile.vue 的 INFO_THRESHOLD 一致），只用于文案 */
+const INFO_THRESHOLD_FOR_TEXT = 0.35;
+
+/** 一项技能都没识别出来时只说明"没写"，不代表能力差，置信度压低到信息不足阈值以下 */
+const SKILL_EMPTY_CONFIDENCE = 0.2;
+/** 同理：一项证书都没识别出来时 */
+const CERT_EMPTY_CONFIDENCE = 0.3;
+
+/** 补充建议：按依据类型给出，不描述具体算法细节，避免与实现脱节 */
+const ADVICE_BY_KIND: Record<DimensionParseDetail['kind'], string> = {
+  keyword:
+    '把上面「补充这些表述还能加分」里的词写进简历或表单即可命中——命中越多分值越高，命中 5 个及以上进入 90 分档。',
+  skill:
+    '按「技能 + 熟练度」的写法补充，例如「熟练使用 Vue3」：识别出的技能越多、标注「熟练」的越多，分值越高。',
+  certificate: '补充已取得证书的全称，例如「全国计算机等级考试二级」：每多一项证书，分值上升一档。',
+};
+
+/** 把依据词表拆成「已命中」与「还没命中」两份，后者用于告诉用户补充什么能加分 */
+const splitSignals = (
+  text: string,
+  keywords: string[],
+  missLimit = 8
+): { matched: string[]; missed: string[] } => {
+  const matched: string[] = [];
+  const missed: string[] = [];
+  keywords.forEach((kw) => {
+    if (findOccurrences(text, kw).length > 0) matched.push(kw);
+    else if (missed.length < missLimit) missed.push(kw);
+  });
+  return { matched, missed };
+};
+
+/** 软性维度的解析明细：由「信号词命中数」决定 */
+const buildKeywordDetail = (
+  text: string,
+  keywords: string[],
+  hitCount: number,
+  score: number,
+  confidence: number
+): DimensionParseDetail => {
+  const { matched, missed } = splitSignals(text, keywords);
+  return {
+    kind: 'keyword',
+    matched_keywords: matched,
+    missed_keywords: missed,
+    matched_count: hitCount,
+    bonus_count: 0,
+    signal_total: keywords.length,
+    score_formula:
+      hitCount > 0
+        ? `这一项的依据词表共 ${keywords.length} 个词，你填的内容命中了 ${hitCount} 个，代入下面的评分曲线得 ${score} 分。`
+        : `这一项的依据词表共 ${keywords.length} 个词，你的内容一个都没命中，因此按中性基准记 ${NEUTRAL_SCORE} 分——这只说明"没写到"，不代表能力不足。`,
+    score_curve: '命中 0 / 1 / 2 / 3 / 4 / ≥5 个词 → 50 / 62 / 72 / 80 / 86 / 90 分',
+    confidence_formula:
+      hitCount > 0
+        ? `置信度 = 0.35 + 命中数 ${hitCount} × 0.12 = ${confidence.toFixed(2)}（上限 0.80）：命中越多，这条结论的原文依据越足。`
+        : `命中数为 0，置信度直接取 ${NEUTRAL_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值，所以只作参考。`,
+    advice: ADVICE_BY_KIND.keyword,
+  };
+};
+
+/** 专业技能维度的解析明细：由「识别到的技能数 + 标注熟练的数量」决定 */
+const buildSkillDetail = (
+  skills: StudentSkillItem[],
+  proficientCount: number,
+  score: number,
+  confidence: number
+): DimensionParseDetail => {
+  const dictSize = Object.values(SKILL_DICTIONARY).reduce((n, words) => n + words.length, 0);
+  const names = skills.map((s) => s.name);
+  return {
+    kind: 'skill',
+    matched_keywords: names,
+    missed_keywords: [],
+    matched_count: skills.length,
+    bonus_count: proficientCount,
+    signal_total: dictSize,
+    score_formula: skills.length
+      ? `在技能词典（共 ${dictSize} 个词条）中识别到 ${skills.length} 项技能，其中 ${proficientCount} 项标注为「熟练」：技能数决定基础档位，再按「熟练」项数加分，得 ${score} 分。`
+      : `技能词典（共 ${dictSize} 个词条）里一项技能都没识别到，按基准 40 分计——请检查是否漏填了技能，而不是直接认定技能弱。`,
+    score_curve:
+      '技能 0 / 1 / 2 / 3 / 4 / 5 / 6 / 7 / ≥8 项 → 40 / 55 / 65 / 72 / 78 / 82 / 86 / 89 / 92 分；每有一项标注「熟练」再加 2 分，最多加 5 分，总分上限 100。',
+    confidence_formula: skills.length
+      ? `置信度 = 0.4 + 技能数 ${skills.length} × 0.08 = ${confidence.toFixed(2)}（上限 0.90）。`
+      : `未识别到技能，置信度取 ${SKILL_EMPTY_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值。`,
+    advice: ADVICE_BY_KIND.skill,
+  };
+};
+
+/** 证书维度的解析明细：由「识别到的证书数」决定 */
+const buildCertDetail = (
+  certificates: StudentCertItem[],
+  score: number,
+  confidence: number
+): DimensionParseDetail => ({
+  kind: 'certificate',
+  matched_keywords: certificates.map((c) => c.name),
+  missed_keywords: [],
+  matched_count: certificates.length,
+  bonus_count: 0,
+  signal_total: CERT_KEYWORDS.length,
+  score_formula: certificates.length
+    ? `在证书词表（共 ${CERT_KEYWORDS.length} 个词条）中识别到 ${certificates.length} 项证书，代入下方曲线得 ${score} 分。`
+    : `证书词表（共 ${CERT_KEYWORDS.length} 个词条）里一项都没识别到，按基准 45 分计——没有证书不代表能力不足，但确实影响这一项得分。`,
+  score_curve: '证书 0 / 1 / 2 / 3 / 4 / ≥5 项 → 45 / 58 / 68 / 76 / 82 / 88 分',
+  confidence_formula: certificates.length
+    ? `置信度 = 0.4 + 证书数 ${certificates.length} × 0.15 = ${confidence.toFixed(2)}（上限 0.85）。`
+    : `未识别到证书，置信度取 ${CERT_EMPTY_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值。`,
+  advice: ADVICE_BY_KIND.certificate,
+});
+
 export const parseStudentProfileByRules = (input: StudentProfileInput): StudentProfile => {
   const corpus = buildCorpus(input);
 
@@ -347,33 +465,41 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
     // ---- 专业技能：由识别出的技能数量与熟练程度决定 ----
     if (meta.key === 'professional_skill') {
       const score = scoreBySkillCount(skills.length, proficientCount);
+      // 一项技能都没识别出来时，只说明"没写"，不代表能力差，
+      // 因此置信度给到 0.2（低于界面的「信息不足」阈值 0.35），
+      // 从而不会被误判为短板。
+      const confidence = skills.length ? Math.min(0.9, 0.4 + skills.length * 0.08) : 0.2;
+
       return {
         key: meta.key,
         label: studentDimensionLabel(meta.key),
         score,
         level: scoreToLevel(score),
-        // 一项技能都没识别出来时，只说明"没写"，不代表能力差，
-        // 因此置信度给到 0.2（低于界面的「信息不足」阈值 0.35），
-        // 从而不会被误判为短板。
-        confidence: skills.length ? Math.min(0.9, 0.4 + skills.length * 0.08) : 0.2,
+        confidence,
         source: 'rule' as ParseSource,
         evidence: skillEvidence,
         skills,
+        parse_detail: buildSkillDetail(skills, proficientCount, score, confidence),
       };
     }
 
     // ---- 证书资质：由证书数量决定 ----
     if (meta.key === 'certificate') {
       const score = scoreByCertCount(certificates.length);
+      const confidence = certificates.length
+        ? Math.min(0.85, 0.4 + certificates.length * 0.15)
+        : 0.3;
+
       return {
         key: meta.key,
         label: studentDimensionLabel(meta.key),
         score,
         level: scoreToLevel(score),
-        confidence: certificates.length ? Math.min(0.85, 0.4 + certificates.length * 0.15) : 0.3,
+        confidence,
         source: 'rule' as ParseSource,
         evidence: certEvidence,
         certificates,
+        parse_detail: buildCertDetail(certificates, score, confidence),
       };
     }
 
@@ -381,15 +507,17 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
     const keywords = DIMENSION_SIGNALS[meta.key] ?? [];
     const hitCount = countDimensionHits(corpus, keywords);
     const score = scoreByHits(hitCount);
+    const confidence = confidenceByHits(hitCount);
 
     return {
       key: meta.key,
       label: studentDimensionLabel(meta.key),
       score,
       level: scoreToLevel(score) as AbilityLevel,
-      confidence: confidenceByHits(hitCount),
+      confidence,
       source: 'rule' as ParseSource,
       evidence: extractDimensionEvidence(corpus, keywords),
+      parse_detail: buildKeywordDetail(corpus, keywords, hitCount, score, confidence),
     };
   });
 

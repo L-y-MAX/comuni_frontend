@@ -342,6 +342,35 @@ export interface StudentBadge {
 
 // ====================== 学生维度 ======================
 
+/**
+ * 单个维度的「解析明细」：把「这个分数、这个置信度是怎么算出来的」如实写清楚。
+ *
+ * 由解析器产出而不是界面自己拼——评分曲线只存在于解析器一处，
+ * 界面若自行解释就会和真实算法脱节。
+ */
+export interface DimensionParseDetail {
+  /** 判定依据类型 */
+  kind: 'keyword' | 'skill' | 'certificate';
+  /** 命中的信号词（软性维度为词表命中，技能/证书维度为识别到的条目名） */
+  matched_keywords: string[];
+  /** 还没命中的信号词，界面据此告诉用户「补充什么能加分」 */
+  missed_keywords: string[];
+  /** 实际参与计分的数量：信号词命中数 / 技能数 / 证书数 */
+  matched_count: number;
+  /** 额外加成项数量（技能维度 = 标注为「熟练」的技能数） */
+  bonus_count: number;
+  /** 该维度依据词表规模；0 表示没有词表，只能给中性基准分 */
+  signal_total: number;
+  /** 分值推导（含具体数字） */
+  score_formula: string;
+  /** 本次使用的完整评分曲线 */
+  score_curve: string;
+  /** 置信度推导（含具体数字） */
+  confidence_formula: string;
+  /** 怎么提高这一项 */
+  advice: string;
+}
+
 export interface StudentDimension {
   key: AbilityDimensionKey;
   label: string;
@@ -353,6 +382,8 @@ export interface StudentDimension {
   source: ParseSource;
   /** 解析依据片段，可追溯 */
   evidence: string[];
+  /** 解析明细（本地规则解析时给出；后端解析的画像可能缺省） */
+  parse_detail?: DimensionParseDetail;
   /** 仅「专业技能」维度：识别出的技能清单 */
   skills?: StudentSkillItem[];
   /** 仅「证书要求」维度：识别出的证书清单 */
@@ -424,6 +455,7 @@ export const normalizeStudentProfile = (raw: Partial<StudentProfile>): StudentPr
       confidence: typeof found?.confidence === 'number' ? found.confidence : 0.5,
       source: found?.source ?? raw.parse_method ?? 'rule',
       evidence: found?.evidence ?? [],
+      parse_detail: found?.parse_detail,
       skills: meta.key === 'professional_skill' ? (found?.skills ?? []) : undefined,
       certificates: meta.key === 'certificate' ? (found?.certificates ?? []) : undefined,
     };

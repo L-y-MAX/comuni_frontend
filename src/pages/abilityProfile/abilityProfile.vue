@@ -458,7 +458,7 @@
                 <view class="dim-title-wrap">
                   <text class="dim-label">{{ dim.label }}</text>
                   <text
-                    v-if="dim.confidence < 0.35"
+                    v-if="dim.confidence < INFO_THRESHOLD"
                     class="dim-hint"
                   >
                     信息不足
@@ -526,26 +526,95 @@
                 </text>
               </view>
 
-              <!-- 展开：依据 -->
+              <!-- 展开：解析明细（把分数与置信度是怎么来的写清楚） -->
               <view
                 v-if="expandedKey === dim.key"
-                class="evidence-box"
+                class="detail-box"
               >
-                <text class="evidence-title">解析依据（置信度 {{ Math.round(dim.confidence * 100) }}%）</text>
-                <text
-                  v-if="!dim.evidence.length"
-                  class="empty-note"
+                <view class="detail-head">
+                  <text class="detail-title">解析明细</text>
+                  <text
+                    class="detail-conf"
+                    :class="{ low: dim.confidence < INFO_THRESHOLD }"
+                  >
+                    置信度 {{ Math.round(dim.confidence * 100) }}%
+                  </text>
+                </view>
+
+                <view class="detail-sec">
+                  <text class="detail-label">① 这个分数怎么来的</text>
+                  <text class="detail-value">{{ parseDetailOf(dim).score_formula }}</text>
+                  <text class="detail-note">评分曲线：{{ parseDetailOf(dim).score_curve }}</text>
+                </view>
+
+                <view class="detail-sec">
+                  <text class="detail-label">② 命中的依据词</text>
+                  <view
+                    v-if="parseDetailOf(dim).matched_keywords.length"
+                    class="kw-row"
+                  >
+                    <text
+                      v-for="kw in parseDetailOf(dim).matched_keywords"
+                      :key="`hit-${kw}`"
+                      class="kw-chip hit"
+                    >
+                      {{ kw }}
+                    </text>
+                  </view>
+                  <text
+                    v-else
+                    class="detail-note"
+                  >
+                    没有任何依据词命中，所以按中性基准分计算。
+                  </text>
+                </view>
+
+                <view
+                  v-if="parseDetailOf(dim).missed_keywords.length"
+                  class="detail-sec"
                 >
-                  你填写的内容中未出现该维度的明确表述，当前为中性基准分。
-                  补充相关经历后重新生成即可。
-                </text>
-                <text
-                  v-for="(e, i) in dim.evidence"
-                  :key="i"
-                  class="evidence-line"
-                >
-                  · {{ e }}
-                </text>
+                  <text class="detail-label">③ 补充这些表述还能加分</text>
+                  <view class="kw-row">
+                    <text
+                      v-for="kw in parseDetailOf(dim).missed_keywords"
+                      :key="`miss-${kw}`"
+                      class="kw-chip"
+                    >
+                      {{ kw }}
+                    </text>
+                  </view>
+                </view>
+
+                <view class="detail-sec">
+                  <text class="detail-label">④ 置信度怎么算的</text>
+                  <text class="detail-value">{{ parseDetailOf(dim).confidence_formula }}</text>
+                  <text class="detail-note">
+                    置信度表示「这条结论有多少原文依据」，与能力高低无关：低于
+                    {{ Math.round(INFO_THRESHOLD * 100) }}% 会被标记为「信息不足」，只作参考。
+                  </text>
+                </view>
+
+                <view class="detail-sec">
+                  <text class="detail-label">⑤ 原文片段（可追溯）</text>
+                  <text
+                    v-if="!dim.evidence.length"
+                    class="detail-note"
+                  >
+                    你填写的内容中未出现该维度的明确表述，可参照上面的依据词补充。
+                  </text>
+                  <text
+                    v-for="(e, i) in dim.evidence"
+                    :key="i"
+                    class="evidence-line"
+                  >
+                    · {{ e }}
+                  </text>
+                </view>
+
+                <view class="detail-sec last">
+                  <text class="detail-label">⑥ 怎么提高</text>
+                  <text class="detail-value">{{ parseDetailOf(dim).advice }}</text>
+                </view>
               </view>
             </view>
           </view>
@@ -784,9 +853,11 @@ import {
   GRADE_LABEL,
   GRADE_OPTIONS,
   STUDENT_PROFILE_STORAGE_KEY,
+  type DimensionParseDetail,
   type GradeKey,
   type StudentProfile,
   type StudentProfileInput,
+  type StudentDimension,
 } from '@/types/studentProfile';
 import { LEVEL_LABEL, PARSE_SOURCE_LABEL, type AbilityDimensionKey } from '@/types/jobProfile';
 import {
@@ -854,6 +925,43 @@ const progressText = ref('');
 const degradedReason = ref('');
 const profile = ref<StudentProfile | null>(null);
 const expandedKey = ref<AbilityDimensionKey | null>(null);
+
+/**
+ * 「信息不足」阈值：低于它说明原文依据太少，结论只作参考。
+ * 维度标签上的「信息不足」标记与解析明细里的说明共用这一个值，避免两处脱节。
+ */
+const INFO_THRESHOLD = 0.35;
+
+/**
+ * 取某个维度的解析明细。
+ *
+ * 本地规则解析的画像自带 parse_detail；旧缓存与后端解析的画像没有，
+ * 这时给一份如实说明的兜底文案——宁可承认「追溯不到评分过程」，
+ * 也不要凭空编一个推导过程出来。
+ */
+const parseDetailOf = (dim: StudentDimension): DimensionParseDetail => {
+  if (dim.parse_detail) return dim.parse_detail;
+
+  const kind: DimensionParseDetail['kind'] =
+    dim.key === 'professional_skill'
+      ? 'skill'
+      : dim.key === 'certificate'
+        ? 'certificate'
+        : 'keyword';
+
+  return {
+    kind,
+    matched_keywords: [],
+    missed_keywords: [],
+    matched_count: dim.evidence.length,
+    bonus_count: 0,
+    signal_total: 0,
+    score_formula: `这份画像没有附带评分推导过程（由后端接口或旧版本解析生成），因此无法追溯这 ${dim.score} 分是怎么算出来的。`,
+    score_curve: '本地规则解析会给出完整评分曲线；点「重新生成画像」即可看到。',
+    confidence_formula: `置信度 ${Math.round(dim.confidence * 100)}% 由解析方直接给出，未提供计算过程。`,
+    advice: '补充相关经历后重新生成画像，就能得到可追溯的解析明细。',
+  };
+};
 
 // ====================== 能力卡片视图切换 ======================
 
@@ -2067,21 +2175,88 @@ onShareTimeline(() => ({
   display: block;
 }
 
-// ========== 依据 ==========
-.evidence-box {
+// ========== 解析明细 ==========
+.detail-box {
   margin-top: 16rpx;
   background: #f8fafc;
   border-left: 6rpx solid #ffd0bb;
   border-radius: 8rpx;
-  padding: 16rpx 20rpx;
+  padding: 18rpx 20rpx;
 }
 
-.evidence-title {
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.detail-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #374151;
+}
+
+.detail-conf {
   font-size: 22rpx;
   color: #6b7280;
+
+  &.low {
+    color: #dc2626;
+  }
+}
+
+.detail-sec {
+  margin-bottom: 14rpx;
+
+  &.last {
+    margin-bottom: 0;
+  }
+}
+
+.detail-label {
+  font-size: 22rpx;
   font-weight: 600;
+  color: #6b7280;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 6rpx;
+}
+
+.detail-value {
+  font-size: 22rpx;
+  color: #1f2937;
+  line-height: 1.7;
+  display: block;
+}
+
+.detail-note {
+  font-size: 21rpx;
+  color: #9ca3af;
+  line-height: 1.6;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.kw-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 4rpx;
+}
+
+.kw-chip {
+  font-size: 21rpx;
+  color: #9ca3af;
+  background: #ffffff;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+
+  &.hit {
+    color: #c2410c;
+    background: #fff7ed;
+    border-color: #ffd0bb;
+  }
 }
 
 .evidence-line {
