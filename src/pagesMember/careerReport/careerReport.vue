@@ -435,9 +435,9 @@ import {
 } from '@/types/careerReport';
 import { MATCH_LEVEL_COLOR, type DimensionGap, type MatchLevel } from '@/types/jobMatch';
 import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile';
-import { buildCareerReport, refreshReportMarkdown } from '@/utils/careerReport';
+import { buildCareerReport, refreshReportMarkdown } from './lib/careerReport';
 import { getSampleJobProfiles } from '@/utils/jobProfileSamples';
-import { exportCareerReport, type ExportFormat } from '@/api/careerReport';
+import { exportCareerReport, type ExportFormat } from './lib/careerReportApi';
 import {
   getHistoryEntry,
   pushReportHistory,

@@ -13,7 +13,7 @@
  */
 
 import { DIMENSION_ADVICE, rankJobsByMatch } from '@/utils/jobMatch';
-import { buildJobGraph } from '@/utils/jobGraph';
+import { buildJobGraph } from './jobGraph';
 import type { AbilityDimensionKey, JobProfile, ParseSource } from '@/types/jobProfile';
 import type { MatchResult } from '@/types/jobMatch';
 import type { StudentProfile } from '@/types/studentProfile';
