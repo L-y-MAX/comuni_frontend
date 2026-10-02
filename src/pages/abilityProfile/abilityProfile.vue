@@ -326,18 +326,18 @@
           <view class="card-head">
             <text class="planet-title">{{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}</text>
             <text class="planet-sub">
-              {{ abilityView === 'planet' ? '星球越大越亮 = 该项能力越强' : '点击可查看解析依据' }}
+              {{ abilityView === 'planet' ? '雷达为骨架，顶点气泡越大 = 该项能力越强' : '点击可查看解析依据' }}
             </text>
           </view>
 
-          <!-- Tab：星球图 / 十维明细（选中态 = 橙字 + 底部短橙线，未选中 = 灰字无下划线） -->
+          <!-- 子 Tab：雷达星球 / 十维明细（选中 = 橙字 + 底部短橙线） -->
           <view class="planet-tabs">
             <view
               class="planet-tab"
               :class="{ active: abilityView === 'planet' }"
               @tap="abilityView = 'planet'"
             >
-              <text class="planet-tab-text">星球图</text>
+              <text class="planet-tab-text">雷达星球</text>
               <view class="planet-tab-line" />
             </view>
             <view
@@ -350,59 +350,85 @@
             </view>
           </view>
 
-          <!-- 星球图：容器是正方形，十项能力才能严格落在正圆环上 -->
+          <!-- 雷达星球视图：底层雷达骨架 + 十维顶点能力气泡 -->
           <view
             v-if="abilityView === 'planet'"
-            class="planet-chart planet-fade"
+            class="radar-chart planet-fade"
+            @tap="closeBubbleTip"
           >
+            <!-- ① 最底层：分割圈（浅灰，只做参考） -->
             <view
-              v-for="(ring, ri) in layout.rings"
+              v-for="(ring, ri) in radar.gridRings"
               :key="`ring-${ri}`"
-              class="orbit-ring"
+              class="radar-ring"
               :style="{ width: `${ring * 2}%`, height: `${ring * 2}%` }"
             />
-
+            <!-- ① 最底层：十条坐标轴 -->
             <view
-              class="planet-core"
-              :style="{ width: `${layout.coreSizeRpx}rpx`, height: `${layout.coreSizeRpx}rpx` }"
-            >
-              <text class="core-score">{{ displayCompetitiveness }}</text>
-              <text class="core-label">综合竞争力</text>
+              v-for="axis in radar.axes"
+              :key="`axis-${axis.key}`"
+              class="radar-axis"
+              :style="axisLineStyle(axis)"
+            />
+            <!-- ② 第二层：极淡主色填充（多边形） -->
+            <view class="radar-fill-mask">
+              <view
+                class="radar-fill"
+                :style="{ clipPath: `polygon(${radar.polygonPoints})` }"
+              />
             </view>
-
+            <!-- ③ 第三层：雷达轮廓折线（逐边旋转绘制，角度精确） -->
             <view
-              v-for="node in layout.nodes"
-              :key="node.key"
-              class="planet"
-              :style="{ left: `${node.xPercent}%`, top: `${node.yPercent}%` }"
-              @tap="togglePlanet(node.key)"
+              v-for="(edge, ei) in radar.edges"
+              :key="`edge-${ei}`"
+              class="radar-edge"
+              :style="edgeLineStyle(edge)"
+            />
+            <!-- ④ 第四层：十个维度顶点上的能力气泡（视觉焦点） -->
+            <view
+              v-for="b in radar.bubbles"
+              :key="b.key"
+              class="bubble-anchor"
+              :style="{ left: `${b.xPercent}%`, top: `${b.yPercent}%` }"
+              @tap.stop="toggleBubble(b.key)"
             >
               <view
-                class="planet-shell"
-                :class="[`tier-${node.tier}`, { active: activePlanetKey === node.key }]"
-                :style="{
-                  width: `${node.sizeRpx}rpx`,
-                  height: `${node.sizeRpx}rpx`,
-                  opacity: node.brightness,
-                }"
-              >
-                <view
-                  class="planet-body"
-                  :style="{ background: planetGradient(node) }"
-                />
-              </view>
-              <text class="planet-label">{{ node.label }}</text>
-              <text class="planet-score">{{ node.score }}</text>
+                class="bubble"
+                :class="[`tier-${b.tier}`, { active: activeBubbleKey === b.key }]"
+                :style="{ width: `${b.sizeRpx}rpx`, height: `${b.sizeRpx}rpx` }"
+              />
             </view>
-
-            <!-- 点击圆点后弹出的悬浮说明 -->
-            <view
-              v-if="activePlanet"
-              class="planet-tip"
-              :style="planetTipStyle"
+            <!-- 维度文字标签：全部落在雷达外圈之外，不挤在图内部 -->
+            <text
+              v-for="axis in radar.axes"
+              :key="`label-${axis.key}`"
+              class="radar-label"
+              :style="{ left: `${axis.labelXPercent}%`, top: `${axis.labelYPercent}%` }"
             >
-              <text class="planet-tip-title">{{ activePlanet.label }}｜得分：{{ activePlanet.score }} 分</text>
-              <text class="planet-tip-desc">说明：{{ planetTipDesc(activePlanet) }}</text>
+              {{ axis.label }}
+            </text>
+            <!-- ⑤ 最上层：点击气泡后的 Tooltip -->
+            <view
+              v-if="activeBubble"
+              class="bubble-tip"
+              :style="bubbleTipStyle"
+              @tap.stop
+            >
+              <text class="tip-title">{{ activeBubble.label }}｜{{ activeBubble.score }}分</text>
+              <text
+                class="tip-grade"
+                :class="`grade-${bubbleGrade(activeBubble).key}`"
+              >
+                【{{ bubbleGrade(activeBubble).text }}】
+              </text>
+              <text class="tip-desc">{{ bubbleTipDesc(activeBubble) }}</text>
+              <text
+                v-if="activeBubbleBadge"
+                class="tip-badge"
+                @tap="goBadgeWall(activeBubbleBadge.id)"
+              >
+                ✅已解锁【{{ activeBubbleBadge.name }}】徽章
+              </text>
             </view>
           </view>
 
@@ -531,7 +557,10 @@
               v-for="badge in profile.badges"
               :key="badge.id"
               class="badge-item"
-              :class="{ unlocked: badge.unlocked }"
+              :class="{
+                unlocked: badge.unlocked,
+                'badge-flash': highlightBadgeId === badge.id,
+              }"
             >
               <view
                 class="badge-icon"
@@ -750,7 +779,12 @@ import {
   type StudentProfileInput,
 } from '@/types/studentProfile';
 import { LEVEL_LABEL, PARSE_SOURCE_LABEL, type AbilityDimensionKey } from '@/types/jobProfile';
-import { buildPlanetLayout, type PlanetNode } from '@/utils/abilityPlanet';
+import {
+  buildRadarLayout,
+  type RadarAxis,
+  type RadarBubble,
+  type RadarEdge,
+} from '@/utils/abilityPlanet';
 import { generateStudentProfile, fetchSavedStudentProfile } from '@/api/studentProfile';
 import { STUDENT_PROFILE_SAMPLE } from '@/utils/studentProfileParser';
 import {
@@ -955,15 +989,19 @@ onUnload(() => {
   unloaded = true;
   // 离开页面时清掉动画定时器，避免后台空转
   stopScoreAnimation();
+  if (badgeHighlightTimer) {
+    clearTimeout(badgeHighlightTimer);
+    badgeHighlightTimer = null;
+  }
 });
 
 const STORAGE_KEY = 'studentAbilityProfile';
 
 // ====================== 派生数据 ======================
 
-/** 星球图布局（纯函数计算，见 utils/abilityPlanet.ts） */
-const layout = computed(() =>
-  buildPlanetLayout(
+/** 雷达星球布局（纯函数计算，见 utils/abilityPlanet.ts） */
+const radar = computed(() =>
+  buildRadarLayout(
     (profile.value?.dimensions ?? []).map((d) => ({
       key: d.key,
       label: d.label,
@@ -1003,60 +1041,100 @@ const levelColor = (level: 'high' | 'medium' | 'low'): string => {
   return '#94a3b8';
 };
 
+/** 轴线的定位与角度（圆心 → 外圈的一段细灰线） */
+const axisLineStyle = (axis: RadarAxis) => ({
+  left: `${axis.lineMidXPercent}%`,
+  top: `${axis.lineMidYPercent}%`,
+  width: `${axis.lineLengthPercent}%`,
+  transform: `translate(-50%, -50%) rotate(${axis.lineAngleDeg}deg)`,
+});
+
 /**
- * 圆点底色：2D 扁平轻渐变（不做立体球）
+ * 轮廓折线一条边的定位与角度
  *
- * 刻意避开三样东西 —— 高对比白色高光、强外发光、多层彩色光晕。
- * 这三样是「AI 生成感」的主要来源，也会和项目的线性图标风格打架。
- * 这里只用同色系「浅 → 深」一层平缓的径向渐变，整体降饱和。
- *
- * 分档按分值（不是按等级），与需求里的色规一一对应：
- *   ≥80 暖橘 #FF9771 / 70~79 浅暖黄 #FFD289 / <70 冷灰（低分不做成灰头土脸，
- *   用一点点冷调把「弱项」和「优势项」拉开，同时不抢暖色的视觉重心）
+ * 逐边画线而不是用整块 clip-path：这样轮廓是精确的直线段，
+ * 且不依赖 clip-path 支持，任何渲染器都能画出雷达轮廓。
  */
-const PLANET_TIER_COLOR: Record<PlanetTier, [string, string]> = {
-  high: ['#ffd9c7', '#ff9771'],
-  mid: ['#ffeed2', '#ffd289'],
-  low: ['#eef2f7', '#c7d2de'],
-};
+const edgeLineStyle = (edge: RadarEdge) => ({
+  left: `${edge.midXPercent}%`,
+  top: `${edge.midYPercent}%`,
+  width: `${edge.lengthPercent}%`,
+  transform: `translate(-50%, -50%) rotate(${edge.angleDeg}deg)`,
+});
 
-const planetGradient = (node: PlanetNode): string => {
-  const [from, to] = PLANET_TIER_COLOR[node.tier];
-  return `radial-gradient(circle at 50% 50%, ${from} 0%, ${to} 100%)`;
-};
+/** 当前点开的气泡（再点一次收起） */
+const activeBubbleKey = ref<AbilityDimensionKey | null>(null);
 
-/** 点击圆点后的人话说明 */
-const planetTipDesc = (node: PlanetNode): string => {
-  if (node.score >= 85) return `你的${node.label}维度表现优秀，是当前的优势项`;
-  if (node.score >= 75) return `你的${node.label}维度表现良好，继续保持即可`;
-  if (node.score >= 60) return `你的${node.label}维度处于中等水平，还有提升空间`;
-  return `你的${node.label}维度目前偏弱，建议优先补齐`;
-};
-
-/** 当前点开的能力圆点（再点一次收起） */
-const activePlanetKey = ref<AbilityDimensionKey | null>(null);
-
-const activePlanet = computed(
-  () => layout.value.nodes.find((n) => n.key === activePlanetKey.value) ?? null
+const activeBubble = computed(
+  () => radar.value.bubbles.find((b) => b.key === activeBubbleKey.value) ?? null
 );
 
-const togglePlanet = (key: AbilityDimensionKey) => {
-  activePlanetKey.value = activePlanetKey.value === key ? null : key;
+const toggleBubble = (key: AbilityDimensionKey) => {
+  activeBubbleKey.value = activeBubbleKey.value === key ? null : key;
+};
+
+/** 点空白处关闭 Tooltip */
+const closeBubbleTip = () => {
+  activeBubbleKey.value = null;
+};
+
+/** 分数档位（Tooltip 里那一行【优秀】） */
+const bubbleGrade = (b: RadarBubble): { key: string; text: string } => {
+  if (b.score >= 85) return { key: 'excellent', text: '优秀' };
+  if (b.score >= 75) return { key: 'good', text: '良好' };
+  if (b.score >= 60) return { key: 'fair', text: '中等' };
+  return { key: 'weak', text: '待提升' };
+};
+
+/** Tooltip 说明文案 */
+const bubbleTipDesc = (b: RadarBubble): string => {
+  if (b.score >= 85) return `你的${b.label}表现突出，是求职核心竞争力`;
+  if (b.score >= 75) return `你的${b.label}表现良好，继续保持即可`;
+  if (b.score >= 60) return `你的${b.label}处于中等水平，还有提升空间`;
+  return `你的${b.label}目前偏弱，建议优先补齐`;
 };
 
 /**
- * 悬浮说明的位置
+ * 该维度对应的已解锁徽章
  *
- * 横向夹在 24%~76% 之间：圆点贴近左右边缘时，说明框也不会被裁掉；
- * 纵向按圆点在上半区/下半区决定放它下方还是上方，避免顶出卡片。
+ * 徽章定义里本来就带 dimension 字段（如「技能大师」绑定专业技能 ≥85），
+ * 所以这里是一对一精确匹配，不需要额外维护映射表；未解锁则不给提示。
  */
-const planetTipStyle = computed(() => {
-  const n = activePlanet.value;
-  if (!n) return {};
-  const left = Math.min(76, Math.max(24, n.xPercent));
-  return n.yPercent < 50
-    ? { left: `${left}%`, top: `${n.yPercent + 10}%` }
-    : { left: `${left}%`, bottom: `${100 - n.yPercent + 10}%` };
+const activeBubbleBadge = computed(() => {
+  const key = activeBubble.value?.key;
+  if (!key) return null;
+  return (profile.value?.badges ?? []).find((b) => b.dimension === key && b.unlocked) ?? null;
+});
+
+/** 高亮中的徽章 id（点 Tooltip 里的徽章提示后，徽章墙对应徽章闪一下） */
+const highlightBadgeId = ref<string | null>(null);
+let badgeHighlightTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 跳到徽章墙并高亮对应徽章：复用页面已有的锚点滚动 */
+const goBadgeWall = (badgeId: string) => {
+  activeBubbleKey.value = null;
+  highlightBadgeId.value = badgeId;
+  goAnchor('sec-badge');
+  if (badgeHighlightTimer) clearTimeout(badgeHighlightTimer);
+  badgeHighlightTimer = setTimeout(() => {
+    highlightBadgeId.value = null;
+    badgeHighlightTimer = null;
+  }, 2400);
+};
+
+/**
+ * Tooltip 位置
+ *
+ * 横向夹在 28%~72% 之间：气泡贴近左右边缘时弹窗也不会被裁掉；
+ * 纵向按气泡在上半区/下半区决定放它下方还是上方，避免顶出卡片。
+ */
+const bubbleTipStyle = computed(() => {
+  const b = activeBubble.value;
+  if (!b) return {};
+  const left = Math.min(72, Math.max(28, b.xPercent));
+  return b.yPercent < 50
+    ? { left: `${left}%`, top: `${b.yPercent + 11}%` }
+    : { left: `${left}%`, bottom: `${100 - b.yPercent + 11}%` };
 });
 
 const toggleDim = (key: AbilityDimensionKey) => {
@@ -1612,12 +1690,10 @@ onShareTimeline(() => ({
   display: block;
 }
 
-// ========== 星球图 ==========
-// 容器必须是正方形：坐标系按宽高百分比换算，只有正方形才能让十项能力
-// 严格落在正圆环上（否则在宽屏上会被拉成椭圆）。
-// 这里用 padding-bottom:100% 撑出正方形，绝对定位子元素的百分比会解析到
-// padding box，所以 left/top 用同一组百分比就是正圆。
-.planet-chart {
+// ========== 雷达星球图 ==========
+// 容器必须是正方形：所有坐标都是「占容器边长的百分比」，
+// 只有正方形才能让雷达成为正多边形、分割圈成为正圆。
+.radar-chart {
   position: relative;
   width: 100%;
   height: 0;
@@ -1625,136 +1701,174 @@ onShareTimeline(() => ({
   margin-top: 24rpx;
 }
 
-// 轨道虚线环：细、浅、低存在感，只作为定位参考
-.orbit-ring {
+// ① 分割圈：浅灰细线，视觉最弱，只做参考
+.radar-ring {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1rpx dashed #ededed;
+  border: 1rpx solid #eeeeee;
 }
 
-// 中心综合竞争力：平缓径向渐变，没有白色高光球，也没有强外发光
-.planet-core {
+// ① 坐标轴：同样用浅灰细线弱化
+.radar-axis {
+  position: absolute;
+  height: 1rpx;
+  background: #eeeeee;
+}
+
+// ② 极淡主色填充
+// 套一层圆形遮罩的原因：万一某个渲染器不支持 clip-path，
+// 填充会退化成「外圈大小的淡橘圆」，而不是一个突兀的方块。
+.radar-fill-mask {
   position: absolute;
   left: 50%;
   top: 50%;
+  width: 60%;
+  height: 60%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #ffb193 0%, #ff9771 100%);
-  box-shadow: 0 0 24rpx rgba(255, 151, 113, 0.22);
+  overflow: hidden;
+}
+
+.radar-fill {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 151, 113, 0.08);
+}
+
+// ③ 雷达轮廓折线：细橘线，逐边绘制
+.radar-edge {
+  position: absolute;
+  height: 2rpx;
+  background: #ff9771;
+  opacity: 0.85;
+}
+
+// ④ 顶点气泡
+.bubble-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  z-index: 4;
+}
+
+// 气泡本体：只允许内部径向渐变（中心浓 → 边缘淡）
+// ❗一律不设 box-shadow —— 向外的扩散发光是廉价 AI 感的主要来源
+.bubble {
+  border-radius: 50%;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+}
+
+.bubble.tier-high {
+  background: radial-gradient(circle at 50% 50%, #ff9771 0%, #ffd9c7 100%);
+}
+
+.bubble.tier-mid {
+  background: radial-gradient(circle at 50% 50%, #ffb347 0%, #ffe4c2 100%);
+}
+
+.bubble.tier-low {
+  background: radial-gradient(circle at 50% 50%, #e2e2e2 0%, #f4f4f4 100%);
+}
+
+// hover / 点击：轻微放大 1.1 倍，300ms 平滑，无闪光无爆炸
+.bubble.active {
+  transform: scale(1.1);
+}
+
+// 维度标签：全部在雷达外圈之外
+.radar-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 24rpx;
+  line-height: 1.2;
+  color: #333333;
+  text-align: center;
+  white-space: nowrap;
   z-index: 3;
 }
 
-.core-score {
-  font-size: 56rpx;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.1;
-}
-
-.core-label {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.92);
-  margin-top: 6rpx;
-  white-space: nowrap;
-}
-
-// 单个能力项：圆点在上，名称与分数分两行居中排在下方
-.planet {
+// ⑤ Tooltip
+.bubble-tip {
   position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 2;
-}
-
-// 外壳只负责尺寸、光晕与点击反馈；渐变画在内层，避免内联样式覆盖点击态描边
-.planet-shell {
-  position: relative;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-}
-
-.planet-shell.tier-high {
-  box-shadow: 0 0 16rpx rgba(255, 151, 113, 0.18);
-}
-
-.planet-shell.tier-mid {
-  box-shadow: 0 0 14rpx rgba(255, 210, 137, 0.18);
-}
-
-.planet-shell.tier-low {
-  box-shadow: 0 0 12rpx rgba(199, 210, 222, 0.22);
-}
-
-// 点击反馈：轻微放大 + 淡淡橘色描边
-.planet-shell.active {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 4rpx rgba(255, 151, 113, 0.45), 0 0 18rpx rgba(255, 151, 113, 0.26);
-}
-
-.planet-body {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-}
-
-.planet-label {
-  font-size: 28rpx;
-  color: #333333;
-  margin-top: 8rpx;
-  white-space: nowrap;
-}
-
-.planet-score {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #ff9771;
-  line-height: 1.25;
-}
-
-// 点击圆点后弹出的悬浮说明
-.planet-tip {
-  position: absolute;
-  transform: translateX(-50%);
-  max-width: 420rpx;
-  padding: 16rpx 20rpx;
-  background: #ffffff;
-  border: 1rpx solid #ededed;
+  z-index: 8;
+  min-width: 320rpx;
+  max-width: 440rpx;
+  padding: 20rpx 22rpx;
+  background: #fff7f2;
+  border: 2rpx solid #ff9771;
   border-radius: 16rpx;
-  box-shadow: 0 6rpx 24rpx rgba(17, 24, 39, 0.1);
-  z-index: 6;
-  animation: planetTipIn 0.2s ease both;
+  box-shadow: 0 6rpx 20rpx rgba(255, 151, 113, 0.16);
+  transform: translateX(-50%);
+  animation: bubbleTipIn 0.3s ease both;
 }
 
-.planet-tip-title {
+.tip-title {
   display: block;
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 700;
   color: #333333;
-  white-space: nowrap;
 }
 
-.planet-tip-desc {
+.tip-grade {
   display: block;
   margin-top: 6rpx;
   font-size: 24rpx;
-  line-height: 1.5;
+  font-weight: 600;
+}
+
+.grade-excellent {
+  color: #ff9771;
+}
+
+.grade-good {
+  color: #ffb347;
+}
+
+.grade-fair {
   color: #888888;
 }
 
-// Tab 切换的平滑淡入（注意：图表容器不能带上横向位移，
-// 否则会被推偏，所以这里只做纵向位移）
+.grade-weak {
+  color: #aaaaaa;
+}
+
+.tip-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #666666;
+}
+
+// 徽章联动提示：Tooltip 右下角小字，可点
+.tip-badge {
+  display: block;
+  margin-top: 12rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: #ff9771;
+  text-decoration: underline;
+}
+
+@keyframes bubbleTipIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// Tab 切换的平滑淡入（只做纵向位移，避免把图表容器推偏）
 @keyframes planetFadeIn {
   from {
     opacity: 0;
@@ -1771,17 +1885,20 @@ onShareTimeline(() => ({
   animation: planetFadeIn 0.28s ease both;
 }
 
-// 悬浮说明需要保持自身居中，所以单独一套关键帧
-@keyframes planetTipIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(6rpx);
+// 徽章墙里被联动的徽章：闪三下描边（0 模糊＝描边，不是发光）
+@keyframes badgeFlash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 151, 113, 0);
   }
 
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+  50% {
+    box-shadow: 0 0 0 6rpx rgba(255, 151, 113, 0.45);
   }
+}
+
+.badge-flash {
+  animation: badgeFlash 0.6s ease 3;
 }
 
 // ========== 十维明细 ==========
