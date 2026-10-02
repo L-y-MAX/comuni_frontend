@@ -69,7 +69,11 @@
         :class="{ active: activeTheme === t.key }"
         @tap="switchTheme(t.key)"
       >
-        <text class="theme-icon">{{ t.icon }}</text>
+        <image
+          class="theme-icon-img"
+          :src="t.icon"
+          mode="aspectFit"
+        />
         <text class="theme-label">{{ t.label }}</text>
       </view>
     </view>
@@ -387,7 +391,7 @@ const heroStats = computed(() => [
  * 按设计稿预填「就业」——它命中全部 8 条政策文件，所以看起来仍是完整列表，
  * 只是想演示「输入框有内容 + 右侧有清除叉号」的状态。清空后即为全部资源。
  */
-const keyword = ref('就业');
+const keyword = ref('');
 
 /** 搜索图标加载失败时退回 emoji，避免出现破图 */
 const searchIconError = ref(false);
@@ -641,18 +645,27 @@ $bg: #f7f8fa;
 
   /* 选中态：浅橙底 + 橙色文字 */
   &.active {
-    background: $primary-soft;
-    border-color: $primary-light;
+  background: #FF7239;
+  border-color: #FF7239;
 
-    .theme-label {
-      color: $primary;
-      font-weight: 700;
-    }
+  // 主题图标是 #ff895d 线稿，压在 #FF7239 上几乎看不见，
+  // 所以选中态给它垫一个白色圆形底（不想要可删掉这一条）
+  .theme-icon-img {
+    background: #ffffff;
+    border-radius: 50%;
+    padding: 6rpx;
+  }
+
+  .theme-label {
+    color: #ffffff;
+    font-weight: 700;
   }
 }
+}
 
-.theme-icon {
-  font-size: 36rpx;
+.theme-icon-img {
+  width: 56rpx;
+  height: 56rpx;
   margin-bottom: 10rpx;
 }
 
