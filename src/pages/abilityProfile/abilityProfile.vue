@@ -700,7 +700,6 @@
             :class="{ current: item.key === CURRENT_FEATURE_KEY }"
             @tap="openFeature(item)"
           >
-            <text class="drawer-item-icon">{{ item.icon }}</text>
             <view class="drawer-item-texts">
               <text class="drawer-item-name">{{ item.name }}</text>
               <text class="drawer-item-desc">{{ item.desc }}</text>
@@ -1858,9 +1857,12 @@ onShareTimeline(() => ({
   align-items: center;
   justify-content: center;
   padding: 20rpx 14rpx;
-  background: rgba(255, 69, 0, 0.92);
+  /* 空心样式：白底 + 橙色描边，文字与图标同色 */
+  background: #ffffff;
+  border: 2rpx solid #ff4500;
+  border-right: none;
   border-radius: 20rpx 0 0 20rpx;
-  box-shadow: -4rpx 4rpx 18rpx rgba(255, 69, 0, 0.28);
+  box-shadow: -2rpx 2rpx 12rpx rgba(255, 69, 0, 0.12);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
@@ -1874,13 +1876,13 @@ onShareTimeline(() => ({
 
 .side-trigger-icon {
   font-size: 30rpx;
-  color: #ffffff;
+  color: #ff4500;
   line-height: 1.1;
 }
 
 .side-trigger-label {
   font-size: 22rpx;
-  color: #ffffff;
+  color: #ff4500;
   margin-top: 6rpx;
 }
 
@@ -1987,11 +1989,6 @@ onShareTimeline(() => ({
   &:active {
     background: #f1f5f9;
   }
-}
-
-.drawer-item-icon {
-  font-size: 34rpx;
-  margin-right: 18rpx;
 }
 
 .drawer-item-texts {
