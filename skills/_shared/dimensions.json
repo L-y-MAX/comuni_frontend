@@ -1,0 +1,65 @@
+{
+  "generatedFrom": "src/types/jobProfile.ts",
+  "dimensions": [
+    {
+      "key": "professional_skill",
+      "label": "专业技能",
+      "weight": 0.2,
+      "description": "岗位要求的编程语言、框架、工具、数据库等硬技能"
+    },
+    {
+      "key": "certificate",
+      "label": "证书要求",
+      "weight": 0.08,
+      "description": "岗位明确要求或优先考虑的证书资质"
+    },
+    {
+      "key": "innovation",
+      "label": "创新能力",
+      "weight": 0.08,
+      "description": "方案设计、技术改进、创意产出的要求程度"
+    },
+    {
+      "key": "learning",
+      "label": "学习能力",
+      "weight": 0.12,
+      "description": "快速上手新技术、持续自主学习的要求程度"
+    },
+    {
+      "key": "stress_resistance",
+      "label": "抗压能力",
+      "weight": 0.1,
+      "description": "面对高强度节奏、交付压力、加班的承受要求"
+    },
+    {
+      "key": "communication",
+      "label": "沟通能力",
+      "weight": 0.1,
+      "description": "跨部门协作、需求表达、客户对接的沟通要求"
+    },
+    {
+      "key": "internship",
+      "label": "实习能力",
+      "weight": 0.12,
+      "description": "相关实习、实践、项目落地经验的要求程度"
+    },
+    {
+      "key": "teamwork",
+      "label": "团队协作",
+      "weight": 0.08,
+      "description": "团队配合、集体目标协同的要求程度"
+    },
+    {
+      "key": "logical_thinking",
+      "label": "逻辑思维",
+      "weight": 0.07,
+      "description": "问题拆解、数据分析、条理严谨程度的要求"
+    },
+    {
+      "key": "industry_cognition",
+      "label": "行业认知",
+      "weight": 0.05,
+      "description": "对所属行业、产业政策、市场趋势的理解要求"
+    }
+  ]
+}
