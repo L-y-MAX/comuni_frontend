@@ -41,25 +41,16 @@
          ============================================================ -->
     <view class="hero">
       <text class="hero-title">就业政策与校招资源</text>
-      <text class="hero-desc">
-        结构化整理的离线资源库：官方来源、定位说明、一键复制官方链接。不转载原文，不确定的条款一律不写。
-      </text>
-
-      <view class="hero-stats">
-        <view
-          v-for="s in heroStats"
-          :key="s.label"
-          class="hero-stat"
-        >
-          <text class="hero-stat-num">{{ s.value }}</text>
-          <text class="hero-stat-label">{{ s.label }}</text>
-        </view>
-      </view>
+      <text class="hero-desc">离线可检索 · 只给官方来源与定位，不转载原文</text>
+      <!-- 统计改成一句话，并随筛选变化：
+           原来是固定的三栏大数字（总条数 / 官方来源 / 主题数），
+           筛选之后数字一动不动，看起来像「不符合条件的还在展示」。 -->
+      <text class="hero-summary">{{ heroSummary }}</text>
     </view>
 
     <!-- ============================================================
          3. 分类标签横向卡片组（3 个）
-         选中态：浅橙底 + 橙色文字；未选中：白底 + 灰色文字
+         选中态：#FF7239 底 + 白字；未选中：白底 + 灰色文字
          ============================================================ -->
     <view class="theme-row">
       <view
@@ -129,14 +120,14 @@
         :style="{ top: navTotalHeight + 'px' }"
       >
         <scroll-view
-          v-if="activeTheme === 'policy'"
+          v-if="activeTheme === 'policy' && visibleCategories.length"
           class="chip-scroll"
           scroll-x
           :show-scrollbar="false"
         >
           <view class="chip-row">
             <text
-              v-for="c in POLICY_CATEGORIES"
+              v-for="c in visibleCategories"
               :key="c.name"
               class="cat-chip"
               :class="{ active: activeTag === c.tag }"
@@ -182,7 +173,8 @@
         </view>
       </view>
 
-      <!-- 选中类型的「面向谁 / 说明」：原来写在 8 张卡片上，改成随选中显示，信息不丢 -->
+      <!-- 选中类型的「面向谁 / 说明」：原来写在 8 张卡片上，改成随选中显示，信息不丢；
+           末尾那句「以官方原文为准」的免责说明也一并跟着展示 -->
       <view
         v-if="activeCategory"
         class="cat-detail"
@@ -417,12 +409,6 @@ const officialCount = computed(
   () => CAREER_RESOURCES.filter((r) => r.kind === 'gov-doc' || r.kind === 'official-platform').length
 );
 
-/** 顶部统计：数字在上、文字在下 */
-const heroStats = computed(() => [
-  { value: CAREER_RESOURCES.length, label: '条资源' },
-  { value: officialCount.value, label: '官方来源' },
-  { value: themeList.length, label: '个主题' },
-]);
 
 // ====================== 搜索与筛选 ======================
 
@@ -459,8 +445,31 @@ const filterText = computed(() => {
 });
 
 /**
- * 当前分类下出现过的全部标签（去重、按首次出现顺序）。
- * 用来在列表上方生成一条统一筛选条，取代原来散落在每张卡片里的标签行。
+ * 顶部一句话统计。
+ *
+ * 原来这里是三栏固定数字（全库条数 / 官方来源数 / 主题数），筛选后完全不变，
+ * 顶部说 8 条、列表只剩 2 条，看起来就像「不符合条件的还在展示」。
+ * 现在有关键词或标签筛选时改为显示「当前 N / 共 M 条」，与列表口径一致。
+ */
+const heroSummary = computed(() =>
+  filterText.value
+    ? `已筛选：当前 ${visibleList.length} / 共 ${CAREER_RESOURCES.length} 条`
+    : `共 ${CAREER_RESOURCES.length} 条资源 · ${officialCount.value} 条官方来源 · ${themeList.length} 个主题`
+);
+
+/**
+ * 某个标签在当前关键词下是否还有结果。
+ * 判断时不叠加当前已选的标签——每个 chip 都应该是「换一个条件仍然有结果」的备选。
+ */
+const tagHasResult = (tag: ResourceTag): boolean =>
+  filterResources(resourcesByTheme(activeTheme.value), keyword.value).some((r) =>
+    r.tags.includes(tag)
+  );
+
+/**
+ * 列表上方的统一筛选条：当前分类下出现过的标签（去重、按首次出现顺序），
+ * 并且只保留「点了仍然有结果」的那些——筛选后不该再展示不符合条件的选项。
+ * 已选中的标签始终保留，否则用户没法再点一次取消。
  */
 const themeTags = computed<ResourceTag[]>(() => {
   const seen: ResourceTag[] = [];
@@ -469,8 +478,13 @@ const themeTags = computed<ResourceTag[]>(() => {
       if (!seen.includes(g)) seen.push(g);
     });
   });
-  return seen;
+  return seen.filter((g) => tagHasResult(g) || activeTag.value === g);
 });
+
+/** 政策类型速查：同样只保留在当前条件下仍有文件的类型 */
+const visibleCategories = computed(() =>
+  POLICY_CATEGORIES.filter((c) => tagHasResult(c.tag) || activeTag.value === c.tag)
+);
 
 /**
  * 当前选中的政策类型。
@@ -658,7 +672,7 @@ $bg: #f7f8fa;
 /* ====================== 2. 橙色顶部大卡片 ====================== */
 .hero {
   margin-top: 24rpx;
-  padding: 40rpx 32rpx 28rpx;
+  padding: 24rpx 28rpx 22rpx;
   border-radius: 26rpx;
   background: linear-gradient(135deg, #ff7a4d 0%, $primary 100%);
   box-shadow: 0 10rpx 30rpx rgba(255, 69, 0, 0.22);
@@ -666,45 +680,26 @@ $bg: #f7f8fa;
 
 .hero-title {
   display: block;
-  font-size: 42rpx;
+  font-size: 36rpx;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 14rpx;
+  margin-bottom: 8rpx;
 }
 
 .hero-desc {
   display: block;
-  font-size: 24rpx;
-  line-height: 1.7;
+  font-size: 23rpx;
+  line-height: 1.5;
   color: rgba(255, 255, 255, 0.94);
 }
 
-.hero-stats {
-  display: flex;
-  align-items: center;
-  margin-top: 28rpx;
-  padding-top: 24rpx;
+.hero-summary {
+  display: block;
+  margin-top: 12rpx;
+  padding-top: 12rpx;
   border-top: 1rpx solid rgba(255, 255, 255, 0.32);
-}
-
-.hero-stat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.hero-stat-num {
-  font-size: 42rpx;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.1;
-}
-
-.hero-stat-label {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.88);
-  margin-top: 8rpx;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ====================== 3. 分类标签横向卡片组 ====================== */
