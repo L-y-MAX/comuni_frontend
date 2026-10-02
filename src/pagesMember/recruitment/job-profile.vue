@@ -772,7 +772,7 @@ onShareTimeline(() => ({
   width: 56rpx;
   height: 56rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #ff4500;
+  border-top-color: #FF7239;
   border-radius: 50%;
   margin-bottom: 28rpx;
   animation: spin 0.9s linear infinite;
@@ -1155,14 +1155,14 @@ onShareTimeline(() => ({
 }
 
 .primary-btn {
-  background: #ff4500;
+  background: #FF7239;
   color: #fff;
 }
 
 .ghost-btn {
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #ff4500;
+  border: 2rpx solid #FF7239;
 }
 
 // ========== 底部数据源 ==========

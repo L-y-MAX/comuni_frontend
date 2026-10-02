@@ -1744,7 +1744,7 @@ onShareTimeline(() => ({
   width: 54rpx;
   height: 54rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #ff4500;
+  border-top-color: #FF7239;
   border-radius: 50%;
   margin-bottom: 26rpx;
   animation: spin 0.9s linear infinite;
@@ -2309,8 +2309,8 @@ onShareTimeline(() => ({
 
   &.unlocked {
     background: linear-gradient(135deg, #fff1eb 0%, #ffd9c7 100%);
-    border-color: #ff4500;
-    box-shadow: 0 0 20rpx rgba(255, 69, 0, 0.34);
+    border-color: #FF7239;
+    box-shadow: 0 0 20rpx rgba(255, 114, 57, 0.34);
   }
 }
 
@@ -2455,7 +2455,7 @@ onShareTimeline(() => ({
   border: 2rpx solid #FF7239;
   border-right: none;
   border-radius: 20rpx 0 0 20rpx;
-  box-shadow: -2rpx 2rpx 12rpx rgba(255, 184, 158, 0.32);
+  box-shadow: -2rpx 2rpx 12rpx rgba(255, 114, 57, 0.28);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;

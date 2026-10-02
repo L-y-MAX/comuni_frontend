@@ -680,7 +680,7 @@ $effect2-gradient2: linear-gradient(
 
 // 按钮样式（核心修改：高度减小1/3 + 纯白背景 + 无阴影）
 .effect-btn {
-  --primary: #ff4500;
+  --primary: #FF7239;
   --primary-light: #ff9a7a;
   font-size: 26rpx;
   padding: 0 40rpx; /* 固定左右内边距，宽度由内容决定 */
@@ -961,7 +961,7 @@ $effect2-gradient2: linear-gradient(
 }
 
 .tag-item.active {
-  background: linear-gradient(135deg, #ff7a4d, #ff4500);
+  background: linear-gradient(135deg, #FF8A54, #FF7239);
   color: #fff;
   border-color: #ff7a4d;
 }

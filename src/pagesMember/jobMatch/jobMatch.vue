@@ -546,7 +546,7 @@ onShareAppMessage(() => ({
   width: 54rpx;
   height: 54rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #ff4500;
+  border-top-color: #FF7239;
   border-radius: 50%;
   margin-bottom: 26rpx;
   animation: spin 0.9s linear infinite;
@@ -989,7 +989,7 @@ onShareAppMessage(() => ({
   font-weight: 600;
   margin: 0;
   padding: 0;
-  background: #ff4500;
+  background: #FF7239;
   color: #fff;
 
   &::after {

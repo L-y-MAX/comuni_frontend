@@ -579,7 +579,7 @@ const goAbilityProfile = () => {
 }
 
 .primary-btn {
-  background: #ff4500;
+  background: #FF7239;
   color: #fff;
 }
 

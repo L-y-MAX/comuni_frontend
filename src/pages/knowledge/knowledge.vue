@@ -1081,7 +1081,7 @@ $border-radius-small: 12rpx;
 
   &.active {
     color: $white;
-    background: linear-gradient(135deg, $secondary-color 0%, #ff6733 100%);
+    background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
   }
 }
 
@@ -1414,7 +1414,7 @@ $border-radius-small: 12rpx;
   justify-content: center;
 
   &:active {
-    background: $secondary-color;
+    background: #FF7239;
     color: $white;
     transform: scale(0.95);
     border: none !important;

@@ -586,7 +586,7 @@ onShareTimeline(() => {
 
 // 按钮样式（核心修改：高度减小1/3 + 纯白背景 + 无阴影）
 .effect-btn {
-  --primary: #ff4500;
+  --primary: #FF7239;
   --primary-light: #ff9a7a;
   font-size: 26rpx;
   padding: 0 40rpx; /* 固定左右内边距，宽度由内容决定 */
@@ -704,7 +704,7 @@ onShareTimeline(() => {
   justify-content: center;
   padding: 8rpx 20rpx;
   border: 2rpx solid #e03e00;
-  background-color: #ff4500;
+  background-color: #FF7239;
   color: #ffffff;
   font-size: 22rpx;
   cursor: pointer;
@@ -858,7 +858,7 @@ onShareTimeline(() => {
 .copy-btn {
   margin-left: 15rpx;
   padding: 4rpx 12rpx;
-  background: #ff4500;
+  background: #FF7239;
   color: #fff;
   border-radius: 6rpx;
   font-size: 24rpx;
@@ -890,7 +890,7 @@ onShareTimeline(() => {
   margin: 24rpx 0 0;
   height: 76rpx;
   line-height: 76rpx;
-  background: #ff4500;
+  background: #FF7239;
   color: #fff;
   border-radius: 14rpx;
   font-size: 28rpx;

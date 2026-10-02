@@ -340,8 +340,8 @@ const submit = async () => {
     cursor: pointer;
 
     &.active {
-      background-color: #ff4500; // 主题色修改
-      border-color: #ff4500; // 主题色修改
+      background-color: #FF7239; // 主题色修改
+      border-color: #FF7239; // 主题色修改
     }
 
     .radio-icon {
@@ -395,7 +395,7 @@ const submit = async () => {
     width: 100%;
     height: 88rpx;
     line-height: 88rpx;
-    background-color: #ff4500; // 主题色修改
+    background-color: #FF7239; // 主题色修改
     -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
     color: #fff;
     border-radius: 44rpx; // 圆边（高度一半）

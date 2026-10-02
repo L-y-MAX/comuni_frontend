@@ -552,7 +552,7 @@ onShareTimeline(() => {
   line-height: 72rpx;
   font-size: 28rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff4500 0%, #ff6733 100%);
+  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
   border-radius: 36rpx;
   border: none;
 }

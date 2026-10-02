@@ -781,7 +781,7 @@ onShareAppMessage(() => ({
   width: 54rpx;
   height: 54rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #ff4500;
+  border-top-color: #FF7239;
   border-radius: 50%;
   margin-bottom: 26rpx;
   animation: spin 0.9s linear infinite;
@@ -1402,7 +1402,7 @@ onShareAppMessage(() => ({
 
 .primary-btn {
   width: 100%;
-  background: #ff4500;
+  background: #FF7239;
   color: #fff;
 }
 
@@ -1410,7 +1410,7 @@ onShareAppMessage(() => ({
   flex: 1;
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #ff4500;
+  border: 2rpx solid #FF7239;
 }
 
 .text-btn {

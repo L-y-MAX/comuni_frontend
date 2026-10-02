@@ -899,7 +899,7 @@ onMounted(() => {
   background-color: #f9f9f9;
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   color: #ff4500;
-  border: 1px solid #ff4500;
+  border: 1px solid #FF7239;
   border-radius: 8rpx;
   padding: 6rpx 12rpx;
   font-size: 22rpx;
@@ -919,15 +919,15 @@ onMounted(() => {
     }
     &:active {
       background-color: #ffe8df; // 点击按压效果
-      border-color: #ff4500;
+      border-color: #FF7239;
       transform: scale(0.96); // 轻微缩放反馈
     }
   }
   // 已关注状态样式优化
   &.followed {
-    background-color: #ff4500;
+    background-color: #FF7239;
     color: #fff;
-    border-color: #ff4500;
+    border-color: #FF7239;
     &:hover {
       background-color: #ff5a28; // 深一点的橙色hover
     }
@@ -964,7 +964,7 @@ onMounted(() => {
 }
 
 .view-btn {
-  background-color: #ff4500;
+  background-color: #FF7239;
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   color: #fff;
   border-radius: 8rpx;
@@ -1225,7 +1225,7 @@ onMounted(() => {
     .create-kb-btn {
       width: 100%;
       height: 70rpx;
-      background-color: #ff4500;
+      background-color: #FF7239;
       color: #fff;
       border: none;
       border-radius: 10rpx;
@@ -1311,7 +1311,7 @@ onMounted(() => {
   margin-top: 24rpx;
   padding: 12rpx 32rpx;
   background: #ffffff;
-  border: 2rpx solid #ff4500;
+  border: 2rpx solid #FF7239;
   border-radius: 40rpx;
   transition: background-color 0.2s ease;
 

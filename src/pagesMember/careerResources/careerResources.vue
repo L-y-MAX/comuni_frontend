@@ -940,7 +940,7 @@ $bg: #f7f8fa;
   margin: 0 12rpx 10rpx 0;
 
   &.active {
-    background: $primary;
+    background: #FF7239;
     color: #ffffff;
   }
 }
@@ -955,7 +955,7 @@ $bg: #f7f8fa;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: $primary;
+  background: #FF7239;
   border-radius: 40rpx;
   padding: 16rpx 32rpx;
 
