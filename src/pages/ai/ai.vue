@@ -105,7 +105,7 @@
       >
         <image
           class="send-icon"
-          src="https://youupro.xyz/notes/static/icons/send.png"
+          src="/static/icons/send.png"
           mode="aspectFit"
         />
       </button>

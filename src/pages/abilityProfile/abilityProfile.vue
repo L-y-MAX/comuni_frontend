@@ -1164,7 +1164,22 @@ const toggleDim = (key: AbilityDimensionKey) => {
 };
 
 const scrollToForm = () => {
-  uni.pageScrollTo({ scrollTop: 0, duration: 200 });
+  // 「返回修改」= 回到页面顶部的填报表单。
+  //
+  // 坑一：页面主体在 <scroll-view id="ability-scroll"> 内部滚动，
+  //       页面级的 uni.pageScrollTo 对它完全无效，必须回写 scroll-top 绑定值。
+  // 坑二：scroll-view 只在「绑定值发生变化」时才真正滚动，
+  //       所以绑定值本来就在 0 时（例如从没点过锚点导航），
+  //       直接再赋 0 不触发任何滚动，表现就是「按钮点了没反应」。
+  //       这里先置 1 破开相等状态，下一帧再归 0，任何情况下都能回顶。
+  if (scrollTop.value === 0) {
+    scrollTop.value = 1
+    setTimeout(() => {
+      scrollTop.value = 0
+    }, 40)
+    return
+  }
+  scrollTop.value = 0
 };
 
 
@@ -1418,14 +1433,14 @@ onShareTimeline(() => ({
   width: 0;
   height: 4rpx;
   border-radius: 2rpx;
-  background: #ff9771;
+  background: #FFB89E;
   transform: translateX(-50%);
   opacity: 0;
   transition: width 0.22s ease, opacity 0.22s ease;
 }
 
 .planet-tab.active .planet-tab-text {
-  color: #ff9771;
+  color: #FFB89E;
   font-weight: 600;
 }
 
@@ -2244,10 +2259,10 @@ onShareTimeline(() => ({
   padding: 20rpx 14rpx;
   /* 空心样式：白底 + 橙色描边，文字与图标同色 */
   background: #ffffff;
-  border: 2rpx solid #ff4500;
+  border: 2rpx solid #FFB89E;
   border-right: none;
   border-radius: 20rpx 0 0 20rpx;
-  box-shadow: -2rpx 2rpx 12rpx rgba(255, 69, 0, 0.12);
+  box-shadow: -2rpx 2rpx 12rpx rgba(255, 184, 158, 0.32);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
@@ -2261,13 +2276,13 @@ onShareTimeline(() => ({
 
 .side-trigger-icon {
   font-size: 30rpx;
-  color: #ff4500;
+  color: #FFB89E;
   line-height: 1.1;
 }
 
 .side-trigger-label {
   font-size: 22rpx;
-  color: #ff4500;
+  color: #FFB89E;
   margin-top: 6rpx;
 }
 
@@ -2309,7 +2324,7 @@ onShareTimeline(() => ({
   align-items: flex-start;
   justify-content: space-between;
   padding: 36rpx 28rpx 24rpx;
-  background: linear-gradient(135deg, #ff7a4d 0%, #ff4500 100%);
+  background: linear-gradient(135deg, #FFD9CB 0%, #FFB89E 100%);
   border-radius: 0 28rpx 0 0;
 }
 
@@ -2389,7 +2404,7 @@ onShareTimeline(() => ({
   margin-bottom: 4rpx;
 
   .drawer-item.current & {
-    color: #ff4500;
+    color: #FFB89E;
   }
 }
 
@@ -2406,7 +2421,7 @@ onShareTimeline(() => ({
   flex-shrink: 0;
 
   .drawer-item.current & {
-    color: #ff4500;
+    color: #FFB89E;
     font-size: 20rpx;
   }
 }
@@ -2452,7 +2467,7 @@ onShareTimeline(() => ({
     background: #fff1ec;
 
     .anchor-text {
-      color: #ff4500;
+      color: #FFB89E;
       font-weight: 600;
     }
   }
