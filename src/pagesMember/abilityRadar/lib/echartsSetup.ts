@@ -18,7 +18,7 @@
  * ## 用法
  *
  * 组件不会自己 import echarts，而是通过 provide/inject 拿，
- * 所以页面里必须显式注册（见 abilityProfile.vue 的 provideEcharts 调用）。
+ * 所以页面里必须显式注册（见 abilityRadar.vue 的 provideEcharts 调用）。
  */
 import * as echarts from 'echarts/core';
 import { RadarChart, ScatterChart } from 'echarts/charts';

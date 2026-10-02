@@ -136,6 +136,17 @@
 			]
 		},
 		{
+			"root": "pagesMember/abilityRadar",
+			"pages": [
+				{
+					"path": "abilityRadar",
+					"style": {
+						"navigationBarTitleText": "能力星球图"
+					}
+				}
+			]
+		},
+		{
 			"root": "pagesMember/knowledge/addKb",
 			"pages": [
 				{
