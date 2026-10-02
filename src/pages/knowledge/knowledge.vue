@@ -34,6 +34,14 @@
         </button>
       </view>
 
+      <!-- 一句话概览：数量取自实际列表，不编造 -->
+      <view class="kb-overview">
+        <text class="kb-overview-num">{{ kbTotal }} 个知识库</text>
+        <text class="kb-overview-sub">
+          {{ activeTab === 'right' ? '我创建的' : '关注与分享给我的' }}
+        </text>
+      </view>
+
       <!-- 使用引导：首次进入默认展开，用户收起后记住选择 -->
       <view class="guide-card">
         <view
@@ -149,17 +157,11 @@
                   <text class="kb-desc">{{ item.description || '' }}</text>
                 </view>
                 <!-- 新增：取消关注按钮 -->
-                <view class="kb-actions">
-                  <button
-                    class="unfollow-kb-btn"
-                    @click.stop="unfollowKbHandle(item.id)"
-                  >
-                    <image
-                      class="action-icon"
-                      src="https://youupro.xyz/notes/static/icons/unfollow.png"
-                      mode="aspectFit"
-                    />
-                  </button>
+                <view
+                  class="kb-more"
+                  @click.stop="openKbActions(item, 'followed')"
+                >
+                  <text class="kb-more-dots">···</text>
                 </view>
               </view>
             </view>
@@ -225,29 +227,11 @@
                   <text class="kb-desc">{{ item.description || '' }}</text>
                 </view>
                 <!-- 新增：关注/取消关注按钮 -->
-                <view class="kb-actions">
-                  <button
-                    class="follow-kb-btn"
-                    @click.stop="followKbHandle(item.id)"
-                    v-if="!isKbFollowed(item.id)"
-                  >
-                    <image
-                      class="action-icon"
-                      src="https://youupro.xyz/notes/static/icons/follow.png"
-                      mode="aspectFit"
-                    />
-                  </button>
-                  <button
-                    class="unfollow-kb-btn"
-                    @click.stop="unfollowKbHandle(item.id)"
-                    v-else
-                  >
-                    <image
-                      class="action-icon"
-                      src="https://youupro.xyz/notes/static/icons/unfollow.png"
-                      mode="aspectFit"
-                    />
-                  </button>
+                <view
+                  class="kb-more"
+                  @click.stop="openKbActions(item, 'shared')"
+                >
+                  <text class="kb-more-dots">···</text>
                 </view>
               </view>
             </view>
@@ -333,17 +317,11 @@
                   </view>
                   <text class="kb-desc">{{ item.description || '' }}</text>
                 </view>
-                <view class="kb-actions">
-                  <button
-                    class="delete-kb-btn"
-                    @click.stop="deleteKnowledgeBaseHandle(item.id)"
-                  >
-                    <image
-                      class="action-icon"
-                      src="https://youupro.xyz/notes/static/icons/delete.png"
-                      mode="aspectFit"
-                    />
-                  </button>
+                <view
+                  class="kb-more"
+                  @click.stop="openKbActions(item, 'mine')"
+                >
+                  <text class="kb-more-dots">···</text>
                 </view>
               </view>
             </view>
@@ -362,25 +340,31 @@
           : followKbList?.length > 0 || shareKbList?.length > 0)
       "
     >
-      <!-- 新增文章按钮 -->
-      <view class="node-subheader">
-        <text class="subheader-text">当前知识库：{{ selectedKbName }}</text>
-        <!-- 文章列表折叠按钮 -->
-        <button
-          class="fold-button node-fold-button"
-          @click="toggleNodeListExpand"
+      <!-- 二级头部：明确的返回 + 当前知识库 + 篇数 + 主操作 -->
+      <view class="node-topbar">
+        <view
+          class="node-topbar-back"
+          @click="backToKbList"
         >
-          <image
-            class="fold-icon"
-            :src="
-              tabState[activeTab].isNodeListExpanded
-                ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
-                : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
-            "
-            mode="aspectFit"
-          />
+          <text class="node-topbar-arrow">‹</text>
+          <text class="node-topbar-name">{{ selectedKbName }}</text>
+        </view>
+        <button
+          class="node-topbar-add"
+          @click="toAddNode"
+        >
+          + 新增文章
         </button>
       </view>
+      <text class="node-topbar-count">
+        共 {{ (tabState[activeTab].nodeList || []).length }} 篇
+        <text v-if="tabState[activeTab].isNodeListExpanded">
+          · <text @click="toggleNodeListExpand">收起</text>
+        </text>
+        <text v-else>
+          · <text @click="toggleNodeListExpand">展开</text>
+        </text>
+      </text>
 
       <!-- 文章加载中：局部提示，替代原来的整页 loading -->
       <view
@@ -395,21 +379,6 @@
 
       <!-- 文章列表内容：根据折叠状态显示/隐藏 -->
       <view v-else-if="tabState[activeTab].isNodeListExpanded">
-        <view class="node-header">
-          <text class="title">文章列表</text>
-          <view class="add-node-section">
-            <button
-              @click="toAddNode"
-              class="add-button"
-            >
-              <image
-                class="add-icon"
-                src="https://youupro.xyz/notes/static/icons/add.png"
-                mode="aspectFit"
-              />
-            </button>
-          </view>
-        </view>
 
         <!--增加可选链保护 length 访问 -->
         <view
@@ -425,33 +394,23 @@
           v-for="item in tabState[activeTab].nodeList || []"
           :key="item.id"
         >
-          <text
-            class="node-name"
+          <view
+            class="node-main"
             @click="toNodeDetail(item.id)"
           >
-            {{ item.name }}
-          </text>
-          <view class="node-actions">
-            <button
-              class="edit-btn"
-              @click="toEditNode(item.id)"
-            >
-              <image
-                class="action-icon"
-                src="https://youupro.xyz/notes/static/icons/edit.png"
-                mode="aspectFit"
-              />
-            </button>
-            <button
-              class="delete-btn"
-              @click="deleteNode(item.id)"
-            >
-              <image
-                class="action-icon"
-                src="https://youupro.xyz/notes/static/icons/delete.png"
-                mode="aspectFit"
-              />
-            </button>
+            <text class="node-name">{{ item.name }}</text>
+            <!-- 体量与时间都来自真实数据：字数按正文粗算，时间取 updated_at -->
+            <text class="node-meta">
+              {{ nodeWordCount(item.content) }} 字<text v-if="nodeTimeText(item.updated_at)">
+                · {{ nodeTimeText(item.updated_at) }}</text
+              >
+            </text>
+          </view>
+          <view
+            class="kb-more"
+            @click.stop="openNodeActions(item)"
+          >
+            <text class="kb-more-dots">···</text>
           </view>
         </view>
       </view>
@@ -1017,6 +976,72 @@ onPullDownRefresh(async () => {
   }
 })
 
+// ====================== 页面改造新增 ======================
+
+/** 顶部概览：数量取自实际列表，不编造 */
+const kbTotal = computed(() =>
+  activeTab.value === 'right'
+    ? kbList.value?.length ?? 0
+    : (followKbList.value?.length ?? 0) + (shareKbList.value?.length ?? 0)
+)
+
+/** 文章体量：按正文字符数粗算（去掉空白），只作体量感参考 */
+const nodeWordCount = (content?: string) => (content ? content.replace(/\s/g, '').length : 0)
+
+/** 更新时间文案：今天 / N 天前 / 具体日期 */
+const nodeTimeText = (updatedAt?: string) => {
+  if (!updatedAt) return ''
+  const t = new Date(String(updatedAt).replace(/-/g, '/')).getTime()
+  if (Number.isNaN(t)) return ''
+  const diff = Date.now() - t
+  const day = 24 * 60 * 60 * 1000
+  if (diff < day) return '今天更新'
+  if (diff < 7 * day) return `${Math.floor(diff / day)} 天前更新`
+  const d = new Date(t)
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日更新`
+}
+
+/**
+ * 知识库行的「更多」操作。
+ *
+ * 取消关注、删除这类破坏性操作原来和整行的点击区挤在一起，很容易误触，
+ * 现在统一收进系统操作菜单。
+ */
+const openKbActions = (item: any, kind: 'followed' | 'shared' | 'mine') => {
+  const list =
+    kind === 'mine'
+      ? ['删除知识库']
+      : kind === 'shared'
+        ? ['关注', '取消关注']
+        : ['取消关注']
+  uni.showActionSheet({
+    itemList: list,
+    success: (res) => {
+      const picked = list[res.tapIndex]
+      if (picked === '关注') followKbHandle(String(item.id))
+      else if (picked === '取消关注') unfollowKbHandle(String(item.id))
+      else if (picked === '删除知识库') deleteKnowledgeBaseHandle(String(item.id))
+    },
+    fail: () => {},
+  })
+}
+
+/** 文章行的「更多」操作：编辑 / 删除 */
+const openNodeActions = (item: any) => {
+  uni.showActionSheet({
+    itemList: ['编辑', '删除'],
+    success: (res) => {
+      if (res.tapIndex === 0) toEditNode(String(item.id))
+      else if (res.tapIndex === 1) deleteNode(String(item.id))
+    },
+    fail: () => {},
+  })
+}
+
+/** 从文章列表返回知识库列表 */
+const backToKbList = () => {
+  tabState[activeTab.value].selectedKbId = ''
+}
 </script>
 
 <style scoped lang="scss">
@@ -1759,5 +1784,179 @@ $border-radius-small: 12rpx;
   .kb-name-row {
     width: 100%;
   }
+}
+/* ====================== 页面改造新增 ====================== */
+
+/* 顶部概览：给页面一个锚点 */
+.kb-overview {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  padding: 4rpx 8rpx 20rpx;
+}
+
+.kb-overview-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.5rpx;
+}
+
+.kb-overview-sub {
+  font-size: 22rpx;
+  color: $text-tertiary;
+}
+
+/* 分段控件：与能力画像页同一套视觉 */
+.kb-tab-header {
+  display: flex;
+  gap: 8rpx;
+  padding: 6rpx;
+  margin-bottom: 20rpx;
+  background: $gray-lighter;
+  border-radius: 18rpx;
+}
+
+.tab-btn {
+  flex: 1;
+  height: 68rpx;
+  line-height: 68rpx;
+  text-align: center;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: $text-secondary;
+  background: transparent;
+  border-radius: 14rpx;
+  border: none !important;
+  box-shadow: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &::after {
+    border: none !important;
+  }
+
+  &.active {
+    color: $white;
+    background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+    box-shadow: $shadow-light;
+  }
+}
+
+/* 知识库行：左侧主色细条常显 = 「可以点进去」的视觉暗示 */
+.kb-item::before {
+  width: 6rpx !important;
+  background: $brand-line !important;
+}
+
+.kb-item.active::before {
+  background: $brand !important;
+}
+
+/* 「更多」按钮：破坏性操作入口，与整行点击区分离 */
+.kb-more {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  margin-left: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12rpx;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: $gray-lighter;
+  }
+}
+
+.kb-more-dots {
+  font-size: 34rpx;
+  line-height: 1;
+  color: $text-tertiary;
+  letter-spacing: 2rpx;
+}
+
+/* 文章二级头部 */
+.node-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 6rpx;
+}
+
+.node-topbar-back {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.node-topbar-arrow {
+  font-size: 34rpx;
+  color: $text-secondary;
+  margin-right: 6rpx;
+  line-height: 1;
+}
+
+.node-topbar-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: $text-primary;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.node-topbar-add {
+  flex-shrink: 0;
+  height: 60rpx;
+  line-height: 60rpx;
+  padding: 0 24rpx;
+  margin: 0;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: $white;
+  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  border-radius: 30rpx;
+  border: none !important;
+  box-shadow: none !important;
+
+  &::after {
+    border: none !important;
+  }
+}
+
+.node-topbar-count {
+  display: block;
+  font-size: 22rpx;
+  color: $text-tertiary;
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+}
+
+/* 文章行：名称 + 体量/时间两行 */
+.node-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-meta {
+  font-size: 22rpx;
+  color: $text-tertiary;
+  margin-top: 6rpx;
+}
+
+/* 引导卡收紧 */
+.guide-card {
+  padding: 20rpx 22rpx;
+}
+
+.guide-title {
+  font-size: 26rpx;
 }
 </style>
