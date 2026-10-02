@@ -632,12 +632,12 @@ onShareTimeline(() => {
   width: 80rpx;
   height: 80rpx;
   margin-left: 15rpx;
-  background-color: #4d88e1;
+  background-color: #ffffff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 2rpx solid #ffe4d9;
   transition: all 0.2s ease;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
@@ -649,20 +649,23 @@ onShareTimeline(() => {
 
 /* 有输入文字（启用）状态 */
 .send-btn:not(:disabled) {
-  background-color: #ff5a30;
+  background-color: #ffffff;
+  border-color: #ffd9c7;
 }
 
 /* 长按（激活）状态 */
 .send-btn:not(:disabled):active {
-  background-color: #d84622;
+  background-color: #fff1eb;
+  border-color: #ffb89e;
   transform: scale(0.95);
 }
 
 /* 按钮禁用状态样式 */
 .send-btn:disabled {
-  background-color: #4d88e1;
+  background-color: #ffffff;
+  border-color: #eef0f3;
+  opacity: 0.5;
   cursor: not-allowed;
-  border: none;
   -webkit-appearance: none;
   appearance: none;
 }

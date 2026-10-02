@@ -858,6 +858,7 @@ import {
   GRADE_LABEL,
   GRADE_OPTIONS,
   STUDENT_PROFILE_STORAGE_KEY,
+  normalizeStudentProfile,
   type DimensionParseDetail,
   type GradeKey,
   type StudentProfile,
@@ -1411,7 +1412,12 @@ const saveToStorage = (p: StudentProfile) => {
 const readFromStorage = (): StudentProfile | null => {
   try {
     const raw = uni.getStorageSync(STORAGE_KEY);
-    return raw && typeof raw === 'object' ? (raw as StudentProfile) : null;
+    if (!raw || typeof raw !== 'object') return null;
+    // 必须走归一化再使用：
+    //   旧缓存里徽章的 icon 还是 emoji（<image src="⚙️"> 会什么都不显示），
+    //   也没有 parse_detail（解析明细会退化成兜底文案）。
+    //   归一化会按徽章 id 回填本地图片路径与英文名，并补齐缺失字段。
+    return normalizeStudentProfile(raw as Partial<StudentProfile>);
   } catch {
     return null;
   }
