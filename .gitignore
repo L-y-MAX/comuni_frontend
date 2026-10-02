@@ -141,6 +141,9 @@ vite.config.ts.timestamp-*
 # 忽略TypeScript编译产物
 src/**/*.js
 src/**/*.js.map
+# 例外：预打包进分包的 echarts 产物必须入库（缺了它构建会直接失败）
+# 由 scripts/build-echarts-bundle.mjs 生成；升级 echarts 或调整注册组件后需重新生成
+!src/pagesMember/abilityRadar/lib/echarts.bundle.js
 
 # 忽略以下文件和目录
 /dist/
