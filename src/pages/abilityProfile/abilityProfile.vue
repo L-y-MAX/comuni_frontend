@@ -321,34 +321,39 @@
         <!-- 能力总览：星球图与十维明细合并为一张卡，用分段控件切换（内容一个不少） -->
         <view
           id="sec-ability"
-          class="chart-card card-style"
+          class="chart-card card-style planet-card"
         >
           <view class="card-head">
-            <text class="section-title">{{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}</text>
-            <text class="section-sub">{{ abilityView === 'planet' ? '星球越大越亮 = 该项能力越强' : '点击可查看解析依据' }}</text>
+            <text class="planet-title">{{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}</text>
+            <text class="planet-sub">
+              {{ abilityView === 'planet' ? '星球越大越亮 = 该项能力越强' : '点击可查看解析依据' }}
+            </text>
           </view>
 
-          <!-- 分段控件：切换「星球图 / 十维明细」 -->
-          <view class="seg">
+          <!-- Tab：星球图 / 十维明细（选中态 = 橙字 + 底部短橙线，未选中 = 灰字无下划线） -->
+          <view class="planet-tabs">
             <view
-              class="seg-item"
+              class="planet-tab"
               :class="{ active: abilityView === 'planet' }"
               @tap="abilityView = 'planet'"
             >
-              <text class="seg-text">星球图</text>
+              <text class="planet-tab-text">星球图</text>
+              <view class="planet-tab-line" />
             </view>
             <view
-              class="seg-item"
+              class="planet-tab"
               :class="{ active: abilityView === 'list' }"
               @tap="abilityView = 'list'"
             >
-              <text class="seg-text">十维明细</text>
+              <text class="planet-tab-text">十维明细</text>
+              <view class="planet-tab-line" />
             </view>
           </view>
 
+          <!-- 星球图：容器是正方形，十项能力才能严格落在正圆环上 -->
           <view
             v-if="abilityView === 'planet'"
-            class="planet-chart"
+            class="planet-chart planet-fade"
           >
             <view
               v-for="(ring, ri) in layout.rings"
@@ -370,29 +375,42 @@
               :key="node.key"
               class="planet"
               :style="{ left: `${node.xPercent}%`, top: `${node.yPercent}%` }"
+              @tap="togglePlanet(node.key)"
             >
               <view
-                class="planet-body"
+                class="planet-shell"
+                :class="[`tier-${node.tier}`, { active: activePlanetKey === node.key }]"
                 :style="{
                   width: `${node.sizeRpx}rpx`,
                   height: `${node.sizeRpx}rpx`,
                   opacity: node.brightness,
-                  background: planetGradient(node),
-                  boxShadow: planetGlow(node),
                 }"
-              />
-              <text class="planet-label">{{ node.label }}</text>
-              <text
-                class="planet-score"
-                :style="{ color: levelColor(node.level) }"
               >
-                {{ node.score }}
-              </text>
+                <view
+                  class="planet-body"
+                  :style="{ background: planetGradient(node) }"
+                />
+              </view>
+              <text class="planet-label">{{ node.label }}</text>
+              <text class="planet-score">{{ node.score }}</text>
+            </view>
+
+            <!-- 点击圆点后弹出的悬浮说明 -->
+            <view
+              v-if="activePlanet"
+              class="planet-tip"
+              :style="planetTipStyle"
+            >
+              <text class="planet-tip-title">{{ activePlanet.label }}｜得分：{{ activePlanet.score }} 分</text>
+              <text class="planet-tip-desc">说明：{{ planetTipDesc(activePlanet) }}</text>
             </view>
           </view>
 
           <!-- 十维明细：与星球图展示同一份数据，切到这一档时渲染 -->
-          <block v-else>
+          <view
+            v-else
+            class="planet-fade"
+          >
 
             <view
               v-for="dim in profile.dimensions"
@@ -494,7 +512,7 @@
                 </text>
               </view>
             </view>
-          </block>
+          </view>
         </view>
 
         <!-- 徽章墙 -->
@@ -985,18 +1003,61 @@ const levelColor = (level: 'high' | 'medium' | 'low'): string => {
   return '#94a3b8';
 };
 
-/** 星球底色（径向渐变模拟球体受光） */
-const planetGradient = (node: PlanetNode): string => {
-  const color = levelColor(node.level);
-  return `radial-gradient(circle at 32% 28%, #ffffff 0%, ${color} 52%, rgba(0,0,0,0.28) 100%)`;
+/**
+ * 圆点底色：2D 扁平轻渐变（不做立体球）
+ *
+ * 刻意避开三样东西 —— 高对比白色高光、强外发光、多层彩色光晕。
+ * 这三样是「AI 生成感」的主要来源，也会和项目的线性图标风格打架。
+ * 这里只用同色系「浅 → 深」一层平缓的径向渐变，整体降饱和。
+ *
+ * 分档按分值（不是按等级），与需求里的色规一一对应：
+ *   ≥80 暖橘 #FF9771 / 70~79 浅暖黄 #FFD289 / <70 冷灰（低分不做成灰头土脸，
+ *   用一点点冷调把「弱项」和「优势项」拉开，同时不抢暖色的视觉重心）
+ */
+const PLANET_TIER_COLOR: Record<PlanetTier, [string, string]> = {
+  high: ['#ffd9c7', '#ff9771'],
+  mid: ['#ffeed2', '#ffd289'],
+  low: ['#eef2f7', '#c7d2de'],
 };
 
-/** 星球光晕（越强越亮） */
-const planetGlow = (node: PlanetNode): string => {
-  const color = levelColor(node.level);
-  const spread = Math.round(6 + 18 * node.brightness);
-  return `0 0 ${spread}rpx ${color}66`;
+const planetGradient = (node: PlanetNode): string => {
+  const [from, to] = PLANET_TIER_COLOR[node.tier];
+  return `radial-gradient(circle at 50% 50%, ${from} 0%, ${to} 100%)`;
 };
+
+/** 点击圆点后的人话说明 */
+const planetTipDesc = (node: PlanetNode): string => {
+  if (node.score >= 85) return `你的${node.label}维度表现优秀，是当前的优势项`;
+  if (node.score >= 75) return `你的${node.label}维度表现良好，继续保持即可`;
+  if (node.score >= 60) return `你的${node.label}维度处于中等水平，还有提升空间`;
+  return `你的${node.label}维度目前偏弱，建议优先补齐`;
+};
+
+/** 当前点开的能力圆点（再点一次收起） */
+const activePlanetKey = ref<AbilityDimensionKey | null>(null);
+
+const activePlanet = computed(
+  () => layout.value.nodes.find((n) => n.key === activePlanetKey.value) ?? null
+);
+
+const togglePlanet = (key: AbilityDimensionKey) => {
+  activePlanetKey.value = activePlanetKey.value === key ? null : key;
+};
+
+/**
+ * 悬浮说明的位置
+ *
+ * 横向夹在 24%~76% 之间：圆点贴近左右边缘时，说明框也不会被裁掉；
+ * 纵向按圆点在上半区/下半区决定放它下方还是上方，避免顶出卡片。
+ */
+const planetTipStyle = computed(() => {
+  const n = activePlanet.value;
+  if (!n) return {};
+  const left = Math.min(76, Math.max(24, n.xPercent));
+  return n.yPercent < 50
+    ? { left: `${left}%`, top: `${n.yPercent + 10}%` }
+    : { left: `${left}%`, bottom: `${100 - n.yPercent + 10}%` };
+});
 
 const toggleDim = (key: AbilityDimensionKey) => {
   expandedKey.value = expandedKey.value === key ? null : key;
@@ -1169,7 +1230,7 @@ onShareTimeline(() => ({
 <style scoped lang="scss">
 .ability-page {
   min-height: 100vh;
-  background: #f8fafc;
+  background: #fdfdfd;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1204,6 +1265,73 @@ onShareTimeline(() => ({
 .section-sub {
   font-size: 22rpx;
   color: #9ca3af;
+}
+
+/* ========== 能力星球图卡片（对齐首页模块卡片规格）========== */
+.planet-card {
+  background: #ffffff;
+  border: none;
+  border-radius: 16rpx;
+  padding: 40rpx;
+  box-shadow: 0 2rpx 12rpx rgba(17, 24, 39, 0.04);
+  margin-bottom: 20rpx;
+}
+
+.planet-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #333333;
+}
+
+.planet-sub {
+  font-size: 22rpx;
+  color: #888888;
+}
+
+/* Tab：选中 = 橙字 + 底部短橙线；未选中 = 灰字、无下划线 */
+.planet-tabs {
+  display: flex;
+  align-items: center;
+  margin: 20rpx 0 4rpx;
+  border-bottom: 1rpx solid #ededed;
+}
+
+.planet-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 4rpx 16rpx;
+  margin-right: 48rpx;
+}
+
+.planet-tab-text {
+  font-size: 26rpx;
+  color: #888888;
+  transition: color 0.2s ease;
+}
+
+.planet-tab-line {
+  position: absolute;
+  left: 50%;
+  bottom: -2rpx;
+  width: 0;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: #ff9771;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: width 0.22s ease, opacity 0.22s ease;
+}
+
+.planet-tab.active .planet-tab-text {
+  color: #ff9771;
+  font-weight: 600;
+}
+
+.planet-tab.active .planet-tab-line {
+  width: 48rpx;
+  opacity: 1;
 }
 
 // ========== 顶部说明 ==========
@@ -1485,30 +1613,37 @@ onShareTimeline(() => ({
 }
 
 // ========== 星球图 ==========
+// 容器必须是正方形：坐标系按宽高百分比换算，只有正方形才能让十项能力
+// 严格落在正圆环上（否则在宽屏上会被拉成椭圆）。
+// 这里用 padding-bottom:100% 撑出正方形，绝对定位子元素的百分比会解析到
+// padding box，所以 left/top 用同一组百分比就是正圆。
 .planet-chart {
   position: relative;
   width: 100%;
-  height: 700rpx;
-  margin-top: 20rpx;
+  height: 0;
+  padding-bottom: 100%;
+  margin-top: 24rpx;
 }
 
+// 轨道虚线环：细、浅、低存在感，只作为定位参考
 .orbit-ring {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1rpx dashed rgba(255, 69, 0, 0.16);
+  border: 1rpx dashed #ededed;
 }
 
+// 中心综合竞争力：平缓径向渐变，没有白色高光球，也没有强外发光
 .planet-core {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #ffd9c7 0%, #ff4500 46%, #b32d00 100%);
-  box-shadow: 0 0 46rpx rgba(255, 69, 0, 0.42);
+  background: radial-gradient(circle at 50% 50%, #ffb193 0%, #ff9771 100%);
+  box-shadow: 0 0 24rpx rgba(255, 151, 113, 0.22);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1517,18 +1652,20 @@ onShareTimeline(() => ({
 }
 
 .core-score {
-  font-size: 52rpx;
+  font-size: 56rpx;
   font-weight: 700;
-  color: #fff;
+  color: #ffffff;
   line-height: 1.1;
 }
 
 .core-label {
-  font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.9);
-  margin-top: 4rpx;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 6rpx;
+  white-space: nowrap;
 }
 
+// 单个能力项：圆点在上，名称与分数分两行居中排在下方
 .planet {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -1538,21 +1675,113 @@ onShareTimeline(() => ({
   z-index: 2;
 }
 
-.planet-body {
+// 外壳只负责尺寸、光晕与点击反馈；渐变画在内层，避免内联样式覆盖点击态描边
+.planet-shell {
+  position: relative;
   border-radius: 50%;
-  transition: opacity 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.planet-shell.tier-high {
+  box-shadow: 0 0 16rpx rgba(255, 151, 113, 0.18);
+}
+
+.planet-shell.tier-mid {
+  box-shadow: 0 0 14rpx rgba(255, 210, 137, 0.18);
+}
+
+.planet-shell.tier-low {
+  box-shadow: 0 0 12rpx rgba(199, 210, 222, 0.22);
+}
+
+// 点击反馈：轻微放大 + 淡淡橘色描边
+.planet-shell.active {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 4rpx rgba(255, 151, 113, 0.45), 0 0 18rpx rgba(255, 151, 113, 0.26);
+}
+
+.planet-body {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 
 .planet-label {
-  font-size: 19rpx;
-  color: #6b7280;
-  margin-top: 6rpx;
+  font-size: 28rpx;
+  color: #333333;
+  margin-top: 8rpx;
   white-space: nowrap;
 }
 
 .planet-score {
-  font-size: 20rpx;
+  font-size: 32rpx;
   font-weight: 700;
+  color: #ff9771;
+  line-height: 1.25;
+}
+
+// 点击圆点后弹出的悬浮说明
+.planet-tip {
+  position: absolute;
+  transform: translateX(-50%);
+  max-width: 420rpx;
+  padding: 16rpx 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #ededed;
+  border-radius: 16rpx;
+  box-shadow: 0 6rpx 24rpx rgba(17, 24, 39, 0.1);
+  z-index: 6;
+  animation: planetTipIn 0.2s ease both;
+}
+
+.planet-tip-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #333333;
+  white-space: nowrap;
+}
+
+.planet-tip-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #888888;
+}
+
+// Tab 切换的平滑淡入（注意：图表容器不能带上横向位移，
+// 否则会被推偏，所以这里只做纵向位移）
+@keyframes planetFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.planet-fade {
+  animation: planetFadeIn 0.28s ease both;
+}
+
+// 悬浮说明需要保持自身居中，所以单独一套关键帧
+@keyframes planetTipIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 // ========== 十维明细 ==========
@@ -2036,41 +2265,6 @@ onShareTimeline(() => ({
   font-size: 21rpx;
   color: #9ca3af;
   line-height: 1.7;
-}
-
-// ========== 分段控件（星球图 / 十维明细切换） ==========
-.seg {
-  display: flex;
-  align-items: center;
-  background: #f1f5f9;
-  border-radius: 12rpx;
-  padding: 6rpx;
-  margin: 18rpx 0 8rpx;
-}
-
-.seg-item {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 60rpx;
-  border-radius: 9rpx;
-  transition: background-color 0.2s ease;
-
-  &.active {
-    background: #ffffff;
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-
-    .seg-text {
-      color: #ff4500;
-      font-weight: 600;
-    }
-  }
-}
-
-.seg-text {
-  font-size: 26rpx;
-  color: #6b7280;
 }
 
 // ========== 结果区吸顶分段导航 ==========

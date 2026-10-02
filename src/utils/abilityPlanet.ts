@@ -15,26 +15,64 @@
  *   3. 布局数学可以抽成纯函数，脱离渲染环境做单元测试（见下方自检）。
  *
  * 因此这里只负责算数，渲染交给 abilityProfile.vue 的 WXML/WXSS。
+ *
+ * ⚠️ 坐标系约定：返回的 xPercent / yPercent 是**百分比**，渲染侧必须放在
+ * **正方形**容器里（abilityProfile.vue 用 `padding-bottom:100%` 撑正方形）。
+ * 只有在正方形里，「同一个半径百分比」才等于「同一个像素半径」，
+ * 十项能力才会落在正圆环上；容器一旦变成矩形，环就会被拉成椭圆。
  */
 
 import type { AbilityDimensionKey, AbilityLevel } from '@/types/jobProfile';
 
 // ====================== 映射区间 ======================
 
-/** 星球直径区间（rpx） */
+/**
+ * 星球直径区间（rpx）
+ *
+ * 刻意收窄了区间。直径是分值的**主要**表达手段，但相邻两档差得太多时，
+ * 大圆和小圆挤在一起会很乱，所以把最大/最小压到 78/46。
+ */
 export const PLANET_SIZE_MIN = 46;
-export const PLANET_SIZE_MAX = 104;
+export const PLANET_SIZE_MAX = 78;
 
-/** 星球亮度区间（0-1，用于 opacity 与光晕强度） */
-export const PLANET_BRIGHTNESS_MIN = 0.42;
+/**
+ * 星球亮度区间（0-1，用于 opacity）
+ *
+ * 亮度只做**辅助**区分，主要看直径，所以区间收得很窄：
+ * 不再出现「亮的刺眼、暗的看不见」，避免亮度和直径重复表达同一件事。
+ */
+export const PLANET_BRIGHTNESS_MIN = 0.88;
 export const PLANET_BRIGHTNESS_MAX = 1;
 
-/** 内圈 / 外圈轨道半径（相对容器的百分比，取宽高各自的百分比） */
-export const ORBIT_RADIUS_INNER = 28;
-export const ORBIT_RADIUS_OUTER = 39;
+/**
+ * 内圈 / 外圈轨道半径（占容器**边长**的百分比）
+ *
+ * 取值同时满足两个硬约束（见 _planet_layout_test）：
+ *   1. 内圈不被中心大圆压住：内半径 − 中心半径 − 最大圆半径 > 0
+ *   2. 外圈连同下方的名称/分数不会顶出卡片
+ * 并保证任意两个圆点之间都留有空隙（最小间距 > 30rpx）。
+ */
+export const ORBIT_RADIUS_INNER = 24;
+export const ORBIT_RADIUS_OUTER = 32;
 
 /** 主星球（核心）直径（rpx） */
 export const CORE_SIZE = 176;
+
+// ====================== 视觉分档 ======================
+
+/**
+ * 分值 → 视觉档位
+ *
+ * 只决定圆点的配色，和「用直径表达分值」这条主轴无关：
+ *   high（≥80）暖橘 #FF9771 / mid（70~79）浅暖黄 #FFD289 / low（<70）冷灰
+ */
+export type PlanetTier = 'high' | 'mid' | 'low';
+
+export const scoreToTier = (score: number): PlanetTier => {
+  if (score >= 80) return 'high';
+  if (score >= 70) return 'mid';
+  return 'low';
+};
 
 // ====================== 类型 ======================
 
@@ -54,6 +92,8 @@ export interface PlanetNode extends PlanetNodeInput {
   sizeRpx: number;
   /** 亮度 0-1 */
   brightness: number;
+  /** 视觉档位（只决定圆点配色） */
+  tier: PlanetTier;
   /** 所在轨道半径百分比 */
   orbitRadiusPercent: number;
   /** 极角（度），0 度为 12 点方向，顺时针递增 */
@@ -106,6 +146,7 @@ export const buildPlanetLayout = (dimensions: PlanetNodeInput[]): PlanetLayout =
 
     const sizeRpx = scoreToPlanetSize(dim.score);
     const brightness = scoreToBrightness(dim.score);
+    const tier = scoreToTier(dim.score);
 
     // 极坐标 → 百分比坐标。
     // 半径按容器宽高的百分比计算，因此在不同屏幕上会呈轻微椭圆分布，观感更自然。
@@ -118,6 +159,7 @@ export const buildPlanetLayout = (dimensions: PlanetNodeInput[]): PlanetLayout =
       yPercent,
       sizeRpx,
       brightness,
+      tier,
       orbitRadiusPercent,
       angleDeg: Number(angleDeg.toFixed(2)),
       index,
