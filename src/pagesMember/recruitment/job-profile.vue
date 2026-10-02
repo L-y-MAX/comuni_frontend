@@ -56,7 +56,20 @@
 
         <!-- 搜索：按岗位名称 / 企业 / 行业过滤候选项 -->
         <view class="pick-search">
-          <text class="pick-search-icon">🔍</text>
+          <!-- 搜索图标：优先用本地 search.png，缺图自动退回 🔍 -->
+          <image
+            v-if="!searchIconError"
+            class="pick-search-icon pick-search-icon-img"
+            src="/static/home/search.png"
+            mode="aspectFit"
+            @error="searchIconError = true"
+          />
+          <text
+            v-else
+            class="pick-search-icon"
+          >
+            🔍
+          </text>
           <input
             v-model="pickerKeyword"
             class="pick-search-input"
@@ -502,6 +515,9 @@ const pickerLoading = ref(false);
  * 只过滤「候选岗位列表」，不影响真实岗位 / 示例岗位的解析流程。
  */
 const pickerKeyword = ref('');
+
+/** 搜索图标加载失败时退回 emoji，避免出现破图 */
+const searchIconError = ref(false);
 
 /** 过滤后的候选岗位；关键词为空时返回全部 */
 const filteredPickerItems = computed<PickJobItem[]>(() => {
@@ -1252,6 +1268,13 @@ onShareTimeline(() => ({
 .pick-search-icon {
   font-size: 26rpx;
   margin-right: 12rpx;
+}
+
+/* 图片版搜索图标：小程序里 image 默认 320x240，必须显式给尺寸 */
+.pick-search-icon-img {
+  width: 30rpx;
+  height: 30rpx;
+  flex: none;
 }
 
 .pick-search-input {

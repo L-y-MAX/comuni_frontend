@@ -81,7 +81,20 @@
          4. 搜索框：放大镜 + 输入 + 清除叉号
          ============================================================ -->
     <view class="search-box">
-      <text class="search-icon">🔍</text>
+      <!-- 搜索图标：优先用本地 search.png，缺图自动退回 🔍 -->
+      <image
+        v-if="!searchIconError"
+        class="search-icon search-icon-img"
+        src="/static/home/search.png"
+        mode="aspectFit"
+        @error="searchIconError = true"
+      />
+      <text
+        v-else
+        class="search-icon"
+      >
+        🔍
+      </text>
       <input
         v-model="keyword"
         class="search-input"
@@ -375,6 +388,9 @@ const heroStats = computed(() => [
  * 只是想演示「输入框有内容 + 右侧有清除叉号」的状态。清空后即为全部资源。
  */
 const keyword = ref('就业');
+
+/** 搜索图标加载失败时退回 emoji，避免出现破图 */
+const searchIconError = ref(false);
 
 /** 当前标签筛选（跨分类共用） */
 const activeTag = ref<ResourceTag | ''>('');
@@ -672,6 +688,13 @@ $bg: #f7f8fa;
 .search-icon {
   font-size: 28rpx;
   margin-right: 14rpx;
+}
+
+/* 图片版搜索图标：小程序里 image 默认 320x240，必须显式给尺寸 */
+.search-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+  flex: none;
 }
 
 .search-input {
