@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { baseURL } from '@/utils/request'
 
 // 定义知识库节点类型接口（匹配后端返回字段）
@@ -223,6 +223,16 @@ const formatTime = (timeStr: string) => {
     return timeStr.slice(0, 10)
   }
 }
+
+// 下拉刷新：重新拉取该知识库下的文档列表
+onPullDownRefresh(async () => {
+  try {
+    await fetchKbNodes()
+  } finally {
+    uni.stopPullDownRefresh()
+  }
+})
+
 </script>
 
 <style scoped lang="scss">

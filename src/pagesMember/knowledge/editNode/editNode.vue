@@ -204,13 +204,6 @@ const instance = getCurrentInstance()
 // 提交按钮禁用逻辑：添加日志
 const isSubmitDisabled = computed(() => {
   const disabled = !formData.name.trim() || !formData.content.trim()
-  console.log('按钮禁用状态计算：', {
-    disabled,
-    name: formData.name.trim(),
-    content: formData.content.trim(),
-    nameEmpty: !formData.name.trim(),
-    contentEmpty: !formData.content.trim(),
-  })
   return disabled
 })
 
@@ -337,10 +330,23 @@ const renderMarkdown = async (content: string): Promise<string> => {
 }
 
 /**
- * 同步编辑内容并渲染Markdown
+ * Markdown 预览防抖定时器
+ *
+ * 原来每次 @input 都会同步跑一遍 marked.parse + 十余次正则全量替换，
+ * 长文输入时明显掉帧。改为停止输入 250ms 后再渲染预览。
+ * （提交用的是 formData.content 原始文本，不受预览延迟影响）
+ */
+let previewTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * 同步编辑内容并渲染Markdown（防抖）
  */
 const handleContentInputSync = () => {
-  renderMarkdownAsync()
+  if (previewTimer) clearTimeout(previewTimer)
+  previewTimer = setTimeout(() => {
+    previewTimer = null
+    renderMarkdownAsync()
+  }, 250)
 }
 
 /**
@@ -511,12 +517,6 @@ onLoad((options: any) => {
   if (type.value === 'add' && kbId.value) {
     formData.knowledge_base_id = kbId.value
   }
-
-  console.log('页面初始化完成，当前状态：', {
-    type: type.value,
-    kbId: kbId.value,
-    formData: { ...formData },
-  })
 })
 
 onReady(async () => {
@@ -631,7 +631,7 @@ page {
     .name-input-icon {
       font-size: 18px;
       margin-right: 4px;
-      color: #007aff;
+      color: #e03c00;
       flex-shrink: 0;
     }
 
@@ -645,13 +645,13 @@ page {
       font-size: 14px;
       font-weight: 500;
       border: none;
-      background-color: #007aff;
+      background-color: #e03c00;
       color: #fff;
       padding: 0;
       margin: 0;
 
       &:active {
-        background-color: #0066cc;
+        background-color: #b33000;
       }
 
       &[disabled] {
@@ -683,7 +683,7 @@ page {
       display: inline-block;
       width: 4px;
       height: 14px;
-      background-color: #007aff;
+      background-color: #e03c00;
       margin-right: 6px;
       border-radius: 2px;
     }
@@ -770,11 +770,11 @@ page {
     }
 
     &::-webkit-scrollbar-thumb {
-      background: #007aff;
+      background: #e03c00;
       border-radius: 3px;
 
       &:hover {
-        background: #0066cc;
+        background: #b33000;
       }
     }
 
@@ -800,7 +800,7 @@ page {
       }
 
       &:focus {
-        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        box-shadow: 0 0 0 3px rgba(224, 60, 0, 0.1);
       }
     }
   }

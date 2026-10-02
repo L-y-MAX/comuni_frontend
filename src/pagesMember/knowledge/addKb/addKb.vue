@@ -138,11 +138,6 @@ const is_public = computed(() => {
   return formData.is_public_str === 'true'
 })
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack({ delta: 1 })
-}
-
 // 单选组事件
 const handleRadioChange = (e: { detail: { value: string } }) => {
   formData.is_public_str = e.detail.value

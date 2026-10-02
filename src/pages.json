@@ -24,7 +24,8 @@
 		{
 			"path": "pages/knowledge/knowledge",
 			"style": {
-				"navigationBarTitleText": "知识库"
+				"navigationBarTitleText": "知识库",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -173,7 +174,8 @@
 				{
 					"path": "showNode",
 					"style": {
-						"navigationBarTitleText": "文章"
+						"navigationBarTitleText": "文章",
+						"enablePullDownRefresh": true
 					}
 				}
 			]
@@ -206,7 +208,8 @@
 				{
 					"path": "showKb",
 					"style": {
-						"navigationBarTitleText": "查看知识库"
+						"navigationBarTitleText": "查看知识库",
+						"enablePullDownRefresh": true
 					}
 				}
 			]

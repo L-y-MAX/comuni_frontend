@@ -355,7 +355,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { getCurrentInstance, nextTick, onMounted, reactive, ref } from 'vue'
 import { getKnowledgeNodeDetail } from '@/api/knowledge'
 import { marked } from 'marked'
@@ -434,7 +434,7 @@ interface RootCommentItem extends CommentItem {
   loadedAnswerCount: number // 已加载回复数
   answerTotalCount: number // 回复总数
   answers: CommentItem[] // 该根评论的回复列表
-  currentPage: number // 当前页码（用于分页）
+  currentOffset: number // 回复列表分页偏移量（代码实际使用的字段）
 }
 
 // ========== 响应式数据 ==========
@@ -628,6 +628,7 @@ const loadAnswers = async (index: number) => {
     const answerRes = await getNodeAnswerComments({
       article_id: formData.id, // 文章Node的PK
       root_id: currentComment.id, // 根评论的PK
+      offset: 0, // 第一页偏移量为0
       limit: PAGE_SIZE, // 每页加载数量
     })
 
@@ -652,10 +653,12 @@ const loadAnswers = async (index: number) => {
         // 首次加载：直接赋值
         currentComment.answers = formattedAnswers
         currentComment.loadedAnswerCount = formattedAnswers.length
+        currentComment.currentOffset = formattedAnswers.length
       } else {
         // 无回复
         currentComment.answers = []
         currentComment.loadedAnswerCount = 0
+        currentComment.currentOffset = 0
       }
     }
   } catch (error) {
@@ -689,6 +692,7 @@ const loadMoreAnswers = async (index: number) => {
     const answerRes = await getNodeAnswerComments({
       article_id: formData.id,
       root_id: currentComment.id,
+      offset: currentComment.currentOffset || 0,
       limit: PAGE_SIZE,
     })
 
@@ -708,6 +712,7 @@ const loadMoreAnswers = async (index: number) => {
       // 追加新回复到现有列表
       currentComment.answers = [...currentComment.answers, ...newAnswers]
       currentComment.loadedAnswerCount = currentComment.answers.length
+      currentComment.currentOffset = currentComment.answers.length // 推进偏移量，供下一页使用
     }
   } catch (error) {
     console.error(`加载根评论${currentComment.id}更多回复失败：`, error)
@@ -834,16 +839,20 @@ const sendReply = async (rootId: string) => {
       root_id: rootId,
       to_user_id: toUserId,
     })
+    // 注意：必须先把索引存下来，hideReplyInput() 会把 replyIndex 重置为 -1，
+    // 之后再判断 replyIndex.value > -1 恒为 false，回复就不会刷新了
+    const targetIndex = replyIndex.value
     uni.showToast({ title: '回复成功', icon: 'success' })
     hideReplyInput()
 
     // 重新加载该根评论的回复
-    if (replyIndex.value > -1) {
-      const currentComment = commentList.value[replyIndex.value]
+    if (targetIndex > -1) {
+      const currentComment = commentList.value[targetIndex]
       currentComment.loadedAnswerCount = 0
-      currentComment.currentPage = 1
+      currentComment.currentOffset = 0
+      currentComment.isExpanded = true
       currentComment.answers = []
-      await loadAnswers(replyIndex.value)
+      await loadAnswers(targetIndex)
     }
   } catch (error) {
     console.error('回复失败：', error)
@@ -874,7 +883,8 @@ const deleteComment = async (commentId: string, isRoot: boolean) => {
             commentList.value.forEach(async (comment, index) => {
               if (comment.answers.some((ans) => ans.id === commentId)) {
                 comment.loadedAnswerCount = 0
-                comment.currentPage = 1
+                comment.currentOffset = 0
+                comment.isExpanded = true
                 comment.answers = []
                 await loadAnswers(index)
               }
@@ -1011,6 +1021,19 @@ const toEdit = () => {
     url: `/pagesMember/knowledge/editNode/editNode?id=${formData.id}&type=edit&kbId=${formData.knowledge_base_id}`,
   })
 }
+
+// 下拉刷新：重新拉取文章详情与根评论
+onPullDownRefresh(async () => {
+  try {
+    if (formData.id) {
+      await fetchNodeDetail(formData.id)
+    }
+    await fetchRootComments()
+  } finally {
+    uni.stopPullDownRefresh()
+  }
+})
+
 </script>
 
 <style scoped lang="scss">

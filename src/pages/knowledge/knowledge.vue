@@ -1,8 +1,8 @@
 <template>
   <view class="knowledge-page">
-    <!-- 加载中占位 -->
+    <!-- 首次进入的整页加载占位（后续操作不再让整页闪烁） -->
     <view
-      v-if="isLoading"
+      v-if="firstLoading"
       class="loading-container"
     >
       <uni-load-more
@@ -309,7 +309,6 @@
       class="node-list"
       v-if="
         tabState[activeTab].selectedKbId &&
-        !isLoading &&
         (activeTab === 'right'
           ? kbList?.length > 0
           : followKbList?.length > 0 || shareKbList?.length > 0)
@@ -335,8 +334,19 @@
         </button>
       </view>
 
+      <!-- 文章加载中：局部提示，替代原来的整页 loading -->
+      <view
+        v-if="isLoading"
+        class="node-loading"
+      >
+        <uni-load-more
+          type="loading"
+          text="加载文章中..."
+        />
+      </view>
+
       <!-- 文章列表内容：根据折叠状态显示/隐藏 -->
-      <view v-if="tabState[activeTab].isNodeListExpanded">
+      <view v-else-if="tabState[activeTab].isNodeListExpanded">
         <view class="node-header">
           <text class="title">文章列表</text>
           <view class="add-node-section">
@@ -402,7 +412,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import {
   getKnowledgeBaseList,
@@ -495,7 +505,8 @@ const tabState = ref<Record<string, TabState>>({
 })
 
 const kbList = ref<any[]>([]) // 我的知识库列表（初始化空数组）
-const isLoading = ref(false) // 加载状态
+const isLoading = ref(false) // 列表/文章级加载状态（局部 loading）
+const firstLoading = ref(true) // 仅首次进入时的整页加载状态
 let refreshTimer: number | null = null // 防抖定时器
 
 //先定义获取缓存状态的函数，再赋值给ref（正确的TS写法）
@@ -715,15 +726,18 @@ const doRefreshKbList = async () => {
     uni.showToast({ title: '刷新失败，请重试', icon: 'none' })
   } finally {
     isLoading.value = false
+    firstLoading.value = false // 首次加载结束，之后一律走局部 loading
   }
 }
 
 /**
  * 选择当前标签页的知识库 - 仅加载该库下的文章
  */
-const selectKb = async (id: string, isRefresh = true) => {
+const selectKb = async (id: string, isRefresh = true, force = false) => {
   const currentTab = activeTab.value
-  if (id === tabState.value[currentTab].selectedKbId) return
+  // force=true 用于「删除文章后刷新」等场景：此时 id 与当前选中项相同，
+  // 如果不放行就会直接 return，导致列表不更新
+  if (!force && id === tabState.value[currentTab].selectedKbId) return
 
   if (isRefresh) isLoading.value = true
   // 更新当前标签页的选中状态
@@ -762,8 +776,8 @@ const selectKb = async (id: string, isRefresh = true) => {
                 uni.showToast({ title: '已加入知识库', icon: 'success' })
                 // 清除 pending
                 uni.removeStorageSync('pendingDocToAdd')
-                // 刷新当前标签页的文章列表
-                await selectKb(id, true)
+                // 刷新当前标签页的文章列表（force=true 绕过同 ID 早退）
+                await selectKb(id, true, true)
               } catch (err) {
                 console.error('将文档加入知识库失败：', err)
                 uni.showToast({ title: '加入失败', icon: 'none' })
@@ -786,8 +800,20 @@ const selectKb = async (id: string, isRefresh = true) => {
 }
 
 // ====================== 生命周期 ======================
-onLoad(async () => {
+onLoad(async (options?: { tab?: string; kbId?: string }) => {
+  // 支持分享卡片深链：?tab=left|right&kbId=xxx
+  if (options?.tab === 'left' || options?.tab === 'right') {
+    activeTab.value = options.tab
+    uni.setStorageSync('kbActiveTab', options.tab)
+  }
   await refreshKnowledgeBaseList(true)
+
+  // 分享链接指定了知识库，优先选中它
+  if (options?.kbId) {
+    await selectKb(options.kbId, false, true)
+    return
+  }
+
   // 初始化时加载当前标签页选中知识库的文章
   const currentTab = activeTab.value
   const currentSelectedId = tabState.value[currentTab].selectedKbId
@@ -806,7 +832,8 @@ onShareAppMessage(() => {
   const currentTab = activeTab.value
   const currentKbId = tabState.value[currentTab].selectedKbId
   const shareTitle = currentKbId ? `知识库-${selectedKbName.value}` : '我的知识库管理'
-  const sharePath = `/pagesMember/knowledge/knowledge?tab=${currentTab}&kbId=${currentKbId || ''}`
+  // 知识库首页注册在主包，旧路径 /pagesMember/knowledge/knowledge 并不存在
+  const sharePath = `/pages/knowledge/knowledge?tab=${currentTab}&kbId=${currentKbId || ''}`
 
   return {
     title: shareTitle,
@@ -869,7 +896,8 @@ const deleteNode = async (id: string) => {
           await deleteKnowledgeNode(id)
           uni.showToast({ title: '删除成功', icon: 'success' })
           const currentTab = activeTab.value
-          await selectKb(tabState.value[currentTab].selectedKbId, true)
+          // force=true：被删的正是当前知识库，必须绕过 selectKb 的同 ID 早退
+          await selectKb(tabState.value[currentTab].selectedKbId, true, true)
         } catch (error) {
           console.error('删除文章失败：', error)
           uni.showToast({ title: '删除失败', icon: 'none' })
@@ -916,6 +944,22 @@ const deleteKnowledgeBaseHandle = async (kbId: string) => {
     },
   })
 }
+
+// 下拉刷新：重新拉取三个知识库列表，并刷新当前选中知识库的文章
+onPullDownRefresh(async () => {
+  try {
+    await refreshKnowledgeBaseList(true)
+    const currentTab = activeTab.value
+    const selectedId = tabState.value[currentTab].selectedKbId
+    if (selectedId) {
+      // force=true：选中的就是它，必须绕过同 ID 早退
+      await selectKb(selectedId, false, true)
+    }
+  } finally {
+    uni.stopPullDownRefresh()
+  }
+})
+
 </script>
 
 <style scoped lang="scss">
@@ -937,7 +981,6 @@ $shadow-strong: 0 8rpx 32rpx rgba(59, 130, 246, 0.12);
 $border-radius-large: 20rpx;
 $border-radius-medium: 16rpx;
 $border-radius-small: 12rpx;
-$white: #ffffff;
 
 .knowledge-page {
   min-height: 100vh;
@@ -1009,7 +1052,6 @@ $white: #ffffff;
 }
 
 // ========== 原有样式 ==========
-.kb-list,
 .node-list {
   background: $white;
   border-radius: $border-radius-large;
@@ -1483,13 +1525,38 @@ $white: #ffffff;
   }
 }
 
+/* 文章列表局部加载提示 */
+.node-loading {
+  padding: 32rpx 0;
+  text-align: center;
+}
+
+/* ========== 图标按钮兜底可见性 ==========
+   知识库的图标全部指向远程地址，一旦域名不可达或某张图 404，
+   纯图标按钮就会变成「看不见但仍可点击」的空白热区。
+   这里给它们加一层极浅的橙色底，保证图标挂掉时按钮位置依然可见。 */
+.fold-button,
+.add-button,
+.follow-kb-btn,
+.unfollow-kb-btn,
+.delete-kb-btn,
+.edit-btn,
+.delete-btn {
+  background: rgba(255, 69, 0, 0.06) !important;
+  border-radius: 10rpx !important;
+}
+
+.fold-button,
+.add-button {
+  border-radius: 50% !important;
+}
+
 /* Responsive Design */
 @media (max-width: 750rpx) {
   .knowledge-page {
     padding: 12rpx;
   }
 
-  .kb-list,
   .node-list {
     padding: 16rpx;
     margin-bottom: 12rpx;

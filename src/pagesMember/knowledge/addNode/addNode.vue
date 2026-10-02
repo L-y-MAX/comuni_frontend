@@ -214,13 +214,6 @@ const instance = getCurrentInstance()
 // 提交按钮禁用逻辑：添加日志
 const isSubmitDisabled = computed(() => {
   const disabled = !formData.name.trim() || !formData.content.trim()
-  console.log('按钮禁用状态计算：', {
-    disabled,
-    name: formData.name.trim(),
-    content: formData.content.trim(),
-    nameEmpty: !formData.name.trim(),
-    contentEmpty: !formData.content.trim(),
-  })
   return disabled
 })
 
@@ -347,10 +340,23 @@ const renderMarkdown = async (content: string): Promise<string> => {
 }
 
 /**
- * 同步编辑内容并渲染Markdown
+ * Markdown 预览防抖定时器
+ *
+ * 原来每次 @input 都会同步跑一遍 marked.parse + 十余次正则全量替换，
+ * 长文输入时明显掉帧。改为停止输入 250ms 后再渲染预览。
+ * （提交用的是 formData.content 原始文本，不受预览延迟影响）
+ */
+let previewTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * 同步编辑内容并渲染Markdown（防抖）
  */
 const handleContentInputSync = () => {
-  renderMarkdownAsync()
+  if (previewTimer) clearTimeout(previewTimer)
+  previewTimer = setTimeout(() => {
+    previewTimer = null
+    renderMarkdownAsync()
+  }, 250)
 }
 
 /**
@@ -515,11 +521,6 @@ onLoad(async (options: any) => {
     name: '',
     content: '',
   }
-
-  console.log('页面初始化完成，当前状态：', {
-    kbId: kbId.value,
-    formData: { ...formData },
-  })
 })
 
 onReady(async () => {
