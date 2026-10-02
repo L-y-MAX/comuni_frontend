@@ -131,7 +131,7 @@ comuni_frontend/
 | 岗位能力画像 | `types/jobProfile.ts` | `utils/jobProfileParser.ts` | `api/jobProfile.ts` | `pagesMember/recruitment/job-profile.vue` |
 | 学生就业能力画像 | `types/studentProfile.ts` | `utils/studentProfileParser.ts`、`utils/abilityPlanet.ts` | `api/studentProfile.ts` | `pages/abilityProfile/abilityProfile.vue` |
 | 人岗智能匹配 | `types/jobMatch.ts` | `utils/jobMatch.ts` | — | `pagesMember/jobMatch/jobMatch.vue` |
-| 生涯发展报告 | `types/careerReport.ts` | `utils/careerReport.ts`、`utils/jobGraph.ts` | `api/careerReport.ts` | `pagesMember/careerReport/careerReport.vue` |
+| 生涯发展报告 | `types/careerReport.ts` | `pagesMember/careerReport/lib/careerReport.ts`、`lib/jobGraph.ts` | `pagesMember/careerReport/lib/careerReportApi.ts` | `pagesMember/careerReport/careerReport.vue` |
 | 历史报告 | `utils/reportHistory.ts` | — | — | `pagesMember/reportHistory/reportHistory.vue` |
 | 就业政策与校招资源 | `types/careerResource.ts` | `utils/careerResources.ts` | — | `pagesMember/careerResources/careerResources.vue` |
 | 功能侧边栏 | — | `utils/featureNav.ts` | — | 能力画像页内 |
@@ -177,6 +177,13 @@ comuni_frontend/
 - **tabBar 页面只能 `switchTab`**，普通页面只能 `navigateTo`，用错会静默失败。
 - **`position: sticky` 在 scroll-view 里不可靠**，本项目的吸顶导航用
   `position: fixed` + 动态 `paddingTop` 实现。
+- **只被一个分包用到的模块，要放进那个分包的目录里**。微信不允许分包之间互相
+  `require`，而 uni-app 的分包优化**不会**搬运 `src/utils`、`src/api` 这类共享
+  目录下的源码 —— 放在共享目录里就会一直占主包体积。分包只能引用「主包」和
+  「自己分包目录内」的文件，所以 `pagesMember/careerReport/lib/` 下的模块
+  可以在该分包任意页面里直接引用，但**不要搬到别处**。
+  反过来，被 ≥2 个分包共用的模块（如 `utils/jobMatch.ts`、`utils/jobProfileSamples.ts`）
+  必须留在主包，这是架构约束而非冗余。
 
 ---
 
