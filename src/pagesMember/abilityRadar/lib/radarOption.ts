@@ -44,13 +44,18 @@ import type { AbilityDimensionKey } from '@/types/jobProfile';
 // ====================== 可调常量 ======================
 
 /**
- * 星球直径（px）：`Math.min(分值 * 0.8, 32)`
+ * 星球直径（px）：`Math.min(分值 * SYMBOL_SIZE_FACTOR, SYMBOL_SIZE_MAX)`
  *
  * 上限 32px 是为了避免相邻星球互相挤压 —— 十项按 36° 均分，
  * 分值高的相邻两颗如果都很大就会糊在一起。
+ *
+ * 系数说明：最初按需求取的 0.8，但那样 40 分以上就全部顶到 32px，
+ * 十颗星球一样大，「用大小表达分值」这条就失效了。
+ * 改成 0.32 后 100 分才刚好 32px，各分数段都能拉开（42 分 ≈ 13.4px、
+ * 70 分 ≈ 22.4px、97 分 ≈ 31px），同时仍然封顶 32px 不会拥挤。
  */
 export const SYMBOL_SIZE_MAX = 32;
-export const SYMBOL_SIZE_FACTOR = 0.8;
+export const SYMBOL_SIZE_FACTOR = 0.32;
 
 /** 雷达与主色（对齐小程序全局色） */
 const LINE_COLOR = '#EEEEEE';
@@ -143,10 +148,8 @@ export const scoreToTier = (score: number): keyof typeof PLANET_GRADIENTS => {
 /**
  * 分值 → 星球直径（px）
  *
- * 需求指定公式：`Math.min(value * 0.8, 32)`。
- * 注意这个公式在 40 分以上就都顶到 32px 上限了，星球大小会趋于一致 ——
- * 如果希望大小继续体现分值差异，把 SYMBOL_SIZE_FACTOR 调小即可
- * （例如 0.32 时 100 分刚好 32px，各档都能拉开）。
+ * `Math.min(分值 * 0.32, 32)`：100 分刚好顶到上限，
+ * 中间分数都能看出大小差别（详见 SYMBOL_SIZE_FACTOR 上的说明）。
  */
 export const scoreToSymbolSize = (score: number): number => {
   const safe = Math.max(0, Math.min(100, score));
@@ -342,6 +345,13 @@ export const buildAbilityRadarOption = (
         },
         areaStyle: {
           color: AREA_COLOR,
+          /**
+           * 必须显式写回 1：
+           * ECharts 的雷达系列默认 areaStyle.opacity = 0.7，
+           * 会把 rgba(...,0.04) 再乘 0.7 变成 0.028（实测 fill-opacity=0.0279…），
+           * 比需求要的填充还淡三成。
+           */
+          opacity: 1,
         },
         // 禁止任何外发光
         itemStyle: {
@@ -362,7 +372,7 @@ export const buildAbilityRadarOption = (
         coordinateSystem: 'polar',
         // 统一用圆形；球感完全由 itemStyle 里的径向渐变提供
         symbol: 'circle',
-        // 分值决定直径：Math.min(分值 * 0.8, 32)；value 是 [分值, 角度]
+        // 分值决定直径：Math.min(分值 * 0.32, 32)；value 是 [分值, 角度]
         symbolSize: (value: unknown) => {
           const raw = Array.isArray(value) ? value[0] : value;
           return scoreToSymbolSize(typeof raw === 'number' ? raw : 0);

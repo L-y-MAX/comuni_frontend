@@ -1,37 +1,25 @@
 /**
- * 小程序端 ECharts 按需装配
+ * 小程序端 ECharts 装配入口
  *
- * ## 为什么要按需装配
+ * ## 为什么这里引的是 ./echarts.bundle.js 而不是 npm 包
  *
- * 直接 `import * as echarts from 'echarts'` 会把**全部图表与组件**打进主包
- * （完整包 1MB 左右）。能力画像页在主包里，这一下就能把主包从 0.49MB 顶到 1.5MB，
- * 首页启动也会跟着变慢。
+ * uni-app 的小程序构建会把 **node_modules 依赖统一打进主包的 common/vendor.js**，
+ * manifest 里的 optimization.subPackages 只搬项目源码、不搬 node_modules。
+ * 也就是说：只要 `import ... from 'echarts/core'`，echarts（约 470KB）
+ * 就会落在主包里 —— 哪怕只有分包页用到它。
  *
- * 这里只注册本图真正用到的东西，其余一律不打包：
- *   - RadarChart        雷达系列（series[0] 的轮廓与面积填充）
- *   - ScatterChart      散点系列（series[1] 的十颗顶点星球）
- *   - RadarComponent    雷达坐标系（indicator / splitLine / axisLine）
- *   - PolarComponent    极坐标系（承载星球图标的定位载体）+ 它的角度轴/半径轴
- *   - TooltipComponent  点击星球后的浮层
- *   - CanvasRenderer    小程序端渲染器
+ * 而放在分包目录下的**项目源码**会被正确归入该分包（本项目已实测）。
+ * 所以 echarts 被预打包成同目录下的 `echarts.bundle.js`，
+ * 以"项目源码"的身份进入分包：主包回到 0.5MB 左右，
+ * 只有真正点进「能力星球图」页时才下载这一份。
  *
- * ## 用法
+ * ## 什么时候需要重新生成
  *
- * 组件不会自己 import echarts，而是通过 provide/inject 拿，
- * 所以页面里必须显式注册（见 abilityRadar.vue 的 provideEcharts 调用）。
+ * - 升级 echarts 版本之后
+ * - 需要增删注册的图表/组件时（改 scripts/echarts-entry.js）
+ *
+ * 执行：`node scripts/build-echarts-bundle.mjs`
  */
-import * as echarts from 'echarts/core';
-import { RadarChart, ScatterChart } from 'echarts/charts';
-import { PolarComponent, RadarComponent, TooltipComponent } from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
-
-echarts.use([
-  RadarChart,
-  ScatterChart,
-  RadarComponent,
-  PolarComponent,
-  TooltipComponent,
-  CanvasRenderer,
-]);
+import echarts from './echarts.bundle.js';
 
 export default echarts;
