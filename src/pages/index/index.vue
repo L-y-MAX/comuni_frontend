@@ -31,8 +31,16 @@
         @tap="handleSearch"
         :class="{ loading: isLoading }"
       >
+        <!-- 优先用 src/static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
+        <image
+          v-if="!isLoading && !searchIconError"
+          class="search-icon"
+          src="/static/home/search.png"
+          mode="aspectFit"
+          @error="searchIconError = true"
+        />
         <text
-          v-if="!isLoading"
+          v-else-if="!isLoading"
           class="icon"
         >
           ◯
@@ -545,6 +553,7 @@ const jobsIconError = ref(false)
 const policyIconError = ref(false)
 const jobProfileIconError = ref(false)
 const knowledgeIconError = ref(false)
+const searchIconError = ref(false)
 
 // 跳转到「岗位能力画像」页面（页内可直接选岗位）
 const goJobProfile = () => {
@@ -784,6 +793,12 @@ onMounted(() => {
   border-radius: 0 38rpx 38rpx 0;
   color: #ff4500;
   font-size: 32rpx;
+}
+
+/* 搜索图标：优先用本地图片，缺图时模板会退回 ◯ */
+.search-icon {
+  width: 40rpx;
+  height: 40rpx;
 }
 
 /* 加载动画 */
