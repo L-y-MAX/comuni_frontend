@@ -116,45 +116,81 @@
       </view>
     </view>
 
-    <!-- ============================================================
-         5. 政策类型速查（仅「就业政策」分类下展示）
-         标题行：左标题 + 右提示；卡片点击 = 按标签筛选（mock 交互，不跳详情页）
-         ============================================================ -->
-    <view
-      v-if="activeTheme === 'policy'"
-      class="section"
-    >
-      <view class="section-head">
-        <text class="section-title">政策类型速查</text>
-        <text class="section-hint">点标签筛选相关文件</text>
-      </view>
-
-      <view
-        v-for="c in POLICY_CATEGORIES"
-        :key="c.name"
-        class="cat-card"
-        :class="{ active: activeTag === c.tag }"
-        @tap="onCategoryTap(c)"
-      >
-        <text class="cat-name">{{ c.name }}</text>
-        <text class="cat-audience">面向：{{ c.audience }}</text>
-        <text class="cat-desc">{{ c.desc }}</text>
-      </view>
-
-      <text class="section-foot">
-        以上为方向性归类，不含金额与时限数字。具体标准请以官方原文为准。
-      </text>
-    </view>
 
     <!-- ============================================================
          6. 资源列表（政策文件 / 校招渠道 / 求职指导）
          ============================================================ -->
     <view class="section">
-      <view class="section-head">
-        <text class="section-title">{{ listTitle }}</text>
-        <text class="section-hint">
-          {{ visibleList.length }} / {{ themeTotal }} 条
-        </text>
+      <!-- 顶部条件区吸顶：政策类型 + 标签筛选 + 列表标题
+           原来「政策类型速查」是 8 张竖排大卡（约 1336rpx），
+           用户要滑过一整屏才看到第一条文件；现在压成一行横滑标签。 -->
+      <view
+        class="list-sticky"
+        :style="{ top: navTotalHeight + 'px' }"
+      >
+        <scroll-view
+          v-if="activeTheme === 'policy'"
+          class="chip-scroll"
+          scroll-x
+          :show-scrollbar="false"
+        >
+          <view class="chip-row">
+            <text
+              v-for="c in POLICY_CATEGORIES"
+              :key="c.name"
+              class="cat-chip"
+              :class="{ active: activeTag === c.tag }"
+              @tap="onCategoryTap(c)"
+            >
+              {{ c.name }}
+            </text>
+          </view>
+        </scroll-view>
+
+        <!-- 标签筛选条：这排标签原来散落在每张卡片里，重复渲染，且要先点进卡片才能筛 -->
+        <scroll-view
+          v-if="themeTags.length"
+          class="chip-scroll"
+          scroll-x
+          :show-scrollbar="false"
+        >
+          <view class="chip-row">
+            <text
+              class="tag-chip"
+              :class="{ active: !activeTag }"
+              @tap="resetFilter"
+            >
+              全部
+            </text>
+            <text
+              v-for="g in themeTags"
+              :key="g"
+              class="tag-chip"
+              :class="{ active: activeTag === g }"
+              @tap="toggleTag(g)"
+            >
+              {{ g }}
+            </text>
+          </view>
+        </scroll-view>
+
+        <view class="section-head">
+          <text class="section-title">{{ listTitle }}</text>
+          <text class="section-hint">
+            {{ visibleList.length }} / {{ themeTotal }} 条
+          </text>
+        </view>
+      </view>
+
+      <!-- 选中类型的「面向谁 / 说明」：原来写在 8 张卡片上，改成随选中显示，信息不丢 -->
+      <view
+        v-if="activeCategory"
+        class="cat-detail"
+      >
+        <text class="cat-detail-name">{{ activeCategory.name }}</text>
+        <text class="cat-audience">面向：{{ activeCategory.audience }}</text>
+        <text class="cat-desc">{{ activeCategory.desc }}</text>
+        <text class="section-foot">以上为方向性归类，不含金额与时限数字。具体标准请以官方原文为准。</text>
       </view>
 
       <!-- 当前筛选状态 -->
@@ -201,11 +237,15 @@
           <text class="res-advice-text">{{ item.advice }}</text>
         </view>
 
-        <view class="res-tags">
+        <!-- 标签：只留前 2 个做「这张卡讲什么」的提示，完整筛选在上方筛选条 -->
+        <view
+          v-if="item.tags && item.tags.length"
+          class="res-tags-mini"
+        >
           <text
-            v-for="g in item.tags"
+            v-for="g in item.tags.slice(0, 2)"
             :key="g"
-            class="res-tag"
+            class="res-tag-mini"
             :class="{ active: activeTag === g }"
             @tap.stop="toggleTag(g)"
           >
@@ -388,8 +428,8 @@ const heroStats = computed(() => [
 
 /**
  * 搜索关键词。
- * 按设计稿预填「就业」——它命中全部 8 条政策文件，所以看起来仍是完整列表，
- * 只是想演示「输入框有内容 + 右侧有清除叉号」的状态。清空后即为全部资源。
+ * 初值留空——之前预填「就业」，用户一进页面就先被一个预设条件过滤，
+ * 既看不到完整列表，也判断不出筛选有没有生效。
  */
 const keyword = ref('');
 
@@ -418,17 +458,59 @@ const filterText = computed(() => {
   return parts.join(' + ');
 });
 
+/**
+ * 当前分类下出现过的全部标签（去重、按首次出现顺序）。
+ * 用来在列表上方生成一条统一筛选条，取代原来散落在每张卡片里的标签行。
+ */
+const themeTags = computed<ResourceTag[]>(() => {
+  const seen: ResourceTag[] = [];
+  resourcesByTheme(activeTheme.value).forEach((r) => {
+    r.tags.forEach((g) => {
+      if (!seen.includes(g)) seen.push(g);
+    });
+  });
+  return seen;
+});
+
+/**
+ * 当前选中的政策类型。
+ * 速查只按 tag 筛选，而多个类型可能共用一个 tag（如两个都叫「基层」），
+ * 所以额外按名称记录，保证下方的说明卡显示的就是刚点的那个类型。
+ */
+const activeCategoryName = ref('');
+const activeCategory = computed<PolicyCategory | null>(
+  () => POLICY_CATEGORIES.find((c) => c.name === activeCategoryName.value) ?? null
+);
+
+/**
+ * 把视图滚到列表顶部（吸顶条件区）。
+ *
+ * 原来点完筛选视图停在原地，用户看不到结果列表的变化——
+ * 这正是「筛完不方便看文件」的直接原因。
+ */
+const scrollToList = () => {
+  uni.pageScrollTo({
+    selector: '.list-sticky',
+    duration: 250,
+    // 取不到节点时静默跳过：只是不滚动，筛选结果不受影响
+    fail: () => {},
+  });
+};
+
 // ====================== 交互 ======================
 
 /** 切换分类：同时清掉标签筛选（标签跨分类共用，带着筛选跳过去会得到空列表） */
 const switchTheme = (key: ResourceTheme) => {
   activeTheme.value = key;
   activeTag.value = '';
+  activeCategoryName.value = '';
+  scrollToList();
 };
 
 /** 点标签：再点一次取消 */
 const toggleTag = (tag: ResourceTag) => {
   activeTag.value = activeTag.value === tag ? '' : tag;
+  scrollToList();
 };
 
 /** 清空搜索关键词（搜索框右侧叉号） */
@@ -439,24 +521,28 @@ const clearKeyword = () => {
 /** 清除全部筛选条件 */
 const resetFilter = () => {
   activeTag.value = '';
+  activeCategoryName.value = '';
   keyword.value = '';
+  scrollToList();
 };
 
 /**
- * 政策类型速查卡片点击。
+ * 政策类型速查标签点击。
  *
  * 按设计稿这里只要一个「简单点击事件」，不写真实详情页：
- * 实现为「按该类型标签筛选下方文件 + 轻提示」，比纯粹弹 toast 更有用，
- * 也正好对应标题行右侧的「点标签筛选相关文件」。
+ * 实现为「按该类型标签筛选下方文件 + 轻提示」，比纯粹弹 toast 更有用。
+ * 类型本身的「面向谁 / 说明」由下方的说明卡展示，因此这里同时记录类型名称。
  */
 const onCategoryTap = (c: PolicyCategory) => {
   const willFilter = activeTag.value !== c.tag;
   activeTag.value = willFilter ? c.tag : '';
+  activeCategoryName.value = willFilter ? c.name : '';
   uni.showToast({
     title: willFilter ? `已按「${c.name}」筛选文件` : '已取消筛选',
     icon: 'none',
     duration: 1500,
   });
+  scrollToList();
 };
 
 /** 资源卡片点击：有链接就复制，没有链接给出说明（同样不跳详情页） */
@@ -743,6 +829,87 @@ $bg: #f7f8fa;
 }
 
 /* ====================== 通用区块 ====================== */
+/* ====================== 列表顶部：吸顶条件区 ====================== */
+/* 原来「政策类型速查」是 8 张竖排大卡（合计约 1336rpx），用户要滑过一整屏
+   才看到第一条文件。现在压成一行横滑标签，并连标签筛选条、列表标题一起吸顶，
+   滑到哪儿都能改筛选条件。top 值由模板按「状态栏 + 标题栏」高度动态给出。 */
+.list-sticky {
+  position: sticky;
+  z-index: 20;
+  margin: 0 -24rpx;
+  padding: 10rpx 24rpx 6rpx;
+  background: $bg;
+}
+
+.chip-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.chip-row {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 0 10rpx;
+}
+
+.cat-chip {
+  flex-shrink: 0;
+  font-size: 23rpx;
+  color: $text-2;
+  background: #ffffff;
+  border: 2rpx solid transparent;
+  border-radius: 22rpx;
+  padding: 8rpx 20rpx;
+  margin-right: 14rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.04);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &.active {
+    background: #FF7239;
+    border-color: #FF7239;
+    color: #ffffff;
+    font-weight: 600;
+  }
+}
+
+.tag-row {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0 8rpx;
+}
+
+.tag-chip {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: $text-2;
+  background: $line;
+  border-radius: 22rpx;
+  padding: 6rpx 20rpx;
+  margin-right: 12rpx;
+
+  &.active {
+    background: #FF7239;
+    color: #ffffff;
+  }
+}
+
+.cat-detail {
+  background: $primary-soft;
+  border-radius: 16rpx;
+  padding: 18rpx 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.cat-detail-name {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: $text-1;
+  margin-bottom: 8rpx;
+}
+
 .section {
   margin-top: 36rpx;
 }
@@ -776,30 +943,7 @@ $bg: #f7f8fa;
 }
 
 /* ====================== 5. 政策类型速查卡片 ====================== */
-.cat-card {
-  padding: 26rpx 24rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-  border: 2rpx solid transparent;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 16rpx;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
 
-  &.active {
-    background: $primary-soft;
-    border-color: $primary-light;
-
-    .cat-name {
-      color: $primary;
-    }
-  }
-
-  &:active {
-    background: #fafbfc;
-  }
-}
 
 .cat-name {
   display: block;
@@ -939,18 +1083,23 @@ $bg: #f7f8fa;
   line-height: 1.7;
 }
 
-.res-tags {
+
+
+.res-tags-mini {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  margin-top: 4rpx;
 }
 
-.res-tag {
+.res-tag-mini {
+  flex-shrink: 0;
   font-size: 21rpx;
   color: $text-2;
   background: $line;
-  border-radius: 22rpx;
-  padding: 5rpx 18rpx;
-  margin: 0 12rpx 10rpx 0;
+  border-radius: 20rpx;
+  padding: 4rpx 16rpx;
+  margin: 0 12rpx 0 0;
 
   &.active {
     background: #FF7239;
