@@ -1593,7 +1593,7 @@ onShareTimeline(() => ({
 .sample-btn {
   font-size: 24rpx;
   color: #ff4500;
-  border: 2rpx solid #FFB89E;
+  border: 2rpx solid #FF7239;
   border-radius: 24rpx;
   padding: 4rpx 20rpx;
 }
@@ -1703,7 +1703,7 @@ onShareTimeline(() => ({
 }
 
 .primary-btn {
-  background: #FF9C7A;
+  background: #FF7239;
   color: #fff;
 
   &[disabled] {
@@ -1715,7 +1715,7 @@ onShareTimeline(() => ({
 .ghost-btn {
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #FFB89E;
+  border: 2rpx solid #FF7239;
 }
 
 // ========== 状态卡 ==========
@@ -1869,7 +1869,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #FFB08F 0%, #FF9C7A 100%);
+  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
   border-radius: 40rpx;
   border: none;
 }
@@ -2452,7 +2452,7 @@ onShareTimeline(() => ({
   padding: 20rpx 14rpx;
   /* 空心样式：白底 + 橙色描边，文字与图标同色 */
   background: #ffffff;
-  border: 2rpx solid #FFB89E;
+  border: 2rpx solid #FF7239;
   border-right: none;
   border-radius: 20rpx 0 0 20rpx;
   box-shadow: -2rpx 2rpx 12rpx rgba(255, 184, 158, 0.32);
@@ -2469,13 +2469,13 @@ onShareTimeline(() => ({
 
 .side-trigger-icon {
   font-size: 30rpx;
-  color: #FFB89E;
+  color: #FF7239;
   line-height: 1.1;
 }
 
 .side-trigger-label {
   font-size: 22rpx;
-  color: #FFB89E;
+  color: #FF7239;
   margin-top: 6rpx;
 }
 
@@ -2517,7 +2517,7 @@ onShareTimeline(() => ({
   align-items: flex-start;
   justify-content: space-between;
   padding: 36rpx 28rpx 24rpx;
-  background: linear-gradient(135deg, #FFB08F 0%, #FF9C7A 100%);
+  background: #FF7239;
   border-radius: 0 28rpx 0 0;
 }
 
