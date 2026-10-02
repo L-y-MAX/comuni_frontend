@@ -21,20 +21,13 @@
 import { onLoad } from '@dcloudio/uni-app'
 import { reactive, ref, onMounted } from 'vue'
 import { marked } from 'marked'
-import hljs from 'highlight.js'
-import { markedHighlight } from 'marked-highlight'
 
-// ========== 1. Marked 配置初始化（代码高亮） ==========
-marked.use(
-  markedHighlight({
-    langPrefix: 'hljs language-',
-    highlight(code, lang) {
-      // 无指定语言时使用纯文本高亮
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-      return hljs.highlight(code, { language }).value
-    },
-  }),
-)
+// ========== 1. Marked 配置 ==========
+// 说明：本页渲染的是「使用说明书」的 Markdown，正文全是散文、列表与表格，
+// **没有任何代码块**，因此不再引入 highlight.js / marked-highlight 做语法高亮。
+// 这两个库会被打进主包 vendor（highlight.js 全语言包源码 5MB+），
+// 对一个用不到的能力来说纯粹是体积负担。
+// 若以后正文里真的要放代码块，仍能正常渲染成等宽预格式文本（见 .md-pre 样式）。
 
 // ========== 2. 类型定义 ==========
 interface TocItem {

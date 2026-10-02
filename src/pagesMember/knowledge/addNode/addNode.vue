@@ -115,7 +115,39 @@
 import { onLoad, onReady, onBackPress } from '@dcloudio/uni-app'
 import { computed, reactive, ref, getCurrentInstance, nextTick } from 'vue'
 import { marked } from 'marked'
-import hljs from 'highlight.js'
+import hljs from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import json from 'highlight.js/lib/languages/json'
+import bash from 'highlight.js/lib/languages/bash'
+import python from 'highlight.js/lib/languages/python'
+import java from 'highlight.js/lib/languages/java'
+import xml from 'highlight.js/lib/languages/xml'
+import css from 'highlight.js/lib/languages/css'
+import sql from 'highlight.js/lib/languages/sql'
+import markdown from 'highlight.js/lib/languages/markdown'
+
+/**
+ * 只注册常用语言。
+ *
+ * 默认入口 `highlight.js` 会带上全部 190+ 种语言定义（源码 5MB+），
+ * 且会被打进**主包**的 common/vendor.js，显著拖慢小程序启动与首页渲染。
+ * 笔记里真正会写的代码就这十种，按需注册即可，高亮能力不受影响。
+ */
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('js', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('ts', typescript)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('shell', bash)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('markdown', markdown)
 import { markedHighlight } from 'marked-highlight'
 import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
 

@@ -1,8 +1,34 @@
 import { baseURL } from '@/utils/request';
 import { CAREER_RESOURCES, filterResources } from '@/utils/careerResources';
 import type { CareerResource } from '@/types/careerResource';
-import { debounce } from 'lodash'
 import { ref } from 'vue'
+
+/**
+ * 极简 debounce。
+ *
+ * 原本从 lodash 引入，但整包 lodash 会被打进主包 vendor（源码 1.3MB），
+ * 而这里只需要「延迟执行 + 可取消」两件事，自己实现即可。
+ */
+const debounce = <A extends unknown[]>(fn: (...args: A) => unknown, wait: number) => {
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  const wrapped = (...args: A) => {
+    if (timer !== null) clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = null
+      void fn(...args)
+    }, wait)
+  }
+
+  const cancel = () => {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+
+  return Object.assign(wrapped, { cancel })
+}
 
 // 1. 补充知识库类型定义（匹配后端返回字段）
 interface KnowledgeBase {
