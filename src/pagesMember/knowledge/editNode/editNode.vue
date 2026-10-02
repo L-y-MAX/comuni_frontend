@@ -161,8 +161,15 @@ interface FormData {
 
 // ========== 抽离 highlight 函数（兼容小程序编译） ==========
 const highlightCode = (code: string, lang: string) => {
-  const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-  return hljs.highlight(code, { language }).value
+  // 注意：'plaintext' 在 highlight.js core 里并没有注册，
+  // 直接 hljs.highlight(code, { language: 'plaintext' }) 会抛
+  // Unknown language —— 而 marked-highlight 的 highlight 回调一旦抛错，
+  // 整个 marked.parse 都会失败：文章正文空白、实时预览挂掉。
+  // 所以未注册语言时退回自动识别（highlightAuto 自带兜底，识别不出就原样返回）。
+  if (lang && hljs.getLanguage(lang)) {
+    return hljs.highlight(code, { language: lang }).value
+  }
+  return hljs.highlightAuto(code).value
 }
 
 // 初始化 marked
@@ -236,14 +243,8 @@ const formRules = ref({
  */
 const handleContentFocus = () => {
   contentInputFocused.value = true
-  stopPageScroll()
-}
-
-/**
- * 阻止页面滚动
- */
-const stopPageScroll = () => {
-  uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+  // 原来这里会调 stopPageScroll() 把页面强制拉回顶部。
+  // 页面本身已不再锁滚动，再拉回顶部只会让用户正在编辑的区域跑出屏幕。
 }
 
 /**
@@ -272,6 +273,95 @@ const extractToc = (content: string): TocItem[] => {
 /**
  * 渲染Markdown为HTML字符串
  */
+/**
+ * Markdown 排版内联样式表
+ *
+ * 为什么必须写内联：本页用 v-html 渲染（小程序端等价于 <rich-text>），
+ * 而 <rich-text> **不认页面 WXSS 的 class 选择器** —— 原来这里加的是
+ * class="md-h1" / class="md-p" 之类，下方那几十行 .md-* 样式从来没生效过。
+ * 唯一可靠的做法是把样式写进节点的 style 属性。
+ */
+const MD_STYLE: Record<string, string> = {
+  h1: 'font-size:44rpx;font-weight:700;color:#1f2937;line-height:1.4;margin:32rpx 0 16rpx;padding-bottom:12rpx;border-bottom:2rpx solid #eceff3;',
+  h2: 'font-size:38rpx;font-weight:700;color:#1f2937;line-height:1.4;margin:28rpx 0 14rpx;padding-bottom:10rpx;border-bottom:2rpx solid #eceff3;',
+  h3: 'font-size:34rpx;font-weight:600;color:#1f2937;line-height:1.45;margin:24rpx 0 12rpx;',
+  h4: 'font-size:32rpx;font-weight:600;color:#374151;line-height:1.45;margin:20rpx 0 10rpx;',
+  h5: 'font-size:30rpx;font-weight:600;color:#374151;line-height:1.45;margin:18rpx 0 10rpx;',
+  h6: 'font-size:28rpx;font-weight:600;color:#6b7280;line-height:1.45;margin:16rpx 0 8rpx;',
+  p: 'font-size:30rpx;line-height:1.8;color:#374151;margin:16rpx 0;',
+  ul: 'padding-left:40rpx;margin:16rpx 0;font-size:30rpx;line-height:1.8;color:#374151;',
+  ol: 'padding-left:40rpx;margin:16rpx 0;font-size:30rpx;line-height:1.8;color:#374151;',
+  li: 'font-size:30rpx;line-height:1.8;color:#374151;margin:6rpx 0;',
+  blockquote:
+    'margin:16rpx 0;padding:12rpx 20rpx;border-left:6rpx solid #ff4500;background:#fff7f4;color:#6b7280;font-size:28rpx;line-height:1.7;',
+  hr: 'height:2rpx;background:#eceff3;border:none;margin:28rpx 0;',
+  a: 'color:#ff4500;text-decoration:underline;',
+  strong: 'font-weight:700;color:#111827;',
+  em: 'font-style:italic;color:#4b5563;',
+  table: 'width:100%;border-collapse:collapse;margin:16rpx 0;font-size:28rpx;',
+  th: 'border:2rpx solid #e5e7eb;padding:10rpx 14rpx;background:#f9fafb;font-weight:600;text-align:left;',
+  td: 'border:2rpx solid #e5e7eb;padding:10rpx 14rpx;',
+  img: 'max-width:100%;height:auto;border-radius:8rpx;',
+  pre: 'padding:20rpx;background:#f6f8fa;border:2rpx solid #e5e7eb;border-radius:8rpx;margin:16rpx 0;white-space:pre-wrap;word-break:break-all;',
+  preCode:
+    'font-family:Consolas,Monaco,monospace;font-size:26rpx;background:transparent;color:#24292e;padding:0;',
+  code: 'font-family:Consolas,Monaco,monospace;font-size:26rpx;background:#f2f4f7;color:#c7254e;padding:2rpx 8rpx;border-radius:4rpx;',
+}
+
+/**
+ * highlight.js 语法着色表（GitHub Light 配色）
+ *
+ * 同样必须内联：hljs 只会输出 class="hljs-keyword" 这类类名，
+ * 而 rich-text 里类名无效，项目里也没有引入任何 hljs 主题样式，
+ * 所以这里把类名直接翻译成内联颜色。
+ */
+const HLJS_COLOR: Record<string, string> = {
+  keyword: 'color:#d73a49;font-weight:600;',
+  'selector-tag': 'color:#22863a;font-weight:600;',
+  'selector-id': 'color:#6f42c1;font-weight:600;',
+  'selector-class': 'color:#6f42c1;',
+  built_in: 'color:#005cc5;',
+  type: 'color:#005cc5;',
+  literal: 'color:#005cc5;',
+  number: 'color:#005cc5;',
+  string: 'color:#032f62;',
+  regexp: 'color:#032f62;',
+  comment: 'color:#6a737d;font-style:italic;',
+  quote: 'color:#6a737d;font-style:italic;',
+  doctag: 'color:#6a737d;',
+  meta: 'color:#6a737d;',
+  title: 'color:#6f42c1;font-weight:600;',
+  section: 'color:#005cc5;font-weight:600;',
+  name: 'color:#22863a;',
+  tag: 'color:#22863a;',
+  attr: 'color:#005cc5;',
+  attribute: 'color:#005cc5;',
+  variable: 'color:#e36209;',
+  'template-variable': 'color:#e36209;',
+  symbol: 'color:#e36209;',
+  bullet: 'color:#735c0f;',
+  emphasis: 'font-style:italic;',
+  strong: 'font-weight:700;',
+  addition: 'color:#22863a;',
+  deletion: 'color:#b31d28;',
+  link: 'color:#032f62;text-decoration:underline;',
+}
+
+/** 把 highlight.js 输出的类名翻译成内联 style */
+const inlineHljsTokens = (html: string): string =>
+  html.replace(/<span class="([^"]+)">/g, (whole, classes: string) => {
+    const names = String(classes).split(/\s+/)
+    for (const n of names) {
+      if (!n.startsWith('hljs-')) continue
+      const style = HLJS_COLOR[n.slice(5)]
+      if (style) return `<span style="${style}">`
+    }
+    return whole
+  })
+
+/**
+ * 渲染Markdown为HTML字符串（全部使用内联样式，适配 rich-text）
+ */
 const renderMarkdown = async (content: string): Promise<string> => {
   if (!content) return ''
 
@@ -279,52 +369,40 @@ const renderMarkdown = async (content: string): Promise<string> => {
   const titleMap = new Map(tocItems.map((item) => [item.title, item.id]))
 
   let html = await marked.parse(content)
-  html = `<div class="markdown-body">${html}</div>`
 
-  // 替换标题样式+添加锚点ID
-  html = html
-    .replace(/<h1>(.*?)<\/h1>/g, (_, title) => {
-      const cleanTitle = title.trim()
-      const id = titleMap.get(cleanTitle) || `h1-${Date.now()}`
-      return `<h1 id="${id}" class="md-h1">${title}</h1>`
+  // 代码块要按 <pre><code> 整体处理，否则行内 code 的底色会串进代码块
+  html = html.replace(
+    /<pre><code([^>]*)>/g,
+    (_m, attrs: string) =>
+      `<pre style="${MD_STYLE.pre}"><code style="${MD_STYLE.preCode}"${attrs}>`,
+  )
+  // 行内代码（此时 <code> 已带属性的不会命中）
+  html = html.split('<code>').join(`<code style="${MD_STYLE.code}">`)
+
+  // 标题：加锚点 id（供目录跳转）+ 内联样式
+  const headingTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+  for (const tag of headingTags) {
+    const re = new RegExp('<' + tag + '>([\\s\\S]*?)</' + tag + '>', 'g')
+    html = html.replace(re, (_m, title: string) => {
+      const cleanTitle = String(title).trim()
+      const id = titleMap.get(cleanTitle) || `${tag}-${Date.now()}`
+      return `<${tag} id="${id}" style="${MD_STYLE[tag]}">${title}</${tag}>`
     })
-    .replace(/<h2>(.*?)<\/h2>/g, (_, title) => {
-      const cleanTitle = title.trim()
-      const id = titleMap.get(cleanTitle) || `h2-${Date.now()}`
-      return `<h2 id="${id}" class="md-h2">${title}</h2>`
-    })
-    .replace(/<h3>(.*?)<\/h3>/g, (_, title) => {
-      const cleanTitle = title.trim()
-      const id = titleMap.get(cleanTitle) || `h3-${Date.now()}`
-      return `<h3 id="${id}" class="md-h3">${title}</h3>`
-    })
-    .replace(/<h4>(.*?)<\/h4>/g, (_, title) => {
-      const cleanTitle = title.trim()
-      const id = titleMap.get(cleanTitle) || `h4-${Date.now()}`
-      return `<h4 id="${id}" class="md-h4">${title}</h4>`
-    })
-    .replace(/<h5>(.*?)<\/h5>/g, (_, title) => {
-      const cleanTitle = title.trim()
-      const id = titleMap.get(cleanTitle) || `h5-${Date.now()}`
-      return `<h5 id="${id}" class="md-h5">${title}</h5>`
-    })
-    .replace(/<h6>(.*?)<\/h6>/g, (_, title) => {
-      const cleanTitle = title.trim()
-      const id = titleMap.get(cleanTitle) || `h6-${Date.now()}`
-      return `<h6 id="${id}" class="md-h6">${title}</h6>`
-    })
-    .replace(/<p>/g, '<p class="md-p">')
-    .replace(/<ul>/g, '<ul class="md-ul">')
-    .replace(/<ol>/g, '<ol class="md-ol">')
-    .replace(/<em>/g, '<em class="md-em">')
-    .replace(
-      /<pre>/g,
-      '<pre class="md-pre" style="padding: 20rpx; background: #f7fafc; border-radius: 8rpx; overflow-x: auto;">',
+  }
+
+  // 其余块级/行内元素：统一补内联样式（允许带属性，如 <a href>、<th align>）
+  const styledTags = [
+    'p', 'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'strong', 'em', 'table', 'th', 'td', 'img',
+  ]
+  for (const tag of styledTags) {
+    const re = new RegExp('<' + tag + '(\\s[^>]*)?>', 'g')
+    html = html.replace(re, (whole, attrs?: string) =>
+      `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
     )
-    .replace(
-      /<code>/g,
-      '<code class="md-code" style="font-family: Consolas, Monaco, monospace; font-size: 28rpx;">',
-    )
+  }
+
+  // 最后把 highlight.js 的类名翻译成内联颜色
+  html = inlineHljsTokens(html)
 
   return html
 }
@@ -537,13 +615,13 @@ onReady(async () => {
 page {
   padding: 0;
   margin: 0;
-  height: 100%;
   box-sizing: border-box;
-  overflow: hidden; // 彻底禁用页面级滚动
+  // 注意：这里不能写 height:100% + overflow:hidden。
+  // 那会让内容超过一屏时既被裁掉、又完全滚不动（小屏手机上编辑区直接看不到）。
 }
 
 .node-detail-page {
-  height: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f5f5f5;
@@ -551,10 +629,9 @@ page {
   padding-bottom: env(safe-area-inset-bottom);
   box-sizing: border-box;
   position: relative;
-  overflow: hidden; // 禁用容器滚动
 }
 
-// 主内容容器：移除滚动属性，仅做布局承载
+// 主内容容器：仅做布局承载，不锁死高度
 .content-container {
   flex: 1;
   padding: 15px;
@@ -563,7 +640,6 @@ page {
   box-sizing: border-box;
   position: relative;
   z-index: 1;
-  overflow: hidden; // 确保无滚动轴
 }
 
 // 表单容器
@@ -576,8 +652,7 @@ page {
   box-sizing: border-box;
   position: relative;
   z-index: 2;
-  height: 100%; // 占满父容器，避免溢出
-  overflow: hidden; // 禁用表单容器滚动
+  // height 交给内容：内容多高就多高，超出屏幕的部分由页面滚动来展示
 }
 
 .form-item {
