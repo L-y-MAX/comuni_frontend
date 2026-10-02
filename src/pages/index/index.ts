@@ -1,7 +1,7 @@
 import { baseURL } from '@/utils/request';
 import { CAREER_RESOURCES, filterResources } from '@/utils/careerResources';
 import type { CareerResource } from '@/types/careerResource';
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 /**
  * 极简 debounce。
