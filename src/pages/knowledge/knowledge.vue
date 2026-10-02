@@ -1020,29 +1020,37 @@ onPullDownRefresh(async () => {
 </script>
 
 <style scoped lang="scss">
-// Apple-inspired Knowledge Management Design (Light Blue Theme)
+// 设计令牌：与全站橙色主色体系保持一致
+// （这一页原来是独立的「浅蓝主题」：极浅蓝底 + 蓝色调阴影，和全站的橙色主色互相打架，
+//   是页面看起来不协调的主因。旧变量名保留，避免大范围改选择器。）
+$brand: #FF7239; // 主色
+$brand-soft: #fff7f2; // 主色浅底
+$brand-line: #ffd0bb; // 主色描边
+$page-bg: #f7f8fa; // 页面底色：白卡浮在浅灰上才有层次
+$line: #f1f5f9; // 分隔线
+
 $primary-color: #ffffff; // 按钮主题色改为白色
 $secondary-color: #ff4500; // 线条主题色改为橙红色
-$accent-color: #93c5fd; // 更浅的蓝色
+$accent-color: $brand; // 原来是浅蓝 #93c5fd，统一到主色
 $success-color: #31e8ab; // 绿色保持
 $danger-color: #ef4444; // 红色保持
 $text-primary: #1f2937; // 深黑
 $text-secondary: #6b7280; // 中灰
 $text-tertiary: #9ca3af; // 浅灰
 $white: #ffffff; // 白
-$gray-light: #f0f9ff; // 极浅蓝色
-$gray-lighter: #e0f2fe; // 浅蓝色
-$shadow-light: 0 2rpx 12rpx rgba(59, 130, 246, 0.06);
-$shadow-medium: 0 4rpx 24rpx rgba(59, 130, 246, 0.08);
-$shadow-strong: 0 8rpx 32rpx rgba(59, 130, 246, 0.12);
+$gray-light: #f7f8fa; // 原为极浅蓝，改中性浅灰
+$gray-lighter: #eef0f3; // 原为浅蓝，改中性浅灰
+$shadow-light: 0 2rpx 10rpx rgba(31, 41, 55, 0.04); // 原为蓝色调阴影
+$shadow-medium: 0 4rpx 20rpx rgba(31, 41, 55, 0.06);
+$shadow-strong: 0 8rpx 28rpx rgba(31, 41, 55, 0.08);
 $border-radius-large: 20rpx;
 $border-radius-medium: 16rpx;
 $border-radius-small: 12rpx;
 
 .knowledge-page {
   min-height: 100vh;
-  background: $white;
-  padding: 16rpx;
+  background: $page-bg;
+  padding: 24rpx;
 }
 
 .loading-container {
@@ -1062,7 +1070,7 @@ $border-radius-small: 12rpx;
 .kb-tab-header {
   display: flex;
   gap: 12rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
 }
 
 .tab-btn {
@@ -1073,7 +1081,7 @@ $border-radius-small: 12rpx;
   font-size: 28rpx;
   font-weight: 600;
   color: $text-secondary;
-  background: $gray-light;
+  background: $gray-lighter;
   border-radius: $border-radius-medium;
   border: none !important;
   outline: none !important;
@@ -1102,18 +1110,20 @@ $border-radius-small: 12rpx;
 
 .kb-section {
   background: $white;
+  border: 1rpx solid $line;
   border-radius: $border-radius-large;
-  padding: 20rpx;
-  margin-bottom: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
   box-shadow: $shadow-medium;
 }
 
 // ========== 原有样式 ==========
 .node-list {
   background: $white;
+  border: 1rpx solid $line;
   border-radius: $border-radius-large;
-  padding: 20rpx;
-  margin-bottom: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
   box-shadow: $shadow-medium;
 }
 
@@ -1291,15 +1301,19 @@ $border-radius-small: 12rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx;
+  padding: 20rpx;
   border-radius: $border-radius-medium;
-  margin-bottom: 12rpx;
-  background: linear-gradient(135deg, $white 0%, $gray-light 100%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 14rpx;
+  background: $white;
+  border: 1rpx solid $line;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
   position: relative;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 
+  // 左侧主色指示条（原来是从白色渐变到橙红，等于一条白杠）
   &::before {
     content: '';
     position: absolute;
@@ -1307,22 +1321,20 @@ $border-radius-small: 12rpx;
     top: 0;
     bottom: 0;
     width: 0;
-    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
-    transition: width 0.3s ease;
+    background: $brand;
+    transition: width 0.2s ease;
   }
 
+  // 按下反馈改为浅橙底：原来同时改位移和阴影，点起来会抖
   &:active {
-    transform: translateX(4rpx);
-    box-shadow: $shadow-strong;
+    background: $brand-soft;
+    border-color: $brand-line;
   }
 
   &.active {
-    background: linear-gradient(
-      135deg,
-      rgba(243, 108, 12, 0.05) 0%,
-      rgba(102, 102, 102, 0.05) 100%
-    );
-    box-shadow: 0 4rpx 20rpx rgba(51, 51, 51, 0.2);
+    background: $brand-soft;
+    border-color: $brand-line;
+    box-shadow: none;
 
     &::before {
       width: 6rpx;
@@ -1477,14 +1489,14 @@ $border-radius-small: 12rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx;
-  transition: all 0.3s ease;
+  padding: 20rpx;
+  border-radius: $border-radius-small;
+  transition: background-color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
   position: relative;
 
   &:active {
-    transform: translateX(4rpx) scale(0.98);
-    box-shadow: $shadow-strong;
+    background: $brand-soft;
   }
 }
 
@@ -1584,11 +1596,11 @@ $border-radius-small: 12rpx;
 
 /* 使用引导卡片 */
 .guide-card {
-  background: linear-gradient(135deg, rgba(255, 69, 0, 0.05) 0%, rgba(255, 103, 51, 0.03) 100%);
-  border: 2rpx solid rgba(255, 69, 0, 0.18);
+  background: $brand-soft;
+  border: 1rpx solid $brand-line;
   border-radius: $border-radius-large;
-  padding: 20rpx;
-  margin-bottom: 16rpx;
+  padding: 22rpx;
+  margin-bottom: 20rpx;
 }
 
 .guide-head {
