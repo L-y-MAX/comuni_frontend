@@ -154,7 +154,15 @@
                     </text>
                     <text class="kb-name">{{ item.name }}</text>
                   </view>
-                  <text class="kb-desc">{{ item.description || '' }}</text>
+                  <text class="kb-desc">
+                    <text
+                      v-if="item.creator_username"
+                      class="kb-author"
+                    >
+                      @{{ item.creator_username }}
+                    </text>
+                    <text v-if="item.creator_username && item.description"> · </text>{{ item.description || '' }}
+                  </text>
                 </view>
                 <!-- 新增：取消关注按钮 -->
                 <view
@@ -228,7 +236,15 @@
                     </text>
                     <text class="kb-name">{{ item.name }}</text>
                   </view>
-                  <text class="kb-desc">{{ item.description || '' }}</text>
+                  <text class="kb-desc">
+                    <text
+                      v-if="item.creator_username"
+                      class="kb-author"
+                    >
+                      @{{ item.creator_username }}
+                    </text>
+                    <text v-if="item.creator_username && item.description"> · </text>{{ item.description || '' }}
+                  </text>
                 </view>
                 <!-- 新增：关注/取消关注按钮 -->
                 <view
@@ -1416,6 +1432,12 @@ $border-radius-small: 12rpx;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+// 作者：用主色，视觉上提示"这是谁的知识库"
+.kb-author {
+  color: $brand;
+  font-weight: 500;
 }
 
 .kb-desc {
