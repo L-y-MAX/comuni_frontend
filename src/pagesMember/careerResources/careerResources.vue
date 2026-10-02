@@ -256,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import {
   CAREER_RESOURCES,
@@ -462,46 +462,17 @@ const themeTags = computed<ResourceTag[]>(() => {
 });
 
 
-/**
- * 把视图滚到列表顶部（吸顶条件区）。
- *
- * 两个坑：
- *   1) 吸顶元素会被 top 拉到导航栏下方，从而**盖住紧随其后的第一张卡片**。
- *      所以不能直接滚到它本身，要少滚一个吸顶区高度，
- *      否则第一张卡片正好被压住，看起来就像「跳到了第二条」。
- *   2) 位置要在筛选后的 DOM 更新完再量，否则按旧布局滚动同样会偏。
- */
-const scrollToList = () => {
-  nextTick(() => {
-    uni.createSelectorQuery()
-      .select('.list-sticky')
-      .boundingClientRect((rect) => {
-        const stickyH = (rect as { height?: number } | null)?.height ?? 0;
-        uni.pageScrollTo({
-          selector: '.list-sticky',
-          // 少滚一个吸顶区高度：让第一张卡片完整露在吸顶区下面
-          offsetTop: -stickyH,
-          duration: 250,
-          fail: () => {},
-        });
-      })
-      .exec();
-  });
-};
-
 // ====================== 交互 ======================
 
 /** 切换分类：同时清掉标签筛选（标签跨分类共用，带着筛选跳过去会得到空列表） */
 const switchTheme = (key: ResourceTheme) => {
   activeTheme.value = key;
   activeTag.value = '';
-  scrollToList();
 };
 
 /** 点标签：再点一次取消 */
 const toggleTag = (tag: ResourceTag) => {
   activeTag.value = activeTag.value === tag ? '' : tag;
-  scrollToList();
 };
 
 /** 清空搜索关键词（搜索框右侧叉号） */
@@ -513,7 +484,6 @@ const clearKeyword = () => {
 const resetFilter = () => {
   activeTag.value = '';
   keyword.value = '';
-  scrollToList();
 };
 
 

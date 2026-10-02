@@ -368,7 +368,7 @@ export const openKnowledgeModal = (doc: SearchResultNode) => {
 }
 
 // 7. 核心搜索逻辑（完整适配新数据结构 + 修复赋值问题）
-export const handleSearch = debounce(async () => {
+const runSearch = async () => {
   const keyword = searchKeyword.value.trim()
   // 记住本次搜索的会话号：期间用户点「退出搜索」就丢弃本次结果
   const session = searchSession
@@ -467,7 +467,21 @@ export const handleSearch = debounce(async () => {
   } finally {
     if (session === searchSession) isLoading.value = false
   }
-}, 500)
+}
+
+/** 回车触发：保留 500ms debounce，避免连续输入时的重复请求 */
+export const handleSearch = debounce(runSearch, 500)
+
+/**
+ * 点击搜索图标触发：明确的手动操作，立刻响应，并确保结果区可见。
+ *
+ * 之前这里也走 debounce，加上 handleInputBlur 可能把 isSearching 置回 false，
+ * 结果区就不会渲染，表现成"点了搜索没反应"。
+ */
+export const searchNow = () => {
+  isSearching.value = true
+  return runSearch()
+}
 
 /**
  * 退出搜索，回到首页初始状态。

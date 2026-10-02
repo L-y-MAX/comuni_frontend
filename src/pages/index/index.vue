@@ -28,7 +28,7 @@
       />
       <view
         class="search-trigger"
-        @tap="handleSearch"
+        @tap="searchNow"
         :class="{ loading: isLoading }"
       >
         <!-- 优先用 src/static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
@@ -485,6 +485,7 @@ import {
   isSearching,
   searchKeyword,
   handleSearch,
+  searchNow,
   exitSearch,
   localResources,
   needLoginForSiteSearch,
