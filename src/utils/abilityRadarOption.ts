@@ -34,6 +34,8 @@
  *   3. 不涉及任何浏览器专属 API（无 document / window / Image）。
  *   4. 星球**不使用任何图片资源**：用圆形 symbol + 径向渐变模拟，
  *      所以也不存在「小程序 canvas 画不了 SVG」这类兼容性风险。
+ *   5. 圆形再加一圈同色系细描边（borderWidth: 1），让轮廓更清晰；
+ *      描边是实线，不是发光，shadowBlur 依旧全为 0。
  */
 
 import type { AbilityDimensionKey } from '@/types/jobProfile';
@@ -64,6 +66,18 @@ export const PLANET_GRADIENTS = {
  */
 export const SYMBOL_SIZE_MIN = 18;
 export const SYMBOL_SIZE_MAX = 45;
+
+/**
+ * 三档描边色：比同档中心色深一档，用来给圆形勾一个清晰的边
+ *
+ * 只用同色系深色，不用白色、不用半透明发光 —— 目的是「轮廓清楚」，
+ * 不是「亮起来」。
+ */
+export const PLANET_BORDERS = {
+  high: '#E8703F',
+  mid: '#DFA030',
+  low: '#B9BFC9',
+} as const;
 
 /** 线条与主色（对齐小程序全局色） */
 const LINE_COLOR = '#EEEEEE';
@@ -129,6 +143,24 @@ export const scoreToPlanetFill = (score: number) => {
       { offset: 0, color: center },
       { offset: 1, color: edge },
     ],
+  };
+};
+
+/**
+ * 分值 → 一颗星球的完整 itemStyle（径向渐变填充 + 同色系细描边 + 无发光）
+ *
+ * 页面侧直接把这个对象挂到数据项上即可，不用自己拼 itemStyle。
+ */
+export const scoreToPlanetStyle = (score: number) => {
+  const tier = scoreToTier(score);
+  return {
+    color: scoreToPlanetFill(score),
+    // 同色系深一档的实线描边，让圆形轮廓更清楚
+    borderColor: PLANET_BORDERS[tier],
+    borderWidth: 1,
+    // 再次显式关闭一切阴影，确保没有任何向外扩散的发光
+    shadowBlur: 0,
+    shadowColor: 'transparent',
   };
 };
 
@@ -328,10 +360,8 @@ export const buildAbilityRadarOption = (
           name: d.label,
           // 第二项是角度值：序号 × 36°，配合 startAngle:90 + clockwise:false 与 radar 对齐
           value: [d.score, i * 36],
-          // 每颗球按自己的分数取径向渐变（中心主色 → 边缘浅色）
-          itemStyle: {
-            color: scoreToPlanetFill(d.score),
-          },
+          // 每颗球按自己的分数取样式：径向渐变 + 同色系细描边
+          itemStyle: scoreToPlanetStyle(d.score),
         })),
       },
     ],
