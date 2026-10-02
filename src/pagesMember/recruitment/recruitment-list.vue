@@ -130,8 +130,15 @@
 
     <!-- 列表区域 -->
     <view class="list-container">
+      <!-- 已有数据时只在顶部显示一行轻量提示，不再整块替换列表（消除翻页闪烁） -->
       <view
-        v-if="loading"
+        v-if="loading && list.length > 0"
+        class="refreshing"
+      >
+        正在刷新…
+      </view>
+      <view
+        v-if="loading && list.length === 0"
         class="loading"
       >
         加载中...
@@ -321,14 +328,76 @@ const handleJumpBlur = () => {
   // 失焦时如果没有输入新值，保持输入框为空（placeholder会显示当前页）
 }
 
+// ====================== 登录守卫 ======================
+
+/**
+ * 整页只跳一次登录页。
+ * 原实现里 fetchFilterOptions 与 fetchList 各自跳一次，
+ * 未登录进入时会连续弹出两次登录页。
+ */
+let loginRedirected = false
+const ensureLogin = (): boolean => {
+  const token = uni.getStorageSync('accessToken')
+  if (token) return true
+  if (!loginRedirected) {
+    loginRedirected = true
+    uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
+    uni.navigateTo({ url: '/pagesMember/login/login' })
+  }
+  return false
+}
+
+// ====================== 筛选选项缓存 ======================
+
+/**
+ * 筛选选项（企业性质、行业、招聘专业、月薪档位…）几乎不变，
+ * 原来每次进页面都要拉 9 个接口。这里加一层本地缓存，命中即用。
+ */
+const FILTER_CACHE_KEY = 'recruitmentFilterOptions'
+const FILTER_CACHE_TTL = 6 * 60 * 60 * 1000 // 6 小时
+
+const readFilterCache = (): Record<string, string[]> | null => {
+  try {
+    const raw = uni.getStorageSync(FILTER_CACHE_KEY)
+    if (!raw || !raw.data || !raw.at) return null
+    if (Date.now() - raw.at > FILTER_CACHE_TTL) return null
+    return raw.data as Record<string, string[]>
+  } catch {
+    return null
+  }
+}
+
+const writeFilterCache = (data: Record<string, string[]>) => {
+  try {
+    uni.setStorageSync(FILTER_CACHE_KEY, { at: Date.now(), data })
+  } catch {
+    // 缓存写失败不影响功能
+  }
+}
+
+/** 把筛选选项落到响应式状态上（缓存与接口两条路径共用） */
+const applyFilterOptions = (data: Record<string, string[]>) => {
+  Object.keys(data).forEach((field) => {
+    filterOptions.value[field] = data[field]
+    // 初始化折叠状态：默认 false (折叠)
+    dimensionCollapseStates.value[field] = false
+  })
+  initSortOptions()
+}
+
 // 通用获取筛选选项函数
 const fetchFilterOptions = async () => {
+  // 先吃缓存：命中就立刻可用，不再阻塞首屏
+  const cached = readFilterCache()
+  if (cached) {
+    applyFilterOptions(cached)
+    return
+  }
+
+  if (!ensureLogin()) return
+
   try {
     const token = uni.getStorageSync('accessToken')
-    if (!token) {
-      uni.navigateTo({ url: '/pagesMember/login/login' })
-      return
-    }
 
     // 构建API路径映射
     const apiMap: Record<string, string> = {
@@ -359,14 +428,13 @@ const fetchFilterOptions = async () => {
     })
 
     const results = await Promise.all(promises)
-    results.forEach(({ field, data }) => {
-      filterOptions.value[field] = data
-      // 初始化折叠状态：默认 false (折叠)
-      dimensionCollapseStates.value[field] = false
+    const data: Record<string, string[]> = {}
+    results.forEach(({ field, data: fieldData }) => {
+      data[field] = fieldData
     })
 
-    // 初始化排序选项
-    initSortOptions()
+    applyFilterOptions(data)
+    writeFilterCache(data)
   } catch (error) {
     console.error('获取筛选选项失败', error)
     uni.showToast({ title: '获取筛选条件失败', icon: 'none' })
@@ -411,15 +479,21 @@ const handleSearch = () => {
   fetchList(1)
 }
 
+/**
+ * 列表请求序号：用于丢弃过期响应。
+ * 快速连点筛选/翻页时，先发的请求可能后返回，会把新结果覆盖掉。
+ */
+let listRequestSeq = 0
+
 // 获取招聘列表数据
 const fetchList = async (page = currentPage.value) => {
+  if (!ensureLogin()) return
+
+  const seq = ++listRequestSeq
+  const wasEmpty = list.value.length === 0
   loading.value = true
   try {
     const token = uni.getStorageSync('accessToken')
-    if (!token) {
-      uni.navigateTo({ url: '/pagesMember/login/login' })
-      return
-    }
 
     // 构建查询参数
     const params: Record<string, any> = {
@@ -448,6 +522,9 @@ const fetchList = async (page = currentPage.value) => {
       data: params, // GET 请求参数自动转为查询字符串
     })
 
+    // 期间又发了新请求：丢弃这次结果，避免旧数据覆盖新数据
+    if (seq !== listRequestSeq) return
+
     const responseData = Array.isArray(res) ? res[1] : res
     if (responseData?.statusCode === 200) {
       const data = responseData.data
@@ -457,14 +534,20 @@ const fetchList = async (page = currentPage.value) => {
       currentPage.value = page
       // 跳转成功后清空输入框
       jumpPageInput.value = ''
+      // 翻页后回到顶部：原来整块替换列表但滚动位置不变，
+      // 用户会停在"新数据的中段"，看起来像没反应
+      if (!wasEmpty) {
+        uni.pageScrollTo({ scrollTop: 0, duration: 200 })
+      }
     } else {
       uni.showToast({ title: '获取列表失败', icon: 'none' })
     }
   } catch (error) {
+    if (seq !== listRequestSeq) return
     console.error('获取招聘列表失败', error)
     uni.showToast({ title: '获取列表失败', icon: 'none' })
   } finally {
-    loading.value = false
+    if (seq === listRequestSeq) loading.value = false
   }
 }
 
@@ -519,9 +602,13 @@ const goToDetail = (item: any) => {
 
 // 页面初始化
 onMounted(() => {
-  fetchFilterOptions().then(() => {
-    fetchList(1)
-  })
+  if (!ensureLogin()) return
+
+  // 筛选选项与列表**并行**请求。
+  // 原来写的是「先等筛选选项全部返回，再请求列表」——
+  // 列表必须等 9 个筛选接口全部返回才开始，首屏时间被硬生生串行相加。
+  fetchFilterOptions()
+  fetchList(1)
 })
 
 // 分享给好友（小程序端）
@@ -1179,5 +1266,16 @@ $effect2-gradient2: linear-gradient(
   padding: 0 20rpx;
   // 核心修改：文字斜体
   font-style: italic;
+}
+
+/* 翻页/筛选时的轻量刷新提示（不遮挡列表） */
+.refreshing {
+  text-align: center;
+  font-size: 24rpx;
+  color: #ff4500;
+  padding: 12rpx 0;
+  margin-bottom: 8rpx;
+  background: #fff5f0;
+  border-radius: 12rpx;
 }
 </style>
