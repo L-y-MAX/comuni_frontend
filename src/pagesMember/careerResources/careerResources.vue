@@ -154,41 +154,6 @@
         </view>
       </view>
 
-      <!-- 政策类型说明：默认收起。
-           这 8 个类型映射到的就是下面标签栏里的 6 个 tag（见习、基层各有两个），
-           也就是说点类型 = 按 tag 筛，和标签栏完全重复，所以不再作为筛选条件，
-           改成一份随时可查的信息面板，内容不丢。 -->
-      <view
-        v-if="activeTheme === 'policy'"
-        class="cat-info"
-      >
-        <view
-          class="cat-info-head"
-          @tap="catInfoOpen = !catInfoOpen"
-        >
-          <text class="cat-info-title">政策类型速查（{{ POLICY_CATEGORIES.length }} 类）</text>
-          <text
-            class="cat-info-arrow"
-            :class="{ open: catInfoOpen }"
-          >
-            ›
-          </text>
-        </view>
-
-        <view v-if="catInfoOpen">
-          <view
-            v-for="c in POLICY_CATEGORIES"
-            :key="c.name"
-            class="cat-info-item"
-          >
-            <text class="cat-info-name">{{ c.name }}</text>
-            <text class="cat-audience">面向：{{ c.audience }}</text>
-            <text class="cat-desc">{{ c.desc }}</text>
-          </view>
-          <text class="section-foot">以上为方向性归类，不含金额与时限数字。具体标准请以官方原文为准。</text>
-        </view>
-      </view>
-
       <!-- 当前筛选状态：标签已在上方筛选条高亮显示，这里只在有关键词时才出现，避免重复 -->
       <view
         v-if="hasKeywordFilter"
@@ -220,7 +185,7 @@
         </view>
 
         <text class="res-meta">
-          {{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
+          <text v-if="item.scope">{{ item.scope }} · </text>{{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
         </text>
 
         <text class="res-summary">{{ item.summary }}</text>
@@ -301,7 +266,6 @@ import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import {
   CAREER_RESOURCES,
-  POLICY_CATEGORIES,
   RESOURCE_LINKAGE_NOTE,
   filterResources,
   resourcesByTheme,
@@ -310,7 +274,6 @@ import {
   RESOURCE_KIND_LABEL,
   RESOURCE_THEMES,
   type CareerResource,
-  type PolicyCategory,
   type ResourceKind,
   type ResourceTag,
   type ResourceTheme,
@@ -504,9 +467,6 @@ const themeTags = computed<ResourceTag[]>(() => {
   return seen.filter((g) => tagHasResult(g) || activeTag.value === g);
 });
 
-
-/** 政策类型说明面板是否展开（默认收起，它不是筛选条件） */
-const catInfoOpen = ref(false);
 
 /**
  * 把视图滚到列表顶部（吸顶条件区）。
@@ -862,49 +822,17 @@ $bg: #f7f8fa;
   }
 }
 
-.cat-info {
-  background: #ffffff;
-  border-radius: 16rpx;
-  padding: 18rpx 24rpx;
-  margin-bottom: 18rpx;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-}
 
-.cat-info-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
-.cat-info-title {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: $text-1;
-}
 
-.cat-info-arrow {
-  font-size: 28rpx;
-  color: $text-3;
-  transition: transform 0.2s ease;
 
-  &.open {
-    transform: rotate(90deg);
-  }
-}
 
-.cat-info-item {
-  padding-top: 16rpx;
-  margin-top: 16rpx;
-  border-top: 1rpx solid $line;
-}
 
-.cat-info-name {
-  display: block;
-  font-size: 25rpx;
-  font-weight: 600;
-  color: $text-1;
-  margin-bottom: 6rpx;
-}
+
+
+
+
+
 
 
 
@@ -931,14 +859,7 @@ $bg: #f7f8fa;
   color: $text-3;
 }
 
-.section-foot {
-  display: block;
-  font-size: 22rpx;
-  color: $text-3;
-  line-height: 1.7;
-  margin-top: 16rpx;
-  padding: 0 4rpx;
-}
+
 
 /* ====================== 5. 政策类型速查卡片 ====================== */
 
@@ -951,19 +872,9 @@ $bg: #f7f8fa;
   margin-bottom: 10rpx;
 }
 
-.cat-audience {
-  display: block;
-  font-size: 23rpx;
-  color: $primary;
-  margin-bottom: 10rpx;
-}
 
-.cat-desc {
-  display: block;
-  font-size: 24rpx;
-  color: $text-2;
-  line-height: 1.7;
-}
+
+
 
 /* ====================== 筛选状态条 ====================== */
 .filter-bar {
