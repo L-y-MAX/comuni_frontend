@@ -710,27 +710,29 @@ page {
     }
 
     // 保存按钮样式：适配行内显示
-    .save-btn {
+            .save-btn {
       flex-shrink: 0; // 固定宽度不收缩
       width: 100px;
       height: 36px;
       line-height: 36px;
-      border-radius: 6px;
+      // 与全站按钮统一：主色渐变 + 胶囊圆角 + 600 字重
+      border-radius: 18px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       border: none;
-      background-color: #e03c00;
+      background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
       color: #fff;
       padding: 0;
       margin: 0;
 
       &:active {
-        background-color: #b33000;
+        opacity: 0.92;
       }
 
+      // 禁用态：浅灰底 + 灰字，比原来的 #ccc 更清楚
       &[disabled] {
-        background-color: #ccc;
-        color: #fff;
+        background: #f1f5f9;
+        color: #9ca3af;
         cursor: not-allowed;
       }
     }

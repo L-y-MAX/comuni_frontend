@@ -161,7 +161,11 @@
                   class="kb-more"
                   @click.stop="openKbActions(item, 'followed')"
                 >
-                  <text class="kb-more-dots">···</text>
+<image
+                    class="kb-more-icon"
+                    src="/static/icons/three.png"
+                    mode="aspectFit"
+                  />
                 </view>
               </view>
             </view>
@@ -231,7 +235,11 @@
                   class="kb-more"
                   @click.stop="openKbActions(item, 'shared')"
                 >
-                  <text class="kb-more-dots">···</text>
+<image
+                    class="kb-more-icon"
+                    src="/static/icons/three.png"
+                    mode="aspectFit"
+                  />
                 </view>
               </view>
             </view>
@@ -321,7 +329,11 @@
                   class="kb-more"
                   @click.stop="openKbActions(item, 'mine')"
                 >
-                  <text class="kb-more-dots">···</text>
+<image
+                    class="kb-more-icon"
+                    src="/static/icons/three.png"
+                    mode="aspectFit"
+                  />
                 </view>
               </view>
             </view>
@@ -410,7 +422,11 @@
             class="kb-more"
             @click.stop="openNodeActions(item)"
           >
-            <text class="kb-more-dots">···</text>
+<image
+                    class="kb-more-icon"
+                    src="/static/icons/three.png"
+                    mode="aspectFit"
+                  />
           </view>
         </view>
       </view>
@@ -1880,12 +1896,13 @@ $border-radius-small: 12rpx;
   }
 }
 
-.kb-more-dots {
-  font-size: 34rpx;
-  line-height: 1;
-  color: $text-tertiary;
-  letter-spacing: 2rpx;
+.kb-more-icon {
+  width: 34rpx;
+  height: 34rpx;
+  opacity: 0.65;
 }
+
+
 
 /* 文章二级头部 */
 .node-topbar {
