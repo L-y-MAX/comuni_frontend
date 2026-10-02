@@ -185,12 +185,12 @@
         <text class="section-foot">以上为方向性归类，不含金额与时限数字。具体标准请以官方原文为准。</text>
       </view>
 
-      <!-- 当前筛选状态 -->
+      <!-- 当前筛选状态：标签已在上方筛选条高亮显示，这里只在有关键词时才出现，避免重复 -->
       <view
-        v-if="filterText"
+        v-if="hasKeywordFilter"
         class="filter-bar"
       >
-        <text class="filter-text">筛选：{{ filterText }}</text>
+        <text class="filter-text">关键词「{{ keyword.trim() }}」</text>
         <text
           class="filter-reset"
           @tap="resetFilter"
@@ -265,7 +265,9 @@
         class="empty-card"
       >
         <text class="empty-title">没有匹配的资源</text>
-        <text class="empty-desc">换个关键词，或点上面的「清除」看全部 {{ themeTotal }} 条。</text>
+        <text class="empty-desc">
+          换个关键词，或点上方标签里的「全部」，查看全部 {{ themeTotal }} 条。
+        </text>
       </view>
     </view>
 
@@ -443,6 +445,9 @@ const filterText = computed(() => {
   if (keyword.value.trim()) parts.push(`关键词「${keyword.value.trim()}」`);
   return parts.join(' + ');
 });
+
+/** 是否有关键词筛选：标签已在上方 chip 上高亮，状态条只负责关键词 */
+const hasKeywordFilter = computed(() => !!keyword.value.trim());
 
 /**
  * 顶部一句话统计。
