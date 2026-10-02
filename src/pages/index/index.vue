@@ -579,11 +579,16 @@ const goCareerResources = (item?: { id?: string }) => {
   })
 }
 
-// 跳转到知识库详情（新增）
+// 跳转到知识库详情
 const navigateToKnowledgeBase = (kb: any) => {
   if (!kb.id) return
+  // 原来指向 /pagesMember/knowledge/baseDetail/baseDetail —— 这个页面并不存在
+  // （src 与 pages.json 里都没有），navigateTo 会直接失败，表现成"点了没反应"。
+  // showKb 才是"查看某个知识库"的页面，onLoad 里读的正是 knowledge_base_id。
   uni.navigateTo({
-    url: `/pagesMember/knowledge/baseDetail/baseDetail?id=${encodeURIComponent(kb.id as string)}`,
+    url: `/pagesMember/knowledge/showKb/showKb?knowledge_base_id=${encodeURIComponent(
+      String(kb.id)
+    )}`,
   })
 }
 
