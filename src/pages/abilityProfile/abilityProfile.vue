@@ -1593,7 +1593,7 @@ onShareTimeline(() => ({
 .sample-btn {
   font-size: 24rpx;
   color: #ff4500;
-  border: 2rpx solid #ff4500;
+  border: 2rpx solid #FFB89E;
   border-radius: 24rpx;
   padding: 4rpx 20rpx;
 }
@@ -1703,11 +1703,11 @@ onShareTimeline(() => ({
 }
 
 .primary-btn {
-  background: #ff4500;
+  background: #FF9C7A;
   color: #fff;
 
   &[disabled] {
-    background: #ffb499;
+    background: #FFC9B4;
     color: #fff;
   }
 }
@@ -1715,7 +1715,7 @@ onShareTimeline(() => ({
 .ghost-btn {
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #ff4500;
+  border: 2rpx solid #FFB89E;
 }
 
 // ========== 状态卡 ==========
@@ -1869,7 +1869,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff4500 0%, #ff6733 100%);
+  background: linear-gradient(135deg, #FFB08F 0%, #FF9C7A 100%);
   border-radius: 40rpx;
   border: none;
 }
@@ -2517,7 +2517,7 @@ onShareTimeline(() => ({
   align-items: flex-start;
   justify-content: space-between;
   padding: 36rpx 28rpx 24rpx;
-  background: linear-gradient(135deg, #FFD9CB 0%, #FFB89E 100%);
+  background: linear-gradient(135deg, #FFB08F 0%, #FF9C7A 100%);
   border-radius: 0 28rpx 0 0;
 }
 
