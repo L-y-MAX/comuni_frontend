@@ -32,6 +32,8 @@
  *   2. tooltip 在小程序里由 canvas 渲染（富文本模式），**不支持 HTML 标签**。
  *      所以 formatter 只用 `\n` 换行、纯文本，不用 <br> / <span>。
  *   3. 不涉及任何浏览器专属 API（无 document / window / Image）。
+ *   4. 星球**不使用任何图片资源**：用圆形 symbol + 径向渐变模拟，
+ *      所以也不存在「小程序 canvas 画不了 SVG」这类兼容性风险。
  */
 
 import type { AbilityDimensionKey } from '@/types/jobProfile';
@@ -39,18 +41,19 @@ import type { AbilityDimensionKey } from '@/types/jobProfile';
 // ====================== 可调常量 ======================
 
 /**
- * 三种土星图标
+ * 三档星球的径向渐变色：[中心色, 边缘色]
  *
- * 图片放在 src/static/globles/ 下，小程序里用绝对路径引用。
- * `image://` 前缀是 ECharts 的图片 symbol 协议，不要漏。
+ * 用 ECharts 的径向渐变对象直接填充圆形 symbol，不用任何图片资源：
+ * 中心是主色、边缘是同色系更浅的色，形成「由中心向边缘变淡」的柔和球感。
+ * 全程不设 shadowBlur —— 向外的发光是廉价 AI 感的主要来源。
  */
-export const PLANET_ICONS = {
+export const PLANET_GRADIENTS = {
   /** 分值 ≥ 80：暖橘 */
-  high: 'image:///static/globles/planet-orange.svg',
+  high: ['#FF9771', '#FFD9C7'],
   /** 70 ≤ 分值 < 80：浅橙黄 */
-  mid: 'image:///static/globles/planet-yellow.svg',
+  mid: ['#FFB347', '#FFD291'],
   /** 分值 < 70：浅灰 */
-  low: 'image:///static/globles/planet-gray.svg',
+  low: ['#E2E2E2', '#F1F1F1'],
 } as const;
 
 /**
@@ -101,15 +104,33 @@ export interface RadarDimensionInput {
   score: number;
 }
 
-/** 分值 → 档位（决定用哪张星球图） */
-export const scoreToTier = (score: number): keyof typeof PLANET_ICONS => {
+/** 分值 → 档位（决定配色） */
+export const scoreToTier = (score: number): keyof typeof PLANET_GRADIENTS => {
   if (score >= 80) return 'high';
   if (score >= 70) return 'mid';
   return 'low';
 };
 
-/** 分值 → 图标地址 */
-export const scoreToSymbol = (score: number): string => PLANET_ICONS[scoreToTier(score)];
+/**
+ * 分值 → 圆形星球的填充色（ECharts 径向渐变对象）
+ *
+ * x / y / r 都取 0.5：渐变圆心在正中间，**不做偏心高光**，
+ * 对应需求里的「不要白色高光点、不做立体球」。
+ * 中心用主色、边缘用浅色，视觉上就是一颗从中心往边缘化开的星球。
+ */
+export const scoreToPlanetFill = (score: number) => {
+  const [center, edge] = PLANET_GRADIENTS[scoreToTier(score)];
+  return {
+    type: 'radial' as const,
+    x: 0.5,
+    y: 0.5,
+    r: 0.5,
+    colorStops: [
+      { offset: 0, color: center },
+      { offset: 1, color: edge },
+    ],
+  };
+};
 
 /**
  * 分值 → 星球直径（px）
@@ -278,18 +299,20 @@ export const buildAbilityRadarOption = (
         data: [{ value: ordered.map((d) => d.score) }],
       },
 
-      // series[1]：十颗顶点星球（分值 → 图标配色 + 直径）
+      // series[1]：十颗顶点星球（分值 → 配色 + 直径），纯圆形 symbol，无图片
       {
         type: 'scatter',
         name: '能力星球',
         coordinateSystem: 'polar',
+        // 统一用圆形；球感完全由 itemStyle 里的径向渐变提供
+        symbol: 'circle',
         // 分值决定直径；value 是 [分值, 角度]，所以取第一个元素
         symbolSize: (value: unknown) => {
           const raw = Array.isArray(value) ? value[0] : value;
           return scoreToSymbolSize(typeof raw === 'number' ? raw : 0);
         },
         itemStyle: {
-          // 明确关闭阴影，只保留 SVG 图标本身的样式
+          // 兜底：即使某一项没带 itemStyle，也不会有任何外发光
           shadowBlur: 0,
           shadowColor: 'transparent',
         },
@@ -305,7 +328,10 @@ export const buildAbilityRadarOption = (
           name: d.label,
           // 第二项是角度值：序号 × 36°，配合 startAngle:90 + clockwise:false 与 radar 对齐
           value: [d.score, i * 36],
-          symbol: scoreToSymbol(d.score),
+          // 每颗球按自己的分数取径向渐变（中心主色 → 边缘浅色）
+          itemStyle: {
+            color: scoreToPlanetFill(d.score),
+          },
         })),
       },
     ],
