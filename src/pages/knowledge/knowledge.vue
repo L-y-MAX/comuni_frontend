@@ -839,7 +839,16 @@ onLoad(async (options?: { tab?: string; kbId?: string }) => {
 })
 
 onShow(() => {
-  refreshKnowledgeBaseList()
+  refreshKnowledgeBaseList();
+
+  // 从「新增文章 / 编辑文章」返回时，文章列表也必须刷新。
+  // 否则会停在旧数据上：新加的文章不出现，篇数还是 0（新建的知识库本来就没有文章）。
+  // force = true 是因为此时 id 与当前选中项相同，不放行会被 selectKb 直接 return。
+  const currentTab = activeTab.value;
+  const selectedId = tabState.value[currentTab].selectedKbId;
+  if (selectedId) {
+    selectKb(selectedId, false, true);
+  }
 })
 
 // ====================== 新增：分享功能 ======================
