@@ -56,7 +56,7 @@
 
         <!-- 搜索：按岗位名称 / 企业 / 行业过滤候选项 -->
         <view class="pick-search">
-          <!-- 搜索图标：优先用本地 search.png，缺图自动退回 🔍 -->
+          <!-- 搜索图标：本地 search.png -->
           <image
             v-if="!searchIconError"
             class="pick-search-icon pick-search-icon-img"
@@ -64,12 +64,6 @@
             mode="aspectFit"
             @error="searchIconError = true"
           />
-          <text
-            v-else
-            class="pick-search-icon"
-          >
-            🔍
-          </text>
           <input
             v-model="pickerKeyword"
             class="pick-search-input"

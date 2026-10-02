@@ -401,7 +401,7 @@
             class="history-btn"
             @click="goReportHistory"
           >
-            🕘 历史报告记录
+            历史报告记录
           </button>
           <button
             class="text-btn"

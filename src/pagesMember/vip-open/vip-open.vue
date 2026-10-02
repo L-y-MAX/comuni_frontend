@@ -12,8 +12,8 @@
             @click="copyPayLink"
           >
             <text class="tooltip">https://youupro.xyz/pay/</text>
-            <text class="text">一键复制👆</text>
-            <text>复制成功! 👋</text>
+            <text class="text">一键复制</text>
+            <text>复制成功!</text>
           </view>
         </view>
 

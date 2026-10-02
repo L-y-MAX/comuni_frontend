@@ -428,7 +428,7 @@
                 class="tip-badge"
                 @tap="goBadgeWall(activeBubbleBadge.id)"
               >
-                ✅已解锁【{{ activeBubbleBadge.name }}】徽章
+                已解锁【{{ activeBubbleBadge.name }}】徽章
               </text>
             </view>
           </view>
@@ -784,7 +784,6 @@
       :class="{ hidden: drawerOpen }"
       @tap="openDrawer"
     >
-      <text class="side-trigger-icon">☰</text>
       <text class="side-trigger-label">功能</text>
     </view>
 

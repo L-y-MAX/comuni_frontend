@@ -20,7 +20,6 @@
           class="form-item name-item"
         >
           <view class="name-input-wrapper">
-            <view class="name-input-icon">📝</view>
             <input
               v-model="formData.name"
               placeholder="请输入文章名称"

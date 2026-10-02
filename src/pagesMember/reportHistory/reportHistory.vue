@@ -9,7 +9,6 @@
         v-if="!list.length"
         class="state-card card-style"
       >
-        <text class="state-icon">🕘</text>
         <text class="state-title">还没有历史报告</text>
         <text class="state-desc">
           每次生成生涯发展报告都会自动存档，之后可以在这里回看，并对比能力变化。

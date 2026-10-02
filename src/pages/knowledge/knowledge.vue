@@ -40,7 +40,14 @@
           class="guide-head"
           @click="toggleGuide"
         >
-          <text class="guide-title">📖 知识库怎么用</text>
+          <view class="guide-head-left">
+            <image
+              class="guide-icon"
+              src="/static/home/knowledge.png"
+              mode="aspectFit"
+            />
+            <text class="guide-title">知识库怎么用</text>
+          </view>
           <text class="guide-toggle">{{ guideCollapsed ? '展开' : '收起' }}</text>
         </view>
         <view
@@ -1588,6 +1595,18 @@ $border-radius-small: 12rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.guide-head-left {
+  display: flex;
+  align-items: center;
+}
+
+.guide-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 10rpx;
+  flex-shrink: 0;
 }
 
 .guide-title {

@@ -78,12 +78,6 @@
           mode="aspectFit"
           @error="jobsIconError = true"
         />
-        <text
-          v-else
-          class="resource-entry-icon"
-        >
-          🏢
-        </text>
         <view class="resource-entry-texts">
           <text class="resource-entry-title">岗位招聘</text>
           <text class="resource-entry-desc">浏览校招合作企业的岗位与企业信息</text>
@@ -107,12 +101,6 @@
           mode="aspectFit"
           @error="policyIconError = true"
         />
-        <text
-          v-else
-          class="resource-entry-icon"
-        >
-          📚
-        </text>
         <view class="resource-entry-texts">
           <text class="resource-entry-title">就业政策与校招资源</text>
           <text class="resource-entry-desc">就业政策 · 校招企业名单 · 简历与面试指导</text>
@@ -136,12 +124,6 @@
           mode="aspectFit"
           @error="jobProfileIconError = true"
         />
-        <text
-          v-else
-          class="resource-entry-icon"
-        >
-          💼
-        </text>
         <view class="resource-entry-texts">
           <text class="resource-entry-title">岗位能力画像</text>
           <text class="resource-entry-desc">查看岗位在十个能力维度上的要求</text>
@@ -165,12 +147,6 @@
           mode="aspectFit"
           @error="knowledgeIconError = true"
         />
-        <text
-          v-else
-          class="resource-entry-icon"
-        >
-          📝
-        </text>
         <view class="resource-entry-texts">
           <text class="resource-entry-title">知识库</text>
           <text class="resource-entry-desc">收藏与管理 Markdown 文档</text>

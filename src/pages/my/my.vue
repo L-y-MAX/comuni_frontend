@@ -146,7 +146,6 @@
     >
       <view class="upgrade-card">
         <view class="upgrade-content">
-          <view class="upgrade-icon">🚀</view>
           <view class="upgrade-text">
             <text class="upgrade-title">升级到会员</text>
             <text class="upgrade-subtitle">解锁尊贵会员</text>

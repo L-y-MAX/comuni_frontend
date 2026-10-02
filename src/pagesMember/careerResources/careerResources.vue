@@ -76,7 +76,7 @@
          4. 搜索框：放大镜 + 输入 + 清除叉号
          ============================================================ -->
     <view class="search-box">
-      <!-- 搜索图标：优先用本地 search.png，缺图自动退回 🔍 -->
+      <!-- 搜索图标：本地 search.png -->
       <image
         v-if="!searchIconError"
         class="search-icon search-icon-img"
@@ -84,12 +84,6 @@
         mode="aspectFit"
         @error="searchIconError = true"
       />
-      <text
-        v-else
-        class="search-icon"
-      >
-        🔍
-      </text>
       <input
         v-model="keyword"
         class="search-input"
@@ -262,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import {
   CAREER_RESOURCES,
@@ -471,15 +465,27 @@ const themeTags = computed<ResourceTag[]>(() => {
 /**
  * 把视图滚到列表顶部（吸顶条件区）。
  *
- * 原来点完筛选视图停在原地，用户看不到结果列表的变化——
- * 这正是「筛完不方便看文件」的直接原因。
+ * 两个坑：
+ *   1) 吸顶元素会被 top 拉到导航栏下方，从而**盖住紧随其后的第一张卡片**。
+ *      所以不能直接滚到它本身，要少滚一个吸顶区高度，
+ *      否则第一张卡片正好被压住，看起来就像「跳到了第二条」。
+ *   2) 位置要在筛选后的 DOM 更新完再量，否则按旧布局滚动同样会偏。
  */
 const scrollToList = () => {
-  uni.pageScrollTo({
-    selector: '.list-sticky',
-    duration: 250,
-    // 取不到节点时静默跳过：只是不滚动，筛选结果不受影响
-    fail: () => {},
+  nextTick(() => {
+    uni.createSelectorQuery()
+      .select('.list-sticky')
+      .boundingClientRect((rect) => {
+        const stickyH = (rect as { height?: number } | null)?.height ?? 0;
+        uni.pageScrollTo({
+          selector: '.list-sticky',
+          // 少滚一个吸顶区高度：让第一张卡片完整露在吸顶区下面
+          offsetTop: -stickyH,
+          duration: 250,
+          fail: () => {},
+        });
+      })
+      .exec();
   });
 };
 
