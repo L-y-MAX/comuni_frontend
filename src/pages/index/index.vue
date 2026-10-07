@@ -60,7 +60,7 @@
       class="exit-search"
       @tap="exitSearch"
     >
-      <text class="exit-search-text">✕ 退出搜索</text>
+      <text class="exit-search-text">✕</text>
     </view>
 
     <!-- 岗位招聘入口（原在「我的」里叫「宣讲活动」，按要求移到首页；只在首页初始态显示） -->
@@ -635,7 +635,7 @@ onMounted(() => {
   align-items: center;
   box-sizing: border-box;
   transition: padding-top 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* 更丝滑的过渡曲线 */
-  padding-top: 60vh; /* 默认状态下顶部留白 */
+  padding-top: 46vh; /* 默认状态下顶部留白（原 60vh，按反馈上提） */
   position: relative; /* 新增：作为brand-sign绝对定位的参考容器 */
 }
 
@@ -650,7 +650,7 @@ onMounted(() => {
   /* 纯装饰：不参与命中测试，避免盖住下方可点元素 */
   pointer-events: none;
   position: absolute;
-  top: 33vh;
+  top: 26vh; /* 与搜索栏一起上提，保持相对位置 */
   left: 50%;
   transform: translateX(-50%); /* 水平居中 */
   transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* 文字同步动画（可选） */
@@ -684,7 +684,7 @@ onMounted(() => {
   color: #ff4500;
   position: absolute;
   /* 默认位置：顶部33vh 和 水平居中后右偏移10rpx */
-  top: calc(33vh + 4rpx);
+  top: calc(26vh + 4rpx); /* 与品牌 logo 同步上移 */
   left: 50%; /* calc(50% + 10rpx); 向右偏移10rpx，避开ComUni文字 */
   transform: translateX(-50%) translateZ(0); /* 水平居中，为滑动做基础 */
   width: 80rpx; /* 固定宽度，取消max-width，避免适配问题 */
@@ -1304,7 +1304,13 @@ onMounted(() => {
 /* ========== 退出搜索快捷操作 ========== */
 .exit-search {
   margin-top: 24rpx;
-  padding: 12rpx 32rpx;
+  // 去掉文字后改成圆形图标按钮，尺寸与站内其它圆形按钮一致
+  width: 72rpx;
+  height: 72rpx;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #ffffff;
   border: 2rpx solid #FF7239;
   border-radius: 40rpx;
@@ -1316,7 +1322,8 @@ onMounted(() => {
 }
 
 .exit-search-text {
-  font-size: 26rpx;
+  font-size: 30rpx;
+  line-height: 1;
   font-weight: 600;
   color: #ff4500;
 }

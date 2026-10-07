@@ -25,13 +25,28 @@
       :scroll-with-animation="true"
       @scroll="onListScroll"
     >
-      <!-- ========== 顶部说明 ========== -->
-      <view class="intro-card card-style">
-        <text class="intro-title">学生就业能力画像</text>
-        <text class="intro-desc">
-          填写你的专业背景、技能证书、项目与实习经历，系统将从十大维度评估你的就业能力，
-          生成能力星球图与职业徽章墙，并给出信息完整度与综合竞争力评分。
-        </text>
+      <!-- ========== 顶部说明：改成进入页面时的弹窗 ========== -->
+      <view
+        v-if="introModalVisible"
+        class="intro-modal-mask"
+        @click="closeIntroModal"
+      >
+        <view
+          class="intro-modal"
+          @click.stop
+        >
+          <text class="intro-modal-title">学生就业能力画像</text>
+          <text class="intro-modal-desc">
+            填写你的专业背景、技能证书、项目与实习经历，系统将从十大维度评估你的就业能力，
+            生成能力星球图与职业徽章墙，并给出信息完整度与综合竞争力评分。
+          </text>
+          <button
+            class="intro-modal-btn"
+            @click="closeIntroModal"
+          >
+            了解
+          </button>
+        </view>
       </view>
 
       <!-- ========== 录入表单 ========== -->
@@ -932,6 +947,31 @@ const profile = ref<StudentProfile | null>(null);
 const expandedKey = ref<AbilityDimensionKey | null>(null);
 
 /**
+ * 顶部说明弹窗。
+ * 首次进入自动弹出，点「了解」关闭并记住选择，之后不再反复打扰。
+ */
+const INTRO_MODAL_KEY = 'abilityIntroModalDismissed';
+const introModalVisible = ref(false);
+
+/** 进入页面时：没关闭过就弹一次 */
+const maybeShowIntroModal = () => {
+  try {
+    introModalVisible.value = uni.getStorageSync(INTRO_MODAL_KEY) !== '1';
+  } catch {
+    introModalVisible.value = true;
+  }
+};
+
+const closeIntroModal = () => {
+  introModalVisible.value = false;
+  try {
+    uni.setStorageSync(INTRO_MODAL_KEY, '1');
+  } catch {
+    // 存不下也不影响关闭
+  }
+};
+
+/**
  * 「信息不足」阈值：低于它说明原文依据太少，结论只作参考。
  * 维度标签上的「信息不足」标记与解析明细里的说明共用这一个值，避免两处脱节。
  */
@@ -1425,6 +1465,8 @@ const readFromStorage = (): StudentProfile | null => {
 // ====================== 生命周期 ======================
 
 onLoad(async () => {
+  maybeShowIntroModal();
+
   // 1) 优先用本地缓存，刷新/重进页面不必重算
   const cached = readFromStorage();
   if (cached) {
@@ -2668,5 +2710,59 @@ onShareTimeline(() => ({
 .anchor-text {
   font-size: 26rpx;
   color: #FF7239;
+}
+
+/* ========== 顶部说明弹窗 ========== */
+.intro-modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 48rpx;
+}
+
+.intro-modal {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx 32rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.16);
+}
+
+.intro-modal-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20rpx;
+}
+
+.intro-modal-desc {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #6b7280;
+}
+
+.intro-modal-btn {
+  margin-top: 32rpx;
+  height: 84rpx;
+  line-height: 84rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  border-radius: 16rpx;
+  border: none;
+
+  &::after {
+    border: none;
+  }
 }
 </style>
