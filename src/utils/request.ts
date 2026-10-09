@@ -25,7 +25,19 @@ const hideLoading = () => {
   uni.hideLoading();
 };
 
-export const baseURL = 'https://youupro.xyz';
+/**
+ * 是否使用本机后端。
+ *
+ * true  = http://localhost:8000（本地联调）
+ * false = https://youupro.xyz（线上）
+ *
+ * 切环境只改这一个常量。注意开发者工具需要勾选
+ * 「详情 → 本地设置 → 不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」，
+ * 否则请求会在本地被拦掉（request:fail url not in domain list）。
+ */
+const USE_LOCAL_API = true;
+
+export const baseURL = USE_LOCAL_API ? 'http://localhost:8000' : 'https://youupro.xyz';
 
 // 2. 扩展RequestOptions类型
 type CustomRequestOptions = UniApp.RequestOptions & {

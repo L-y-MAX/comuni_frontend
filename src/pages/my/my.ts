@@ -66,7 +66,7 @@ export const fetchVipInfoFromServer = async () => {
     }
 
     const res = await uni.request({
-      url: 'https://youupro.xyz/api/v1/auth/user/vip/',
+      url: 'http://localhost:8000/api/v1/auth/user/vip/',
       method: 'GET',
       // 开启 withCredentials，让请求自动携带 Cookie（适配 Session 认证）
       withCredentials: true,
@@ -335,7 +335,7 @@ export const wxQuickLogin = async () => {
 
     // 2. 调用后端微信登录接口
     const response = await uni.request({
-      url: 'https://youupro.xyz/api/v1/auth/wechat/mini/login/',
+      url: 'http://localhost:8000/api/v1/auth/wechat/mini/login/',
       method: 'POST',
       timeout: REQUEST_TIMEOUT,
       header: {

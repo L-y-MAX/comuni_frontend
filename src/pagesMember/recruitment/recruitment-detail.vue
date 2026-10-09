@@ -391,7 +391,7 @@ const fetchDetailById = async (creditCode: string) => {
   uni.showLoading({ title: '加载中...' })
   try {
     const res = await uni.request({
-      url: `https://youupro.xyz/api/v1/employment/recruitments/?search=${encodeURIComponent(creditCode)}`,
+      url: `http://localhost:8000/api/v1/employment/recruitments/?search=${encodeURIComponent(creditCode)}`,
       method: 'GET',
       header: {
         Authorization: `JWT ${uni.getStorageSync('accessToken')}`,

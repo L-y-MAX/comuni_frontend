@@ -416,7 +416,7 @@ const fetchFilterOptions = async () => {
     const promises = filterFields.map(async (field) => {
       const apiPath = apiMap[field]
       const res = await uni.request({
-        url: `https://youupro.xyz/api/v1/employment/filters/${apiPath}/`,
+        url: `http://localhost:8000/api/v1/employment/filters/${apiPath}/`,
         method: 'GET',
         header: { Authorization: `JWT ${token}` },
       })
@@ -516,7 +516,7 @@ const fetchList = async (page = currentPage.value) => {
     }
 
     const res = await uni.request({
-      url: 'https://youupro.xyz/api/v1/employment/recruitments/',
+      url: 'http://localhost:8000/api/v1/employment/recruitments/',
       method: 'GET',
       header: { Authorization: `JWT ${token}` },
       data: params, // GET 请求参数自动转为查询字符串

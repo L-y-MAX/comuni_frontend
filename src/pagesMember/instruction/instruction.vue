@@ -394,7 +394,7 @@ const fetchNodeDetail = async () => {
   try {
     // 模拟 API 请求（实际项目中替换为真实请求）
     // const res = await uni.request({
-    //   url: 'https://youupro.xyz/api/v1/knowledge/nodes/648e9e6c-ec46-4263-b37b-5f3c4141066f/',
+    //   url: 'http://localhost:8000/api/v1/knowledge/nodes/648e9e6c-ec46-4263-b37b-5f3c4141066f/',
     //   method: 'GET'
     // })
     // const data = res.data

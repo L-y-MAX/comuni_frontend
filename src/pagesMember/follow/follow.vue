@@ -119,7 +119,7 @@ const page = ref(1) // 分页页码
 const hasMore = ref(true) // 是否有更多数据
 
 // 后端API基础地址
-const BASE_URL = 'https://youupro.xyz/api/v1/auth/user/follow'
+const BASE_URL = 'http://localhost:8000/api/v1/auth/user/follow'
 // 获取本地Token
 const getToken = () => uni.getStorageSync('accessToken') || ''
 
