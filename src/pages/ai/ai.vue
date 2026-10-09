@@ -284,7 +284,7 @@ const unmountNote = () => {
 const mountNote = async () => {
   try {
     const kbRes: any = await getKnowledgeBaseList()
-    const kbs: any[] = kbRes?.results || kbRes || []
+    const kbs: any[] = pickList(kbRes)
     if (!kbs.length) {
       uni.showToast({ title: '还没有知识库，先去创建一个', icon: 'none' })
       return
@@ -295,7 +295,7 @@ const mountNote = async () => {
         const kb = kbs[kbPicked.tapIndex]
         try {
           const nodeRes: any = await getKnowledgeNodeListByKBId(kb.id)
-          const nodes: any[] = nodeRes?.results || nodeRes || []
+          const nodes: any[] = pickList(nodeRes)
           if (!nodes.length) {
             uni.showToast({ title: '这个知识库还没有文章', icon: 'none' })
             return
@@ -319,16 +319,31 @@ const mountNote = async () => {
       },
       fail: () => {},
     })
-  } catch {
-    uni.showToast({ title: '读取知识库失败', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: `读取知识库失败：${String((e as any)?.errMsg || '请检查登录状态')}`, icon: 'none', duration: 2500 })
   }
+}
+
+/**
+ * 统一从接口响应里取出列表。
+ * 后端可能返回数组、{ results } 或 { data: { results } } 三种形态，
+ * 只处理一种会导致"看起来没反应"，这里一次兜住。
+ */
+const pickList = (res: any): any[] => {
+  if (Array.isArray(res)) return res
+  if (Array.isArray(res?.results)) return res.results
+  if (Array.isArray(res?.data?.results)) return res.data.results
+  if (Array.isArray(res?.data)) return res.data
+  return []
 }
 
 /**
  * 预设能力按钮：填入并直接发送，省掉"点两次"的操作。
  */
 const usePrompt = (p: string) => {
-  fillPrompt(p)
+  // 必须直接写 inputContent：fillPrompt 并不会把值写进输入框，
+  // 而 sendMessage 开头就是 if (!content) return，会静默什么都不做。
+  inputContent.value = p
   sendMessage()
 }
 
@@ -373,7 +388,7 @@ const verifyQuotes = (answer: string) => {
 const saveAnswerToKb = async (content: string) => {
   try {
     const res: any = await getKnowledgeBaseList()
-    const kbs: any[] = res?.results || res || []
+    const kbs: any[] = pickList(res)
     if (!kbs.length) {
       uni.showToast({ title: '还没有知识库，先去创建一个', icon: 'none' })
       return
