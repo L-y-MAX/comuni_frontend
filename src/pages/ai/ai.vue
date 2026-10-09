@@ -248,25 +248,7 @@ const fillPrompt = (promptText: string) => {
 const hasArticle = computed(() => !!knowledgeStore.currentArticle?.content)
 const articleTitle = computed(() => knowledgeStore.currentArticle?.name || '未命名文章')
 
-/** 示例问题：让第一次使用的人知道可以问什么 */
-const examplePrompts = [
-  '这篇文章讲了什么',
-  '总结一下这篇文章，控制在500字以内',
-  '提炼 3 个最关键的结论',
-  '把文中的代码逐段解释一遍',
-  '根据这篇文章给我出 5 道面试题',
-  '用更简单的话重新讲一遍',
-]
-
-/** 没带文章时的引导：去知识库挑一篇 */
-const goKnowledge = () => {
-  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
-}
-
-// 轮询查询任务结果
-const pollTaskResult = async (taskId: string) => {
-  try {
-    /** 已挂载的上下文笔记名（空表示没挂） */
+/** 已挂载的上下文笔记名（空表示没挂） */
 const mountedNoteName = computed(() => knowledgeStore.currentArticle?.name || "")
 
 /** 取消挂载：把上下文清掉，之后的提问就不再带文章 */
@@ -414,7 +396,25 @@ const saveAnswerToKb = async (content: string) => {
     uni.showToast({ title: '读取知识库失败', icon: 'none' })
   }
 }
-const accessToken = uni.getStorageSync('accessToken')
+/** 示例问题：让第一次使用的人知道可以问什么 */
+const examplePrompts = [
+  '这篇文章讲了什么',
+  '总结一下这篇文章，控制在500字以内',
+  '提炼 3 个最关键的结论',
+  '把文中的代码逐段解释一遍',
+  '根据这篇文章给我出 5 道面试题',
+  '用更简单的话重新讲一遍',
+]
+
+/** 没带文章时的引导：去知识库挑一篇 */
+const goKnowledge = () => {
+  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
+}
+
+// 轮询查询任务结果
+const pollTaskResult = async (taskId: string) => {
+  try {
+    const accessToken = uni.getStorageSync('accessToken')
     const response = await uni.request({
       url: `${resultApiUrl}?task_id=${taskId}`,
       method: 'GET',
