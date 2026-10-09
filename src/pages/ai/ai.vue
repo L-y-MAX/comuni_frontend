@@ -258,6 +258,28 @@ const unmountNote = () => {
 }
 
 /**
+ * 把整个知识库的文章拼成一份上下文（多篇合一）。
+ * 后端只认 current_article 这一个字段，所以整库问答不用改后端：
+ * 每篇前面加上标题拼起来，总长度封顶，避免超出模型上下文导致整体失败。
+ */
+const KB_CONTEXT_LIMIT = 8000
+const buildKbContext = (nodes: any[]) => {
+  const parts: string[] = []
+  let used = 0
+  let total = 0
+  for (const n of nodes) {
+    const body = String(n?.content || '').trim().slice(0, KB_CONTEXT_LIMIT)
+    if (!body) continue
+    total++
+    const chunk = `【${n.name}】\n${body}`
+    if (used + chunk.length > KB_CONTEXT_LIMIT) break
+    parts.push(chunk)
+    used += chunk.length
+  }
+  return { content: parts.join('\n\n'), used: parts.length, total }
+}
+
+/**
  * 选择一篇文章作为上下文。
  * 先选知识库、再选文章：两步都用系统操作菜单，不自绘选择器。
  * 选中后直接写进 knowledgeStore.currentArticle —— 发送逻辑本来就读它，
@@ -282,10 +304,28 @@ const mountNote = async () => {
             uni.showToast({ title: '这个知识库还没有文章', icon: 'none' })
             return
           }
+          const picked = nodes.slice(0, 5)
           uni.showActionSheet({
-            itemList: nodes.slice(0, 6).map((n) => n.name),
+            itemList: [`整个知识库（共 ${nodes.length} 篇）`, ...picked.map((n) => n.name)],
             success: (nodePicked) => {
-              const node = nodes[nodePicked.tapIndex]
+              // 第 0 项 = 整个知识库：把库内文章拼成一份长上下文，
+              // 仍然走原来的 current_article 通道，后端不用改。
+              if (nodePicked.tapIndex === 0) {
+                const ctx = buildKbContext(nodes)
+                if (!ctx.used) {
+                  uni.showToast({ title: '这个知识库还没有正文', icon: 'none' })
+                  return
+                }
+                knowledgeStore.currentArticle = {
+                  id: kb.id,
+                  name: `知识库：${kb.name}（${ctx.used}/${ctx.total} 篇）`,
+                  content: ctx.content,
+                } as any
+                uni.showToast({ title: `已挂载整个知识库（${ctx.used} 篇）`, icon: 'none' })
+                return
+              }
+              const node = picked[nodePicked.tapIndex - 1]
+              if (!node) return
               knowledgeStore.currentArticle = {
                 ...node,
                 name: node.name,
