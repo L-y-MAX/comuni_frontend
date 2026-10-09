@@ -451,9 +451,61 @@ const goKnowledge = () => {
   uni.navigateTo({ url: '/pages/knowledge/knowledge' })
 }
 
+/** 轮询上限：1 秒一次，最多 60 次；不设上限会在后台没返回时永远转圈 */
+const POLL_MAX = 60
+const pollCount = ref(0)
+
+/** 取最近一条用户提问（本地检索要用它当关键词） */
+const lastUserMessage = () => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].isUser) return messages.value[i].content
+  }
+  return ''
+}
+
+/** 把后端/网络的错误翻译成用户能照着做的说明 */
+const describeAiError = (raw: string) => {
+  const s = String(raw || '')
+  if (/401|InvalidApiKey|Incorrect API key|Unauthorized/i.test(s)) {
+    return 'API Key 无效或已过期：请在后台 .env 更新 DASHSCOPE_API_KEY 后重启 Django 与 Celery'
+  }
+  if (/timeout|timed out|超时/i.test(s)) return '模型响应超时'
+  if (/quota|Arrearage|欠费|额度/i.test(s)) return '账号额度不足或欠费'
+  return s.slice(0, 120) || '未知错误'
+}
+
+/**
+ * 本地检索降级：模型不可用时，用提问里的关键词在已挂载内容里找最相关的几句原文。
+ * 结果只做原文摘录，绝不冒充 AI 生成的答案，调用处会明确标注。
+ */
+const localRetrieve = (question: string, topN = 3) => {
+  const corpus = String(knowledgeStore.currentArticle?.content || '')
+  if (!corpus) return ''
+  const terms = (String(question || '').match(/[\u4e00-\u9fa5]{2,}|[A-Za-z][A-Za-z0-9_+#.-]{1,}/g) || [])
+    .filter((t) => t.length >= 2)
+  if (!terms.length) return ''
+  const sentences = corpus
+    .split(/[。！？；\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 8)
+  const scored = sentences
+    .map((s) => {
+      let score = 0
+      terms.forEach((t) => { if (s.includes(t)) score += t.length })
+      return { s, score }
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN)
+  if (!scored.length) return ''
+  return scored.map((x, i) => `${i + 1}. ${x.s}`).join('\n')
+}
+
 // 轮询查询任务结果
 const pollTaskResult = async (taskId: string) => {
   try {
+    pollCount.value++
+    if (pollCount.value > POLL_MAX) throw new Error('等待超时：后台一直没返回结果')
     const accessToken = uni.getStorageSync('accessToken')
     const response = await uni.request({
       url: `${resultApiUrl}?task_id=${taskId}`,
@@ -464,41 +516,44 @@ const pollTaskResult = async (taskId: string) => {
       },
     })
 
-    if (response.statusCode === 200 && response.data) {
-      const responseData = response.data as AnyObject
-      // 任务处理完成
-      if (responseData.status === 'SUCCESS') {
-        clearInterval(pollTimer.value!)
-        pollTimer.value = null
-        // 添加AI回复
-        messages.value.push({
-          content: responseData.data.answer,
-          isUser: false,
-        })
-        scrollToBottom()
-        isLoading.value = false
-      }
-      // 任务失败
-      else if (responseData.status === 'FAILURE') {
-        clearInterval(pollTimer.value!)
-        pollTimer.value = null
-        throw new Error(responseData.data.error || 'AI处理失败')
-      }
-      // 任务仍在处理中，继续轮询
-      else {
-        return
-      }
-    } else {
-      clearInterval(pollTimer.value!)
-      pollTimer.value = null
+    if (response.statusCode !== 200 || !response.data) {
       throw new Error('查询任务结果失败')
     }
+    const responseData = response.data as AnyObject
+    const payload = (responseData.data || {}) as AnyObject
+    const outer = String(responseData.status || "").toUpperCase()
+    const inner = String(payload.status || "").toUpperCase()
+
+    // 失败要同时看内外层：后端任务失败时是 return 字典、Celery 状态仍是 SUCCESS，
+    // 只看外层会把失败当成功，接着读到一个空的 answer（表现就是"不回答"）。
+    if (outer === 'FAILURE' || inner === 'FAILED' || inner === 'FAILURE') {
+      throw new Error(String(payload.error || responseData.message || '模型调用失败'))
+    }
+    if (outer !== 'SUCCESS' || inner === 'PENDING' || inner === 'STARTED') {
+      return // 仍在处理中，继续轮询
+    }
+
+    const answer = typeof payload.answer === 'string' ? payload.answer.trim() : ''
+    if (!answer) throw new Error('模型没有返回内容')
+
+    clearInterval(pollTimer.value!)
+    pollTimer.value = null
+    messages.value.push({
+      content: answer,
+      isUser: false,
+    })
+    scrollToBottom()
+    isLoading.value = false
   } catch (error) {
     clearInterval(pollTimer.value!)
     pollTimer.value = null
     console.error('轮询任务结果错误:', error)
+    const reason = describeAiError(String((error as any)?.message || (error as any)?.errMsg || error))
+    const local = localRetrieve(lastUserMessage())
     messages.value.push({
-      content: '抱歉，获取回复失败，请稍后再试',
+      content: local
+        ? `模型暂时不可用（${reason}）。\n下面是从你挂载的内容里本地检索到的原文片段（非 AI 生成，仅供参考）：\n${local}`
+        : `模型暂时不可用：${reason}`,
       isUser: false,
     })
     scrollToBottom()
@@ -568,6 +623,7 @@ const sendMessage = async () => {
       if (!taskId) {
         throw new Error('获取任务ID失败')
       }
+      pollCount.value = 0
       // 第二步：启动轮询（每隔1秒查询一次结果）
       pollTimer.value = setInterval(() => {
         pollTaskResult(taskId)
@@ -687,6 +743,7 @@ onShareTimeline(() => {
 }
 
 .message-content {
+    white-space: pre-wrap;
   padding: 20rpx 25rpx;
   border-radius: 22rpx;
   font-size: 30rpx;
