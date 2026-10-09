@@ -101,6 +101,24 @@
     </scroll-view>
 
     <!-- 输入区域 -->
+    <!-- 上下文：AI 页自己就能选一篇文章，不必先去知识库绕一圈 -->
+    <view class="mount-bar">
+      <text
+        v-if="mountedNoteName"
+        class="mount-chip"
+        @click="unmountNote"
+      >
+        上下文：{{ mountedNoteName }}  ✕
+      </text>
+      <text
+        v-else
+        class="mount-btn"
+        @click="mountNote"
+      >
+        选择笔记作为上下文
+      </text>
+    </view>
+
     <view class="input-area">
       <view class="input-wrapper">
         <textarea
@@ -141,7 +159,11 @@ interface Message {
 
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useKnowledgeStore } from '@/stores/knowledge'
-import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
+import {
+  addKnowledgeNode,
+  getKnowledgeBaseList,
+  getKnowledgeNodeListByKBId,
+} from '@/api/knowledge'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
 
 // 初始化状态库
@@ -244,7 +266,65 @@ const goKnowledge = () => {
 // 轮询查询任务结果
 const pollTaskResult = async (taskId: string) => {
   try {
-    /**
+    /** 已挂载的上下文笔记名（空表示没挂） */
+const mountedNoteName = computed(() => knowledgeStore.currentArticle?.name || "")
+
+/** 取消挂载：把上下文清掉，之后的提问就不再带文章 */
+const unmountNote = () => {
+  knowledgeStore.currentArticle = null as any
+  uni.showToast({ title: '已取消上下文', icon: 'none' })
+}
+
+/**
+ * 选择一篇文章作为上下文。
+ * 先选知识库、再选文章：两步都用系统操作菜单，不自绘选择器。
+ * 选中后直接写进 knowledgeStore.currentArticle —— 发送逻辑本来就读它，
+ * 所以不需要改动原有请求链路。
+ */
+const mountNote = async () => {
+  try {
+    const kbRes: any = await getKnowledgeBaseList()
+    const kbs: any[] = kbRes?.results || kbRes || []
+    if (!kbs.length) {
+      uni.showToast({ title: '还没有知识库，先去创建一个', icon: 'none' })
+      return
+    }
+    uni.showActionSheet({
+      itemList: kbs.slice(0, 6).map((kb) => kb.name),
+      success: async (kbPicked) => {
+        const kb = kbs[kbPicked.tapIndex]
+        try {
+          const nodeRes: any = await getKnowledgeNodeListByKBId(kb.id)
+          const nodes: any[] = nodeRes?.results || nodeRes || []
+          if (!nodes.length) {
+            uni.showToast({ title: '这个知识库还没有文章', icon: 'none' })
+            return
+          }
+          uni.showActionSheet({
+            itemList: nodes.slice(0, 6).map((n) => n.name),
+            success: (nodePicked) => {
+              const node = nodes[nodePicked.tapIndex]
+              knowledgeStore.currentArticle = {
+                ...node,
+                name: node.name,
+                content: node.content || "",
+              } as any
+              uni.showToast({ title: `已挂载「${node.name}」`, icon: 'none' })
+            },
+            fail: () => {},
+          })
+        } catch {
+          uni.showToast({ title: '读取文章失败', icon: 'none' })
+        }
+      },
+      fail: () => {},
+    })
+  } catch {
+    uni.showToast({ title: '读取知识库失败', icon: 'none' })
+  }
+}
+
+/**
  * 预设能力按钮：填入并直接发送，省掉"点两次"的操作。
  */
 const usePrompt = (p: string) => {
@@ -841,5 +921,33 @@ onShareTimeline(() => {
   border: 2rpx solid #FF7239;
   border-radius: 8rpx;
   padding: 2rpx 12rpx;
+}
+
+/* 上下文挂载栏 */
+.mount-bar {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 24rpx 4rpx;
+}
+
+.mount-btn {
+  font-size: 22rpx;
+  color: #6b7280;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 24rpx;
+  padding: 6rpx 20rpx;
+}
+
+.mount-chip {
+  max-width: 100%;
+  font-size: 22rpx;
+  color: #FF7239;
+  background: #fff7f2;
+  border: 2rpx solid #ffd0bb;
+  border-radius: 24rpx;
+  padding: 6rpx 20rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>
