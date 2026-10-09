@@ -40,6 +40,26 @@
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
         <view class="message-content">{{ msg.content }}</view>
+
+        <!-- 仅 AI 回答：引用核对 + 存回知识库 -->
+        <view
+          v-if="!msg.isUser"
+          class="msg-actions"
+        >
+          <text
+            v-if="verifyQuotes(msg.content).total"
+            class="msg-verify"
+            :class="{ bad: verifyQuotes(msg.content).failed > 0 }"
+          >
+            引用核对：{{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可在原文中找到
+          </text>
+          <text
+            class="msg-save"
+            @click="saveAnswerToKb(msg.content)"
+          >
+            存到知识库
+          </text>
+        </view>
       </view>
 
       <!-- 加载中提示 -->
@@ -73,7 +93,7 @@
           v-for="p in examplePrompts"
           :key="p"
           class="prompt-item"
-          @click="fillPrompt(p)"
+          @click="usePrompt(p)"
         >
           {{ p }}
         </view>
@@ -121,6 +141,7 @@ interface Message {
 
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useKnowledgeStore } from '@/stores/knowledge'
+import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
 
 // 初始化状态库
@@ -130,8 +151,8 @@ const knowledgeStore = useKnowledgeStore()
 const scrollRef = ref<HTMLElement | null>(null)
 
 // 后端接口地址 - 修改为异步任务接口地址
-const taskApiUrl = 'https://youupro.xyz/api/v1/ai/ai-chat/task/'
-const resultApiUrl = 'https://youupro.xyz/api/v1/ai/ai-chat/result/'
+const taskApiUrl = 'http://localhost:8000/api/v1/ai/ai-chat/task/'
+const resultApiUrl = 'http://localhost:8000/api/v1/ai/ai-chat/result/'
 
 // 响应式数据 - 指定messages类型
 const messages = ref<Message[]>([]) // 关键修复：指定数组元素类型
@@ -223,7 +244,82 @@ const goKnowledge = () => {
 // 轮询查询任务结果
 const pollTaskResult = async (taskId: string) => {
   try {
-    const accessToken = uni.getStorageSync('accessToken')
+    /**
+ * 预设能力按钮：填入并直接发送，省掉"点两次"的操作。
+ */
+const usePrompt = (p: string) => {
+  fillPrompt(p)
+  sendMessage()
+}
+
+/**
+ * 从回答里抠出被引号或书名号包住的片段。
+ * 只认成对出现的引号，避免把整段文字当成引用。
+ */
+const extractQuotes = (text: string): string[] => {
+  const out: string[] = []
+  const re = /[「『“"]([^」』”"]{4,60})[」』”"]|《([^》]{2,40})》/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text))) {
+    const s = (m[1] || m[2] || '').trim()
+    if (s) out.push(s)
+  }
+  return out
+}
+
+/**
+ * 规范化：去空白 + 统一小写。与 skills 校验器（contract.cjs）同一口径。
+ */
+const normalizeForMatch = (s: string) =>
+  String(s || '').toLowerCase().replace(/[\s\u3000]+/g, '')
+
+/**
+ * 核对回答里的引用能否在当前文章原文中找到。
+ * 找不到的说明模型可能在编造依据 —— 只提示，不篡改回答内容。
+ */
+const verifyQuotes = (answer: string) => {
+  const quotes = extractQuotes(answer)
+  const corpus = normalizeForMatch(knowledgeStore.currentArticle?.content || "")
+  let ok = 0
+  quotes.forEach((q) => {
+    if (corpus.includes(normalizeForMatch(q))) ok++
+  })
+  return { total: quotes.length, ok, failed: quotes.length - ok }
+}
+
+/**
+ * 把 AI 回答存进我自己的某个知识库（选库 -> 写入）。
+ */
+const saveAnswerToKb = async (content: string) => {
+  try {
+    const res: any = await getKnowledgeBaseList()
+    const kbs: any[] = res?.results || res || []
+    if (!kbs.length) {
+      uni.showToast({ title: '还没有知识库，先去创建一个', icon: 'none' })
+      return
+    }
+    uni.showActionSheet({
+      itemList: kbs.slice(0, 6).map((kb) => kb.name),
+      success: async (picked) => {
+        const kb = kbs[picked.tapIndex]
+        try {
+          await addKnowledgeNode({
+            name: `AI 回答 · ${new Date().toLocaleString()}`,
+            content,
+            knowledge_base_id: kb.id,
+          })
+          uni.showToast({ title: `已存入「${kb.name}」`, icon: 'none' })
+        } catch {
+          uni.showToast({ title: '存入失败，请稍后重试', icon: 'none' })
+        }
+      },
+      fail: () => {},
+    })
+  } catch {
+    uni.showToast({ title: '读取知识库失败', icon: 'none' })
+  }
+}
+const accessToken = uni.getStorageSync('accessToken')
     const response = await uni.request({
       url: `${resultApiUrl}?task_id=${taskId}`,
       method: 'GET',
@@ -715,5 +811,35 @@ onShareTimeline(() => {
   40% {
     transform: scale(1);
   }
+}
+
+/* AI 回答下方的操作区 */
+.msg-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 14rpx;
+}
+
+.msg-verify {
+  font-size: 21rpx;
+  color: #16a34a;
+  background: #f0fdf4;
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+
+  &.bad {
+    color: #dc2626;
+    background: #fef2f2;
+  }
+}
+
+.msg-save {
+  font-size: 21rpx;
+  color: #FF7239;
+  border: 2rpx solid #FF7239;
+  border-radius: 8rpx;
+  padding: 2rpx 12rpx;
 }
 </style>
