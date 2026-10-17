@@ -199,21 +199,17 @@ const validatePassword = (): boolean => {
     passwordError.value = '密码不能为空'
     return false
   }
-  if (value.length < 8) {
-    passwordError.value = '密码长度不能少于8位'
-    return false
-  }
-  if (!/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
-    passwordError.value = '密码需包含字母和数字'
-    return false
-  }
+  // 不再强加"≥8 位且含字母+数字"的自造规则：后端登录接口对密码没有任何格式限制，
+  // 这条规则会在前端就把合法账号拦下（表现是点登录没反应），所以只校验非空。
   passwordError.value = ''
   return true
 }
 
 // ========== 计算属性 ==========
 const canLogin = computed((): boolean => {
-  return validateUsername() && validatePassword() && !isLoading.value
+  // 不要在 computed 里调用会写 error 状态的校验函数（会反复触发、提示乱跳），
+  // 这里只做无副作用的判断，具体的格式错误在点击登录时再由 handleLogin 校验。
+  return !!username.value.trim() && !!password.value.trim() && !isLoading.value
 })
 
 // ========== 事件处理 ==========
@@ -244,7 +240,17 @@ const handleLogin = async (): Promise<void> => {
 
     const response = Array.isArray(res) ? res[1] : res
     if (response.statusCode !== 200) {
-      throw new Error('账号或密码错误')
+      // 按状态码区分原因：以前不分 401/500/网络都提示"账号或密码错误"，
+      // 后端 500（例如 Redis 没启动）也会被说成密码错，让人一直重试密码。
+      const body: any = response.data || {}
+      const serverMsg = String(body.msg || body.detail || '')
+      if (response.statusCode === 401) throw new Error(serverMsg || '账号或密码错误')
+      if (response.statusCode === 400) throw new Error(serverMsg || '账号或密码格式不正确')
+      if (response.statusCode === 429) throw new Error('操作太频繁，请稍后再试')
+      if (response.statusCode >= 500) {
+        throw new Error(`服务器异常（${response.statusCode}）：后端依赖可能没启动（Redis / 数据库）`)
+      }
+      throw new Error(serverMsg || `登录失败（${response.statusCode}）`)
     }
 
     const loginData = response.data as LoginResponse
