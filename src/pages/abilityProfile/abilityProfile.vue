@@ -322,14 +322,14 @@
             v-if="isDegraded"
             class="source-note"
           >
-            千问解析接口暂不可用（{{ degradedReason }}），当前结果由本地关键词规则解析生成，
+            DeepSeek解析接口暂不可用（{{ degradedReason }}），当前结果由本地关键词规则解析生成，
             仅依据你填写内容中明确出现的表述，建议后端接口就绪后重新生成。
           </text>
           <text
             v-else
             class="source-note"
           >
-            本画像由阿里千问大模型对你填写的经历做结构化抽取与量化评估生成。
+            本画像由阿里DeepSeek大模型对你填写的经历做结构化抽取与量化评估生成。
           </text>
         </view>
 

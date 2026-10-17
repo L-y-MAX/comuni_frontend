@@ -1,5 +1,5 @@
 /**
- * 学生能力画像 API —— 千问结构化解析任务 + 本地规则降级兜底
+ * 学生能力画像 API —— DeepSeek结构化解析任务 + 本地规则降级兜底
  *
  * ## 接口契约（待后端实现）
  *
@@ -49,7 +49,7 @@ export const STUDENT_PROFILE_ENDPOINTS = {
   detail: '/api/v1/auth/user/student-profile/',
 } as const;
 
-/** 请求载荷（把学生填写内容整体交给后端做千问抽取） */
+/** 请求载荷（把学生填写内容整体交给后端做DeepSeek抽取） */
 export interface StudentProfileParsePayload extends StudentProfileInput {
   dimensions: string[];
 }
@@ -195,7 +195,7 @@ export const pollStudentProfileTask = (
       }
       if (Date.now() - startedAt > timeoutMs) {
         cleanup();
-        reject(new Error('千问解析超时，已切换本地规则解析'));
+        reject(new Error('DeepSeek解析超时，已切换本地规则解析'));
         return;
       }
 
@@ -206,7 +206,7 @@ export const pollStudentProfileTask = (
           const profile = result.data?.profile;
           if (!profile || !isValidStudentProfile(profile)) {
             cleanup();
-            reject(new Error('千问返回的画像结构不完整'));
+            reject(new Error('DeepSeek返回的画像结构不完整'));
             return;
           }
           cleanup();
@@ -216,12 +216,12 @@ export const pollStudentProfileTask = (
 
         if (result.status === 'FAILURE') {
           cleanup();
-          reject(new Error(result.error || '千问解析失败'));
+          reject(new Error(result.error || 'DeepSeek解析失败'));
           return;
         }
 
         const seconds = Math.round((Date.now() - startedAt) / 1000);
-        onProgress?.(`千问正在解析你的经历…（已等待 ${seconds}s）`);
+        onProgress?.(`DeepSeek正在解析你的经历…（已等待 ${seconds}s）`);
         timer = setTimeout(tick, intervalMs);
       } catch (err) {
         cleanup();
@@ -254,7 +254,7 @@ export interface StudentProfileGenerateResult {
 /**
  * 生成学生能力画像（对外唯一入口）
  *
- * 流程：读已保存画像 → 建千问任务 → 轮询 → 校验；任一步失败降级本地规则。
+ * 流程：读已保存画像 → 建DeepSeek任务 → 轮询 → 校验；任一步失败降级本地规则。
  * 无论走哪条路径，返回值都保证是「十维齐全 + 完整度/竞争力/徽章齐备」的合法画像。
  */
 export const generateStudentProfile = async (
@@ -277,10 +277,10 @@ export const generateStudentProfile = async (
     }
   }
 
-  // ---- 2. 千问解析 ----
+  // ---- 2. DeepSeek解析 ----
   if (!forceLocal) {
     try {
-      onProgress?.('正在提交千问解析任务…');
+      onProgress?.('正在提交DeepSeek解析任务…');
       const payload: StudentProfileParsePayload = {
         ...input,
         dimensions: [...JOB_DIMENSION_KEYS],
@@ -298,9 +298,9 @@ export const generateStudentProfile = async (
       if (err instanceof Error && err.name === 'AbortError') {
         throw err;
       }
-      const reason = err instanceof Error ? err.message : '千问解析不可用';
-      console.warn('[学生画像] 千问解析不可用，降级为本地规则解析：', reason);
-      onProgress?.('千问接口暂不可用，正在使用本地规则解析…');
+      const reason = err instanceof Error ? err.message : 'DeepSeek解析不可用';
+      console.warn('[学生画像] DeepSeek解析不可用，降级为本地规则解析：', reason);
+      onProgress?.('DeepSeek接口暂不可用，正在使用本地规则解析…');
       const profile = parseStudentProfileByRules(input);
       return { profile, method: 'rule', degraded: true, degradedReason: reason };
     }

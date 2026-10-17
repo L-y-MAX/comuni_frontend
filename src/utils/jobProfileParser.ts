@@ -915,7 +915,7 @@ const buildSummary = (
   return (
     `${enterprise}${jobName}岗位画像：${focusText}。${highText}，${lowText}。` +
     `${skillText}。${industryText}` +
-    `本画像由本地关键词规则解析生成，可作为能力对标参考；接入千问大模型解析后精度将显著提升。`
+    `本画像由本地关键词规则解析生成，可作为能力对标参考；接入 DeepSeek 大模型解析后精度将显著提升。`
   );
 };
 

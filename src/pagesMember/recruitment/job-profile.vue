@@ -177,14 +177,14 @@
           v-if="isDegraded"
           class="source-note"
         >
-          千问解析接口暂不可用（{{ degradedReason }}），当前结果由本地关键词规则解析生成，
+          DeepSeek解析接口暂不可用（{{ degradedReason }}），当前结果由本地关键词规则解析生成，
           仅覆盖文本中明确出现的要求，建议后端接口就绪后重新解析。
         </text>
         <text
           v-else
           class="source-note"
         >
-          本画像由阿里千问大模型对岗位文本结构化解析生成，十大维度分值可直接用于人岗匹配计算。
+          本画像由阿里DeepSeek大模型对岗位文本结构化解析生成，十大维度分值可直接用于人岗匹配计算。
         </text>
       </view>
 
@@ -441,7 +441,7 @@ const expandedKey = ref<JobDimensionKey | null>(null);
 
 /** 是否有一次生成流程正在进行中（防止重复点击并发发起请求） */
 let inFlight = false;
-/** 页面是否已卸载（用于中止千问轮询，避免离开后仍在发请求） */
+/** 页面是否已卸载（用于中止DeepSeek轮询，避免离开后仍在发请求） */
 let unloaded = false;
 
 onUnload(() => {
@@ -675,10 +675,10 @@ const runGenerate = async (
 /** 首次加载：允许命中后端缓存 */
 const loadAll = () => runGenerate();
 
-/** 重新解析：跳过后端缓存，重新走千问 */
+/** 重新解析：跳过后端缓存，重新走DeepSeek */
 const regenerate = () => runGenerate({ useCache: false, toast: '已重新生成' });
 
-/** 强制本地规则解析：调试/降级演示用，不发千问请求 */
+/** 强制本地规则解析：调试/降级演示用，不发DeepSeek请求 */
 const forceLocalParse = () => runGenerate({ forceLocal: true, toast: '已切换本地规则解析' });
 
 /** 跳转到人岗匹配页，带上当前岗位标识 */

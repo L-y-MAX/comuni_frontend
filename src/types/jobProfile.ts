@@ -151,7 +151,7 @@ export const LEVEL_LABEL: Record<AbilityLevel, string> = {
 
 /** 解析来源中文 label */
 export const PARSE_SOURCE_LABEL: Record<ParseSource, string> = {
-  qwen: '千问大模型解析',
+  qwen: 'DeepSeek 解析',
   rule: '本地规则解析',
 };
 

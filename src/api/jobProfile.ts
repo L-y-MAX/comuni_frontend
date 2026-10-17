@@ -1,5 +1,5 @@
 /**
- * 岗位画像 API —— 千问结构化解析任务 + 本地规则降级兜底
+ * 岗位画像 API —— DeepSeek结构化解析任务 + 本地规则降级兜底
  *
  * ## 接口契约（待后端实现）
  *
@@ -18,7 +18,7 @@
  *             "data": { "profile": JobProfile },
  *             "error": "失败原因" }
  *
- * 3) 读取已缓存的画像（可选，后端按 recruitment_id 缓存解析结果，避免重复调用千问）
+ * 3) 读取已缓存的画像（可选，后端按 recruitment_id 缓存解析结果，避免重复调用DeepSeek）
  *    GET  /api/v1/employment/job-profile/?recruitment_id=<credit_code>
  *    200 →  JobProfile
  *    404 →  尚未解析过
@@ -28,7 +28,7 @@
  * 三个接口任一环节失败（404 / 501 / 500 / 超时 / 返回结构不合法）时，
  * 自动降级到 `parseJobProfileByRules()` 本地规则解析，
  * 并在返回值里通过 `degraded: true` + `degradedReason` 如实告知页面，
- * 由页面标注「本地规则解析」，不伪装成千问结果。
+ * 由页面标注「本地规则解析」，不伪装成DeepSeek结果。
  *
  * ## 为什么这里用原生 uni.request 而不是 @/utils/request
  *
@@ -53,7 +53,7 @@ import { parseJobProfileByRules, type RuleParseInput } from '@/utils/jobProfileP
 // ====================== 端点常量 ======================
 
 export const JOB_PROFILE_ENDPOINTS = {
-  /** 创建千问解析任务 */
+  /** 创建DeepSeek解析任务 */
   parseTask: '/api/v1/employment/job-profile/parse/task/',
   /** 轮询解析任务结果 */
   parseResult: '/api/v1/employment/job-profile/parse/result/',
@@ -99,10 +99,10 @@ const rawRequest = <T = unknown>(
     });
   });
 
-// ====================== 1. 创建千问解析任务 ======================
+// ====================== 1. 创建DeepSeek解析任务 ======================
 
 /**
- * 创建千问结构化解析任务
+ * 创建DeepSeek结构化解析任务
  * @returns task_id
  * @throws 接口未就绪 / 网络异常 / 结构不合法时抛错，由上层降级
  */
@@ -222,7 +222,7 @@ export const pollJobProfileTask = (
       // 超时保护
       if (Date.now() - startedAt > timeoutMs) {
         cleanup();
-        reject(new Error('千问解析超时，已切换本地规则解析'));
+        reject(new Error('DeepSeek解析超时，已切换本地规则解析'));
         return;
       }
 
@@ -233,7 +233,7 @@ export const pollJobProfileTask = (
           const profile = result.data?.profile;
           if (!profile || !isValidJobProfile(profile)) {
             cleanup();
-            reject(new Error('千问返回的画像结构不完整'));
+            reject(new Error('DeepSeek返回的画像结构不完整'));
             return;
           }
           cleanup();
@@ -243,13 +243,13 @@ export const pollJobProfileTask = (
 
         if (result.status === 'FAILURE') {
           cleanup();
-          reject(new Error(result.error || '千问解析失败'));
+          reject(new Error(result.error || 'DeepSeek解析失败'));
           return;
         }
 
         // PENDING：继续轮询
         const seconds = Math.round((Date.now() - startedAt) / 1000);
-        onProgress?.(`千问正在解析岗位文本…（已等待 ${seconds}s）`);
+        onProgress?.(`DeepSeek正在解析岗位文本…（已等待 ${seconds}s）`);
         timer = setTimeout(tick, intervalMs);
       } catch (err) {
         cleanup();
@@ -264,7 +264,7 @@ export const pollJobProfileTask = (
 
 // ====================== 5. 组装解析载荷 ======================
 
-/** 把招聘原始数据组装成千问解析任务的请求载荷 */
+/** 把招聘原始数据组装成DeepSeek解析任务的请求载荷 */
 export const buildParsePayload = (input: RuleParseInput): JobProfileParsePayload => ({
   recruitment_id: input.recruitment_id ?? '',
   job_name: input.job_name ?? '',
@@ -282,7 +282,7 @@ export const buildParsePayload = (input: RuleParseInput): JobProfileParsePayload
 export interface GenerateOptions {
   /** 是否先尝试读取后端缓存（默认 true） */
   useCache?: boolean;
-  /** 是否跳过千问、直接用本地规则（默认 false，调试用） */
+  /** 是否跳过DeepSeek、直接用本地规则（默认 false，调试用） */
   forceLocal?: boolean;
   /** 轮询间隔 */
   intervalMs?: number;
@@ -299,7 +299,7 @@ export interface GenerateOptions {
  *
  * 流程：
  *   1. （可选）读取后端缓存画像 → 命中直接返回
- *   2. 创建千问解析任务 → 轮询结果 → 校验结构
+ *   2. 创建DeepSeek解析任务 → 轮询结果 → 校验结构
  *   3. 任一步骤失败 → 降级本地规则解析，并返回 degraded=true + degradedReason
  *
  * 无论走哪条路径，返回值都保证是「十维齐全、权重合计为 1」的合法画像，
@@ -331,10 +331,10 @@ export const generateJobProfile = async (
     }
   }
 
-  // ---- 2. 千问解析 ----
+  // ---- 2. DeepSeek解析 ----
   if (!forceLocal) {
     try {
-      onProgress?.('正在提交千问解析任务…');
+      onProgress?.('正在提交DeepSeek解析任务…');
       const taskId = await createJobProfileParseTask(buildParsePayload(input));
       const profile = await pollJobProfileTask(taskId, {
         intervalMs,
@@ -348,9 +348,9 @@ export const generateJobProfile = async (
       if (err instanceof Error && err.name === 'AbortError') {
         throw err;
       }
-      const reason = err instanceof Error ? err.message : '千问解析不可用';
-      console.warn('[岗位画像] 千问解析不可用，降级为本地规则解析：', reason);
-      onProgress?.('千问接口暂不可用，正在使用本地规则解析…');
+      const reason = err instanceof Error ? err.message : 'DeepSeek解析不可用';
+      console.warn('[岗位画像] DeepSeek解析不可用，降级为本地规则解析：', reason);
+      onProgress?.('DeepSeek接口暂不可用，正在使用本地规则解析…');
       const profile = parseJobProfileByRules(input);
       return { profile, method: 'rule', degraded: true, degradedReason: reason };
     }

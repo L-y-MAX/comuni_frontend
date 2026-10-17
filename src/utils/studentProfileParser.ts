@@ -306,7 +306,7 @@ const buildSummary = (
     `你是${gradeText}${majorText}学生${targetText}。` +
     `综合就业竞争力评分 ${competitiveness} 分，${strengthText}，${weaknessText}。` +
     `${completenessText}。` +
-    `本画像由本地关键词规则解析生成；接入千问大模型解析后，可从简历原文中抽取更细的能力证据。`
+    `本画像由本地关键词规则解析生成；接入 DeepSeek 大模型解析后，可从简历原文中抽取更细的能力证据。`
   );
 };
 

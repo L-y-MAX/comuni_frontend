@@ -95,7 +95,7 @@
         >
           <text class="source-note">
             当前画像由本地规则解析生成（置信度 {{ Math.round(report.confidence * 100) }}%），
-            报告结论仅作方向性参考。接入千问大模型解析后，差距判断与建议会显著更细。
+            报告结论仅作方向性参考。接入DeepSeek大模型解析后，差距判断与建议会显著更细。
           </text>
         </view>
 
