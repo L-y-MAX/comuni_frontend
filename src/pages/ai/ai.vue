@@ -960,6 +960,12 @@ const goKnowledgeFromGuide = () => {
 
 // 页面挂载时执行
 onMounted(() => {
+  // 从「就业政策」页带过来的提问：填入输入框，由用户确认后再发送
+  const pendingPrompt = uni.getStorageSync("aiPendingPrompt")
+  if (pendingPrompt) {
+    inputContent.value = String(pendingPrompt)
+    uni.removeStorageSync("aiPendingPrompt")
+  }
   // 第一次进来还没选上下文时，先把用法弹出来
   if (!mountedNoteName.value) guideVisible.value = true
   console.log('AI助手页面初始化完成')

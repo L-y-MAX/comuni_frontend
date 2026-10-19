@@ -220,6 +220,12 @@
           class="res-actions"
         >
           <view
+            class="ai-btn"
+            @tap.stop="askAi(item)"
+          >
+            <text class="ai-btn-text">AI 提问</text>
+          </view>
+          <view
             class="copy-btn"
             @tap.stop="copyLink(item)"
           >
@@ -374,6 +380,19 @@ const isAdviceOpen = (item: CareerResource): boolean => !!adviceOpen.value[advic
 /** 标签计数：当前主题下该标签的资源数 */
 const tagCount = (tag: ResourceTag): number =>
   resourcesByTheme(activeTheme.value).filter((it) => it.tags && it.tags.includes(tag)).length;
+
+/** 带着这条资源的上下文跳 AI 助手（tabBar 页不能用 query 传参，走 storage） */
+const askAi = (item: CareerResource) => {
+  const title = item.title || "该资源";
+  uni.setStorageSync("aiPendingPrompt", `基于《${title}》，帮我解答：`);
+  uni.switchTab({
+    url: '/pages/ai/ai',
+    fail: () => {
+      uni.removeStorageSync("aiPendingPrompt");
+      uni.showToast({ title: '打开 AI 助手失败', icon: 'none' });
+    },
+  });
+};
 
 const themeTotal = computed(() => resourcesByTheme(activeTheme.value).length);
 
@@ -1123,5 +1142,20 @@ $bg: #f7f8fa;
     padding: 16rpx 18rpx;
     background: #fff8f4;
     border-radius: 12rpx;
+  }
+
+  /* 资源卡「AI 提问」按钮：蓝底，与橙色复制按钮区分 */
+  .ai-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8rpx 20rpx;
+    border-radius: 999rpx;
+    background: #eff6ff;
+    border: 1rpx solid #bfdbfe;
+      margin-right: 14rpx;
+  }
+  .ai-btn-text {
+    font-size: 22rpx;
+    color: #2563eb;
   }
 </style>
