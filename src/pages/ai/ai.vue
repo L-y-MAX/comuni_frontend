@@ -56,77 +56,39 @@
         v-for="(msg, index) in messages"
         :key="index"
         :class="['message-item', msg.isUser ? 'user-message' : 'ai-message']"
-        @longpress="onMessageLongPress(msg)"
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
-        <view class="message-content">
-          <rich-text
-            v-if="!msg.isUser && msg.html"
-            :nodes="msg.html"
-          />
-          <text v-else>{{ msg.content }}</text>
-        </view>
+        <view class="message-content">{{ msg.content }}</view>
 
-        <!-- 溯源：默认折叠在气泡正文底部，展开显示来源卡片 -->
-        <view
-          v-if="!msg.isUser && verifyQuotes(msg.content).total"
-          class="msg-source"
-          @click="toggleSource(index)"
-        >
-          <text class="msg-source-text">参考来源 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可核对</text>
-          <text class="msg-source-toggle">{{ openSourceIndex === index ? '收起' : '展开' }}</text>
-        </view>
-        <view
-          v-if="!msg.isUser && verifyQuotes(msg.content).total && openSourceIndex === index"
-          class="source-cards"
-        >
-          <view
-            class="source-card"
-            @click="openSourceArticle"
-          >
-            <text class="source-card-title">{{ mountedNoteName || '未挂载上下文' }}</text>
-            <text class="source-card-sub">来自你挂载的知识库内容 · 点击查看原文</text>
-          </view>
-        </view>
-
-        <!-- 操作区：复制 / 重新生成 / 存到知识库（与溯源分开，避免混淆） -->
+        <!-- 仅 AI 回答：引用核对 + 存回知识库 -->
         <view
           v-if="!msg.isUser"
           class="msg-actions"
         >
           <text
-            v-if="isErrorMsg(msg)"
-            class="msg-op retry"
-            @click="retryLast"
-          >重新回答</text>
-          <text
-            v-else
-            class="msg-op"
-            @click="copyText(msg.content)"
-          >复制</text>
-          <text
-            v-if="!isErrorMsg(msg)"
-            class="msg-op"
-            @click="regenerate"
-          >重新生成</text>
+            v-if="verifyQuotes(msg.content).total"
+            class="msg-verify"
+            :class="{ bad: verifyQuotes(msg.content).failed > 0 }"
+          >
+            引用核对：{{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可在原文中找到
+          </text>
           <text
             class="msg-save"
             @click="saveAnswerToKb(msg.content)"
-          >存到知识库</text>
+          >
+            存到知识库
+          </text>
         </view>
       </view>
 
-      <!-- 思考中：打字三点 + 文字 -->
+      <!-- 加载中提示 -->
       <view
         v-if="isLoading"
         class="loading-indicator"
       >
-        <view class="loading-dots">
-          <view class="loading-dot"></view>
-          <view class="loading-dot"></view>
-          <view class="loading-dot"></view>
-        </view>
-        <text class="loading-text">思考中…</text>
+        <view class="loading-dot"></view>
+        <view class="loading-dot"></view>
+        <view class="loading-dot"></view>
       </view>
     </scroll-view>
 
@@ -166,9 +128,6 @@
       <view class="input-wrapper">
         <textarea
           class="input-box"
-            :adjust-position="true"
-            :cursor-spacing="100"
-            @focus="scrollToBottom"
           v-model="inputContent"
           placeholder="请输入你的问题..."
           @confirm="
@@ -184,16 +143,10 @@
       </view>
       <button
         class="send-btn"
-        :class="{ stopping: isLoading }"
-        @click="onMainButton"
-        :disabled="!isLoading && (!inputContent.trim() || inputContent.length > maxInputLength)"
+        @click="sendMessage"
+        :disabled="!inputContent.trim() || isLoading || inputContent.length > maxInputLength"
       >
-        <text
-          v-if="isLoading"
-          class="send-stop-text"
-        >停止</text>
         <image
-          v-else
           class="send-icon"
           src="/static/icons/send.png"
           mode="aspectFit"
@@ -207,8 +160,6 @@
 interface Message {
   content: string
   isUser: boolean
-  /** AI 回答的渲染 HTML（用户消息不用） */
-  html?: string
 }
 
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
@@ -220,8 +171,6 @@ import {
 } from '@/api/knowledge'
 import { toKbContent } from '@/utils/plainText'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
-
-// 知识库文章按纯文本/富文本两种形态存在，AI 回答则按 Markdown 渲染（更易读）
 
 // 初始化状态库
 const knowledgeStore = useKnowledgeStore()
@@ -611,7 +560,6 @@ const pollTaskResult = async (taskId: string) => {
     pollTimer.value = null
     messages.value.push({
       content: answer,
-      html: renderAnswerHtml(answer),
       isUser: false,
     })
     scrollToBottom()
@@ -723,169 +671,6 @@ const sendMessage = async () => {
   }
 }
 
-/** 失败/降级气泡：展示「重新回答」而非常规操作 */
-const isErrorMsg = (m: Message): boolean =>
-  !m.isUser && (m.content.includes('模型暂时不可用') || m.content.includes('抱歉，创建请求失败'))
-
-/** 复制到剪贴板 */
-const copyText = (text: string) => {
-  if (!text) return
-  uni.setClipboardData({
-    data: text,
-    success: () => uni.showToast({ title: '已复制', icon: 'none', duration: 1200 }),
-  })
-}
-
-/** 取最近一条用户提问（重试与重新生成共用） */
-const lastQuestionText = (): string => {
-  for (let i = messages.value.length - 1; i >= 0; i--) {
-    if (messages.value[i].isUser) return messages.value[i].content
-  }
-  return ''
-}
-
-/** 停止生成：清掉轮询，已显示内容保留 */
-const stopGenerating = () => {
-  if (pollTimer.value) {
-    clearInterval(pollTimer.value)
-    pollTimer.value = null
-  }
-  isLoading.value = false
-  uni.showToast({ title: '已停止生成', icon: 'none', duration: 1200 })
-}
-
-/** 主按钮：加载中即停止，否则发送 */
-const onMainButton = () => {
-  if (isLoading.value) return stopGenerating()
-  sendMessage()
-}
-
-/** 重新回答：清掉失败提示后重新提问 */
-const retryLast = () => {
-  const question = lastQuestionText()
-  if (!question) return
-  messages.value = messages.value.filter((m) => !isErrorMsg(m))
-  inputContent.value = question
-  sendMessage()
-}
-
-/** 重新生成：用同一个问题再问一次 */
-const regenerate = () => {
-  const question = lastQuestionText()
-  if (!question) return
-  inputContent.value = question
-  sendMessage()
-}
-
-/** 溯源展开状态（同时只展开一条） */
-const openSourceIndex = ref(-1)
-const toggleSource = (index: number) => {
-  openSourceIndex.value = openSourceIndex.value === index ? -1 : index
-}
-
-/** 点来源卡片：跳到知识库查看原文 */
-const openSourceArticle = () => {
-  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
-}
-
-/** 长按气泡菜单：AI 可复制/重新生成，用户消息只能复制 */
-const onMessageLongPress = (msg: Message) => {
-  const items = msg.isUser ? ['复制'] : ['复制', '重新生成']
-  uni.showActionSheet({
-    itemList: items,
-    success: (res) => {
-      if (res.tapIndex === 0) return copyText(msg.content)
-      if (res.tapIndex === 1 && !msg.isUser) regenerate()
-    },
-    fail: () => {},
-  })
-}
-
-/** 转义 HTML 特殊字符 */
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-/** 行内格式：加粗、斜体、行内代码 */
-const inlineMd = (text: string): string => {
-  let t = escapeHtml(text)
-  t = t.replace(/`([^`]+)`/g, '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">$1</code>')
-  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight:600;color:#111827;">$1</strong>')
-  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
-  return t
-}
-
-/** 标题字号：一级最大，逐级递减 */
-const headingStyle = (level: number): string => {
-  const size = level === 1 ? '38rpx' : level === 2 ? '34rpx' : level === 3 ? '31rpx' : '29rpx'
-  return 'font-size:' + size + ';font-weight:600;color:#111827;line-height:1.5;margin:20rpx 0 12rpx;'
-}
-
-/**
- * Markdown → rich-text 可渲染的 HTML（零依赖）。
- * 支持标题、加粗/斜体、行内代码、代码块、有序/无序列表与段落间距，
- * 让模型输出的层级（大标题、小标题、加粗）真正体现出来。
- */
-const renderAnswerHtml = (markdown: string): string => {
-  if (!markdown) return ''
-  const srcLines = String(markdown).replace(/\r\n/g, '\n').split('\n')
-  const out: string[] = []
-  let inCode = false
-  let listType: '' | 'ul' | 'ol' = ''
-  const closeList = () => {
-    if (listType) {
-      out.push(`</${listType}>`)
-      listType = ''
-    }
-  }
-
-  for (const raw of srcLines) {
-    const line = raw.replace(/\s+$/, '')
-    if (/^\s*```/.test(line)) {
-      closeList()
-      if (!inCode) {
-        out.push('<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;white-space:pre;font-size:24rpx;line-height:1.6;margin:14rpx 0;">')
-        inCode = true
-      } else {
-        out.push('</pre>')
-        inCode = false
-      }
-      continue
-    }
-    if (inCode) {
-      out.push(escapeHtml(raw) + '\n')
-      continue
-    }
-    if (!line.trim()) {
-      closeList()
-      continue
-    }
-    const heading = line.match(/^(#{1,4})\s+(.*)$/)
-    if (heading) {
-      closeList()
-      out.push(`<div style="${headingStyle(heading[1].length)}">${inlineMd(heading[2])}</div>`)
-      continue
-    }
-    const bullet = line.match(/^\s*[-*+]\s+(.*)$/)
-    const ordered = line.match(/^\s*(\d+)[.)]\s+(.*)$/)
-    if (bullet || ordered) {
-      const type: 'ul' | 'ol' = bullet ? 'ul' : 'ol'
-      if (listType !== type) {
-        closeList()
-        out.push(type === 'ul' ? '<ul style="padding-left:40rpx;margin:12rpx 0;">' : '<ol style="padding-left:40rpx;margin:12rpx 0;">')
-        listType = type
-      }
-      const text = bullet ? bullet[1] : ordered ? ordered[2] : ''
-      out.push(`<li style="margin:8rpx 0;line-height:1.7;">${inlineMd(text)}</li>`)
-      continue
-    }
-    closeList()
-    out.push(`<p style="margin:14rpx 0;line-height:1.75;">${inlineMd(line)}</p>`)
-  }
-  closeList()
-  if (inCode) out.push('</pre>')
-  return out.join('')
-}
-
 // 页面挂载时执行
 onMounted(() => {
   console.log('AI助手页面初始化完成')
@@ -931,14 +716,15 @@ onShareTimeline(() => {
   overflow: hidden;
 }
 
-  .chat-container {
-    flex: 1;
-    min-height: 0; /* 关键：允许在 flex 里被压缩，避免把底部输入区顶出屏幕 */
-    padding: 20rpx;
-    box-sizing: border-box;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+.chat-container {
+  flex: 1;
+  padding: 20rpx;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  height: calc(100vh - 120rpx);
+  overflow: hidden;
+}
 
 .system-message {
   text-align: center;
@@ -951,16 +737,14 @@ onShareTimeline(() => {
   max-width: 60%;
 }
 
-  .message-item {
-    display: flex;
-    flex-direction: column; /* 竖直排列：正文 → 溯源 → 操作区 */
-    align-items: flex-start;
-    margin-bottom: 30rpx;
-    max-width: 85%;
-    animation: fadeIn 0.3s ease forwards;
-    opacity: 0;
-    transform: translateY(10rpx);
-  }
+.message-item {
+  display: flex;
+  margin-bottom: 30rpx;
+  max-width: 80%;
+  animation: fadeIn 0.3s ease forwards;
+  opacity: 0;
+  transform: translateY(10rpx);
+}
 
 @keyframes fadeIn {
   to {
@@ -970,8 +754,8 @@ onShareTimeline(() => {
 }
 
 .user-message {
-    align-items: flex-end;
-    margin-left: auto;
+  flex-direction: row-reverse;
+  margin-left: auto;
 }
 
 .ai-message {
@@ -986,7 +770,7 @@ onShareTimeline(() => {
   line-height: 1.6;
   word-wrap: break-word;
   word-break: break-all;
-    max-width: 100%;
+    max-width: 85%; /* 手机阅读不撑满 */
 }
 
 .user-message .message-content {
@@ -1086,7 +870,6 @@ onShareTimeline(() => {
   box-sizing: border-box;
   padding: 10rpx 0;
   white-space: nowrap;
-    flex-shrink: 0; /* 顶部栏不参与压缩 */
 }
 
 .prompt-tips-inner {
@@ -1122,7 +905,6 @@ onShareTimeline(() => {
   box-sizing: border-box;
   z-index: 10;
   max-height: 300rpx;
-    flex-shrink: 0; /* 顶部栏不参与压缩 */
 }
 
 /* 输入框外层容器（恢复原有样式） */
@@ -1245,12 +1027,12 @@ onShareTimeline(() => {
 
 /* AI 回答下方的操作区 */
 .msg-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 18rpx;
-    margin-top: 16rpx;
-  }
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 14rpx;
+}
 
 .msg-verify {
   font-size: 21rpx;
@@ -1266,19 +1048,18 @@ onShareTimeline(() => {
 }
 
 .msg-save {
-    font-size: 26rpx;
-    color: #ffffff;
-    background: #FF7239;
-    border-radius: 999rpx;
-    padding: 10rpx 22rpx;
-  }
+  font-size: 21rpx;
+  color: #FF7239;
+  border: 2rpx solid #FF7239;
+  border-radius: 8rpx;
+  padding: 2rpx 12rpx;
+}
 
 /* 上下文挂载栏 */
 .mount-bar {
   display: flex;
   align-items: center;
   padding: 12rpx 24rpx 4rpx;
-    flex-shrink: 0; /* 顶部栏不参与压缩 */
 }
 
 .mount-btn {
@@ -1355,75 +1136,5 @@ onShareTimeline(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  /* 溯源与操作区分离 */
-  .msg-source {
-    margin-top: 8rpx;
-  }
-.msg-source-text {
-    font-size: 24rpx;
-    color: #64748b;
-  }
-.msg-op {
-    /* msg-op 加大：原来 24rpx 太小几乎看不见 */
-    font-size: 26rpx;
-    color: #475569;
-    background: #f1f5f9;
-    padding: 10rpx 22rpx;
-    border-radius: 999rpx;
-  }
-.msg-op.retry {
-    color: #ffffff;
-    background: #2563eb;
-  }
-  .loading-dots {
-    display: flex;
-    align-items: center;
-  }
-  .loading-text {
-    margin-left: 12rpx;
-    font-size: 24rpx;
-    color: #94a3b8;
-  }
-  .send-btn.stopping {
-    background: #ef4444;
-  }
-  .send-stop-text {
-    font-size: 24rpx;
-    color: #ffffff;
-    line-height: 1;
-  }
-
-  /* 溯源折叠与来源卡片 */
-  .msg-source {
-    display: flex;
-    align-items: center;
-    margin-top: 10rpx;
-  }
-.msg-source-toggle {
-    margin-left: 12rpx;
-    font-size: 24rpx;
-    color: #2563eb;
-  }
-  .source-cards {
-    margin-top: 10rpx;
-  }
-  .source-card {
-    padding: 16rpx 20rpx;
-    background: #f8fafc;
-    border: 1rpx solid #e2e8f0;
-    border-radius: 12rpx;
-  }
-  .source-card-title {
-    display: block;
-    font-size: 26rpx;
-    color: #334155;
-  }
-  .source-card-sub {
-    display: block;
-    margin-top: 6rpx;
-    font-size: 22rpx;
-    color: #94a3b8;
   }
 </style>
