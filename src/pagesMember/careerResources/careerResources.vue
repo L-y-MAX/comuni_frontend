@@ -598,13 +598,14 @@ $bg: #f7f8fa;
 }
 
 /* ====================== 2. 橙色顶部大卡片 ====================== */
-.hero {
-  margin-top: 24rpx;
-  padding: 24rpx 28rpx 22rpx;
-  border-radius: 26rpx;
-  background: linear-gradient(135deg, #ff7a4d 0%, $primary 100%);
-  box-shadow: 0 10rpx 30rpx rgba(255, 69, 0, 0.22);
-}
+  /* hero 降饱和：柔化渐变、收窄内边距与阴影 */
+  .hero {
+    margin-top: 20rpx;
+    padding: 20rpx 24rpx;
+    border-radius: 20rpx;
+    background: linear-gradient(135deg, #f7a97c 0%, #ef8250 100%);
+    box-shadow: 0 6rpx 18rpx rgba(239, 125, 74, 0.16);
+  }
 
 .hero-title {
   display: block;
@@ -653,23 +654,16 @@ $bg: #f7f8fa;
     border-color 0.2s ease;
 
   /* 选中态：浅橙底 + 橙色文字 */
+  /* 选中态：白底 + 橙色边框 + 橙色文字，不再整卡填橙 */
   &.active {
-  background: #FF7239;
-  border-color: #FF7239;
-
-  // 主题图标是 #ff895d 线稿，压在 #FF7239 上几乎看不见，
-  // 所以选中态给它垫一个白色圆形底（不想要可删掉这一条）
-  .theme-icon-img {
     background: #ffffff;
-    border-radius: 50%;
-    padding: 6rpx;
+    border-color: #FF7239;
+  
+    .theme-label {
+      color: #FF7239;
+      font-weight: 700;
+    }
   }
-
-  .theme-label {
-    color: #ffffff;
-    font-weight: 700;
-  }
-}
 }
 
 .theme-icon-img {
@@ -792,9 +786,10 @@ $bg: #f7f8fa;
   padding: 6rpx 20rpx;
   margin-right: 12rpx;
 
+  /* 选中态：浅橙底 + 橙色文字，弱化视觉重量 */
   &.active {
-    background: #FF7239;
-    color: #ffffff;
+    background: #fff1e8;
+    color: #FF7239;
   }
 }
 
@@ -882,7 +877,7 @@ $bg: #f7f8fa;
   background: #ffffff;
   border-radius: 20rpx;
   box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 16rpx;
+    margin-bottom: 20rpx;
 }
 
 .res-head {
