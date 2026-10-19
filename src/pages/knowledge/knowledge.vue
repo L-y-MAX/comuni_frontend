@@ -23,14 +23,14 @@
           :class="{ active: activeTab === 'left' }"
           @click="switchTab('left')"
         >
-          关注/分享的知识库
+          关注/分享的知识库<text class="tab-badge">{{ leftKbTotal }}</text>
         </button>
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'right' }"
           @click="switchTab('right')"
         >
-          我的知识库
+          我的知识库<text class="tab-badge">{{ kbList.length }}</text>
         </button>
       </view>
 
@@ -38,12 +38,15 @@
       <view class="kb-overview">
         <text class="kb-overview-num">{{ kbTotal }} 个知识库</text>
         <text class="kb-overview-sub">
-          {{ activeTab === 'right' ? '我创建的' : '关注与分享给我的' }}
+          {{ activeTab === 'right' ? '你的个人知识库，支持 AI 检索与问答' : '关注与分享给我的' }}
         </text>
       </view>
 
-      <!-- 使用引导：首次进入默认展开，用户收起后记住选择 -->
-      <view class="guide-card">
+      <!-- 使用指引：首次进入默认展开，用户收起后记住；可「不再提示」永久隐藏 -->
+      <view
+        v-if="!guideHidden"
+        class="guide-card"
+      >
         <view
           class="guide-head"
           @click="toggleGuide"
@@ -54,9 +57,15 @@
               src="/static/home/knowledge.png"
               mode="aspectFit"
             />
-            <text class="guide-title">知识库怎么用</text>
+            <text class="guide-title">使用指引</text>
           </view>
-          <text class="guide-toggle">{{ guideCollapsed ? '展开' : '收起' }}</text>
+          <view class="guide-head-right">
+            <text class="guide-toggle">{{ guideCollapsed ? '展开' : '收起' }}</text>
+            <text
+              class="guide-dismiss"
+              @click.stop="dismissGuide"
+            >不再提示</text>
+          </view>
         </view>
         <view
           v-if="!guideCollapsed"
@@ -64,28 +73,22 @@
         >
           <view class="guide-step">
             <text class="guide-num">1</text>
-            <text class="guide-text">在「我的知识库」点右上角 ＋ 新建一个知识库</text>
+            <text class="guide-text">点右上角「＋」新建知识库</text>
           </view>
           <view class="guide-step">
             <text class="guide-num">2</text>
-            <text class="guide-text"
-              >选中这个知识库，点「新增文章」。正文为纯文本，直接换行分段即可</text
-            >
+            <text class="guide-text">进入知识库，新增文章，正文直接写纯文本换行分段</text>
           </view>
           <view class="guide-step">
             <text class="guide-num">3</text>
-            <text class="guide-text"
-              >保存后在文章详情页右上角点「问 AI」，可以让它概括要点、解释代码、出面试题</text
-            >
+            <text class="guide-text">文章详情页右上角「问 AI」：概括要点、出题、解析内容</text>
           </view>
           <view class="guide-step">
             <text class="guide-num">4</text>
-            <text class="guide-text"
-              >把知识库分享给同学，也可以在别人的主页关注他的知识库</text
-            >
+            <text class="guide-text">可分享知识库，也能在别人主页关注他的知识库</text>
           </view>
           <view class="guide-tip"
-            >不知道写什么？「新增文章」页里有一键「插入示例模板」，会填好一段演示内容。</view
+            >提示：新增文章页支持一键「插入示例模板」，不知道写什么可以直接用它。</view
           >
         </view>
       </view>
@@ -125,7 +128,7 @@
                 v-if="followKbList?.length === 0"
                 class="empty-tip"
               >
-                <text>暂无关注的知识库</text>
+                <text>暂无关注的知识库，去首页浏览并关注他人知识库</text>
               </view>
               <!--遍历前确保数组存在 -->
               <view
@@ -163,6 +166,16 @@
                     </text>
                     <text v-if="item.creator_username && item.description"> · </text>{{ item.description || '' }}
                   </text>
+                  <text
+                    v-if="typeof item.node_count === 'number'"
+                    class="kb-stat"
+                  >共 {{ item.node_count }} 篇文章</text>
+                </view>
+                <view
+                  class="kb-ai"
+                  @click.stop="askKbAi(item)"
+                >
+                  <text>AI 提问</text>
                 </view>
                 <!-- 新增：取消关注按钮 -->
                 <view
@@ -207,7 +220,7 @@
                 v-if="shareKbList?.length === 0"
                 class="empty-tip"
               >
-                <text>暂无分享给我的知识库</text>
+                <text>暂无分享给我的知识库，可以让同学把知识库分享给你</text>
               </view>
               <!--遍历前确保数组存在 -->
               <view
@@ -245,6 +258,16 @@
                     </text>
                     <text v-if="item.creator_username && item.description"> · </text>{{ item.description || '' }}
                   </text>
+                  <text
+                    v-if="typeof item.node_count === 'number'"
+                    class="kb-stat"
+                  >共 {{ item.node_count }} 篇文章</text>
+                </view>
+                <view
+                  class="kb-ai"
+                  @click.stop="askKbAi(item)"
+                >
+                  <text>AI 提问</text>
                 </view>
                 <!-- 新增：关注/取消关注按钮 -->
                 <view
@@ -271,6 +294,14 @@
             <view class="kb-header">
               <text class="title">我的知识库</text>
               <view class="kb-header-actions">
+                <!-- 排序：最近更新 / 创建时间 -->
+                <view
+                  class="sort-btn"
+                  @click="toggleSortMode"
+                >
+                  <text class="sort-text">{{ sortLabel }}</text>
+                  <text class="sort-arrow">⇅</text>
+                </view>
                 <!-- 知识库折叠按钮 -->
                 <button
                   class="fold-button"
@@ -286,19 +317,14 @@
                     mode="aspectFit"
                   />
                 </button>
-                <!-- 知识库按钮 -->
-                <view class="add-kb-section">
-                  <button
-                    @click="toAddKb"
-                    class="add-button"
-                  >
-                    <image
-                      class="add-icon"
-                      src="https://youupro.xyz/notes/static/icons/add.png"
-                      mode="aspectFit"
-                    />
-                  </button>
-                </view>
+                <!-- 新建知识库：图标 + 文字 -->
+                <button
+                  class="add-kb-btn"
+                  @click="toAddKb"
+                >
+                  <text class="add-kb-plus">＋</text>
+                  <text class="add-kb-text">新建知识库</text>
+                </button>
               </view>
             </view>
 
@@ -309,13 +335,20 @@
                 v-if="kbList?.length === 0"
                 class="empty-tip"
               >
-                <text>暂无知识库，点击「新增知识库」创建</text>
+                <text class="empty-title">你还没有创建知识库</text>
+                <text class="empty-sub">用来存放笔记、政策资料、面试素材</text>
+                <view
+                  class="empty-btn"
+                  @click="toAddKb"
+                >
+                  <text>＋ 新建知识库</text>
+                </view>
               </view>
 
               <!--知识库条目, 遍历前确保数组存在 -->
               <view
                 class="kb-item"
-                v-for="item in kbList || []"
+                v-for="item in sortedKbList"
                 :key="`my-${item.id}`"
                 :class="{ active: tabState[activeTab].selectedKbId === item.id }"
               >
@@ -328,18 +361,30 @@
                     <text
                       class="kb-public"
                       v-if="item.is_public"
+                      @click.stop="hintPermission(item)"
                     >
                       公开
                     </text>
                     <text
                       class="kb-private"
                       v-else
+                      @click.stop="hintPermission(item)"
                     >
                       私有
                     </text>
                     <text class="kb-name">{{ item.name }}</text>
                   </view>
                   <text class="kb-desc">{{ item.description || '' }}</text>
+                  <text
+                    v-if="typeof item.node_count === 'number'"
+                    class="kb-stat"
+                  >共 {{ item.node_count }} 篇文章</text>
+                </view>
+                <view
+                  class="kb-ai"
+                  @click.stop="askKbAi(item)"
+                >
+                  <text>AI 提问</text>
                 </view>
                 <view
                   class="kb-more"
@@ -456,14 +501,17 @@ import { computed, ref } from 'vue'
 import {
   getKnowledgeBaseList,
   getKnowledgeNodeList,
+  getKnowledgeNodeListByKBId,
   deleteKnowledgeNode,
   deleteKnowledgeBase,
+  updateKnowledgeBase,
   addKnowledgeNode,
   getFollowKnowledgeBaseList,
   getSharedToMeKnowledgeBaseList,
   followKnowledgeBase,
   unfollowKnowledgeBase,
 } from '@/api/knowledge'
+import { useKnowledgeStore } from '@/stores/knowledge'
 
 // ==========  分栏相关状态 ==========
 // 活跃分栏（left:关注/分享，right:我的），从缓存读取
@@ -554,6 +602,14 @@ const guideCollapsed = ref(uni.getStorageSync(GUIDE_COLLAPSED_KEY) === true)
 const toggleGuide = () => {
   guideCollapsed.value = !guideCollapsed.value
   uni.setStorageSync(GUIDE_COLLAPSED_KEY, guideCollapsed.value)
+}
+
+/** 使用指引「不再提示」：关闭后永久隐藏 */
+const GUIDE_HIDDEN_KEY = 'kbGuideHidden'
+const guideHidden = ref(uni.getStorageSync(GUIDE_HIDDEN_KEY) === true)
+const dismissGuide = () => {
+  guideHidden.value = true
+  uni.setStorageSync(GUIDE_HIDDEN_KEY, true)
 }
 let refreshTimer: number | null = null // 防抖定时器
 
@@ -854,6 +910,17 @@ onLoad(async (options?: { tab?: string; kbId?: string }) => {
     activeTab.value = options.tab
     uni.setStorageSync('kbActiveTab', options.tab)
   }
+
+  // 首次进入：引导卡展开给新用户看；之后默认收起，避免长期占用首屏
+  try {
+    const collapsedRaw = uni.getStorageSync(GUIDE_COLLAPSED_KEY)
+    if (collapsedRaw === '' || collapsedRaw === null || collapsedRaw === undefined) {
+      uni.setStorageSync(GUIDE_COLLAPSED_KEY, true)
+    }
+  } catch (e) {
+    // 存储失败就保持默认展开，不影响页面
+  }
+
   await refreshKnowledgeBaseList(true)
 
   // 分享链接指定了知识库，优先选中它
@@ -1026,6 +1093,41 @@ const kbTotal = computed(() =>
     : (followKbList.value?.length ?? 0) + (shareKbList.value?.length ?? 0)
 )
 
+/** 左栏（关注 + 分享）总数：Tab 角标用 */
+const leftKbTotal = computed(
+  () => (followKbList.value?.length ?? 0) + (shareKbList.value?.length ?? 0),
+)
+
+/** 我的知识库排序：最近更新 / 创建时间（本地记忆） */
+const KB_SORT_KEY = 'kbSortMode'
+const sortMode = ref<'updated' | 'created'>(
+  uni.getStorageSync(KB_SORT_KEY) === 'created' ? 'created' : 'updated',
+)
+const sortLabel = computed(() => (sortMode.value === 'updated' ? '最近更新' : '创建时间'))
+const sortTime = (s?: string) => {
+  const t = new Date(String(s || '').replace(/-/g, '/')).getTime()
+  return Number.isNaN(t) ? 0 : t
+}
+const sortedKbList = computed(() => {
+  const list = [...(kbList.value || [])]
+  list.sort((a, b) =>
+    sortMode.value === 'updated'
+      ? sortTime(b.updated_at) - sortTime(a.updated_at)
+      : sortTime(b.created_at) - sortTime(a.created_at),
+  )
+  return list
+})
+const toggleSortMode = () => {
+  uni.showActionSheet({
+    itemList: ['最近更新', '创建时间'],
+    success: (res) => {
+      sortMode.value = res.tapIndex === 1 ? 'created' : 'updated'
+      uni.setStorageSync(KB_SORT_KEY, sortMode.value)
+    },
+    fail: () => {},
+  })
+}
+
 /** 文章体量：按正文字符数粗算（去掉空白），只作体量感参考 */
 const nodeWordCount = (content?: string) => (content ? content.replace(/\s/g, '').length : 0)
 
@@ -1051,7 +1153,7 @@ const nodeTimeText = (updatedAt?: string) => {
 const openKbActions = (item: any, kind: 'followed' | 'shared' | 'mine') => {
   const list =
     kind === 'mine'
-      ? ['删除知识库']
+      ? ['重命名', '设置权限', '分享', '删除知识库']
       : kind === 'shared'
         ? ['关注', '取消关注']
         : ['取消关注']
@@ -1061,10 +1163,119 @@ const openKbActions = (item: any, kind: 'followed' | 'shared' | 'mine') => {
       const picked = list[res.tapIndex]
       if (picked === '关注') followKbHandle(String(item.id))
       else if (picked === '取消关注') unfollowKbHandle(String(item.id))
+      else if (picked === '重命名') renameKbHandle(item)
+      else if (picked === '设置权限') toggleKbPermission(item)
+      else if (picked === '分享') shareKb(item)
       else if (picked === '删除知识库') deleteKnowledgeBaseHandle(String(item.id))
     },
     fail: () => {},
   })
+}
+
+/** 知识库权限标签点击提示：说明公开/私有的含义 */
+const hintPermission = (item: any) => {
+  uni.showToast({
+    title: item?.is_public ? '公开：任何人可以查看、关注' : '私有：仅自己可见，不会对外分享',
+    icon: 'none',
+    duration: 1800,
+  })
+}
+
+/** 重命名知识库（PATCH name） */
+const renameKbHandle = (item: any) => {
+  uni.showModal({
+    title: '重命名知识库',
+    editable: true,
+    content: item.name,
+    placeholderText: '输入新的名称',
+    confirmText: '保存',
+    async success(res: any) {
+      if (!res.confirm) return
+      const name = String(res.content || '').trim()
+      if (!name) {
+        uni.showToast({ title: '名称不能为空', icon: 'none' })
+        return
+      }
+      if (name === item.name) return
+      try {
+        await updateKnowledgeBase(String(item.id), { name })
+        uni.showToast({ title: '已重命名', icon: 'success' })
+        await refreshKnowledgeBaseList(true)
+      } catch (e) {
+        console.error('重命名知识库失败：', e)
+        uni.showToast({ title: '重命名失败，请重试', icon: 'none' })
+      }
+    },
+  })
+}
+
+/** 切换知识库公开/私有（PATCH is_public） */
+const toggleKbPermission = (item: any) => {
+  const target = !item?.is_public
+  uni.showModal({
+    title: target ? '设为公开' : '设为私有',
+    content: target
+      ? '公开后任何人可以查看并关注这个知识库'
+      : '私有后仅自己可见，已关注的同学将无法访问',
+    confirmText: target ? '设为公开' : '设为私有',
+    async success(res: any) {
+      if (!res.confirm) return
+      try {
+        await updateKnowledgeBase(String(item.id), { is_public: target })
+        uni.showToast({ title: target ? '已设为公开' : '已设为私有', icon: 'success' })
+        await refreshKnowledgeBaseList(true)
+      } catch (e) {
+        console.error('修改知识库权限失败：', e)
+        uni.showToast({ title: '修改失败，请重试', icon: 'none' })
+      }
+    },
+  })
+}
+
+/** 分享知识库：先选中该库，再提示用右上角菜单转发 */
+const shareKb = (item: any) => {
+  selectKb(String(item.id))
+  uni.showToast({ title: '已选中，点右上角「…」转发该知识库', icon: 'none', duration: 2200 })
+}
+
+/** 知识库 → AI：把库内文章拼成上下文挂载到 AI 页 */
+const KB_AI_CONTEXT_LIMIT = 8000
+const askKbAi = async (item: any) => {
+  try {
+    uni.showLoading({ title: '读取知识库…' })
+    const res: any = await getKnowledgeNodeListByKBId(String(item.id))
+    const nodes: any[] = (res?.results || []).filter((n: any) => String(n?.content || '').trim())
+    if (!nodes.length) {
+      uni.hideLoading()
+      uni.showToast({ title: '这个知识库还没有文章内容', icon: 'none' })
+      return
+    }
+    let used = 0
+    const parts: string[] = []
+    for (const n of nodes) {
+      if (used >= KB_AI_CONTEXT_LIMIT) break
+      const title = String(n?.name || '未命名文章')
+      const body = String(n?.content || '').trim().slice(0, KB_AI_CONTEXT_LIMIT)
+      const chunk = `【${title}】\n${body}`
+      if (used + chunk.length > KB_AI_CONTEXT_LIMIT && parts.length) break
+      parts.push(chunk)
+      used += chunk.length
+    }
+    const store = useKnowledgeStore()
+    store.setCurrentArticle({
+      id: String(item.id),
+      name: `知识库：${item.name}（${parts.length}/${nodes.length} 篇）`,
+      content: parts.join('\n\n'),
+      description: '',
+      knowledge_base_id: String(item.id),
+    })
+    uni.hideLoading()
+    uni.switchTab({ url: '/pages/ai/ai' })
+  } catch (e) {
+    console.error('读取知识库上下文失败：', e)
+    uni.hideLoading()
+    uni.showToast({ title: '读取知识库失败，请稍后重试', icon: 'none' })
+  }
 }
 
 /** 文章行的「更多」操作：编辑 / 删除 */
@@ -2006,5 +2217,195 @@ $border-radius-small: 12rpx;
 
 .guide-title {
   font-size: 26rpx;
+}
+
+/* ====================== 知识库页面优化（按方案落地） ====================== */
+/* 顶部 Tab：橙色文字 + 底部短橙线，去掉大面积橙色填充 */
+.kb-tab-header {
+  padding: 6rpx 8rpx 0;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1rpx solid $line;
+}
+
+.tab-btn {
+  position: relative;
+  height: 76rpx;
+  line-height: 76rpx;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: $text-secondary;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+
+  &.active {
+    color: $brand;
+    background: transparent;
+    box-shadow: none;
+    font-weight: 700;
+  }
+}
+
+.tab-btn::after {
+  border: none !important;
+  content: none;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 8rpx;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: $brand;
+}
+
+/* Tab 数量角标 */
+.tab-badge {
+  display: inline-block;
+  min-width: 30rpx;
+  padding: 0 8rpx;
+  margin-left: 6rpx;
+  height: 30rpx;
+  line-height: 30rpx;
+  border-radius: 15rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  color: $text-secondary;
+  background: rgba(31, 41, 55, 0.06);
+  text-align: center;
+}
+
+.tab-btn.active .tab-badge {
+  color: $brand;
+  background: $brand-soft;
+}
+
+/* 引导卡右侧操作区 */
+.guide-head-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.guide-dismiss {
+  margin-left: 16rpx;
+  font-size: 22rpx;
+  color: $text-tertiary;
+}
+
+/* 知识库条目统计小字 */
+.kb-stat {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: $text-tertiary;
+}
+
+/* 条目内「AI 提问」按钮 */
+.kb-ai {
+  flex-shrink: 0;
+  margin-left: 8rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  line-height: 1.2;
+  color: $brand;
+  background: $brand-soft;
+  border: 1rpx solid $brand-line;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+/* 排序按钮 */
+.sort-btn {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 10rpx;
+  border-radius: 10rpx;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: $gray-lighter;
+  }
+}
+
+.sort-text {
+  font-size: 22rpx;
+  color: $text-secondary;
+}
+
+.sort-arrow {
+  margin-left: 6rpx;
+  font-size: 22rpx;
+  color: $text-tertiary;
+}
+
+/* 新建知识库按钮：图标 + 文字 */
+.add-kb-btn {
+  display: flex;
+  align-items: center;
+  height: 60rpx;
+  line-height: 60rpx;
+  padding: 0 20rpx;
+  margin: 0;
+  border-radius: 30rpx;
+  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  border: none !important;
+  box-shadow: none !important;
+
+  &::after {
+    border: none !important;
+  }
+}
+
+.add-kb-plus {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: $white;
+  line-height: 1;
+  margin-right: 6rpx;
+}
+
+.add-kb-text {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: $white;
+  line-height: 1;
+}
+
+/* 空状态 */
+.empty-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.empty-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: $text-tertiary;
+}
+
+.empty-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 12rpx 32rpx;
+  border-radius: 999rpx;
+  background: $brand-soft;
+  border: 1rpx solid $brand-line;
+  color: $brand;
+  font-size: 24rpx;
+  font-weight: 600;
 }
 </style>

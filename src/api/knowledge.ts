@@ -203,6 +203,21 @@ export const deleteKnowledgeBase = (id: string) => {
   });
 };
 
+/** 更新知识库（重命名 / 修改公开权限） */
+export const updateKnowledgeBase = (id: string, data: {
+  name?: string;
+  description?: string;
+  is_public?: boolean;
+}) => {
+  return request<KnowledgeBase>({
+    url: `${API_PREFIX}/knowledgebase/${id}/`,
+    method: 'PATCH' as any,
+    data,
+    showLoading: true,
+    loadingText: '更新知识库中...'
+  });
+};
+
 // ====================== 知识节点（KnowledgeNode）相关 API ======================
 /**
  * 获取指定知识库下的知识节点列表（核心接口）

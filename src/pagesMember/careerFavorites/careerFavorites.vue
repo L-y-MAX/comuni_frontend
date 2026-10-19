@@ -1,8 +1,34 @@
 <template>
-  <view class="fav-page">
+  <view
+    class="fav-page"
+    :style="{ paddingTop: navTotalHeight + 'px' }"
+  >
+    <!-- 自定义导航栏：左上角返回 + 居中标题（右侧留给微信原生胶囊） -->
+    <view
+      class="custom-nav"
+      :style="{ paddingTop: statusBarHeight + 'px' }"
+    >
+      <view
+        class="nav-inner"
+        :style="{ height: navBarHeight + 'px' }"
+      >
+        <view
+          class="nav-left"
+          :style="{ width: sideWidth + 'px' }"
+          @tap="goBack"
+        >
+          <text class="nav-back">‹</text>
+        </view>
+        <text class="nav-title">我的收藏</text>
+        <view
+          class="nav-right"
+          :style="{ width: sideWidth + 'px' }"
+        ></view>
+      </view>
+    </view>
+
     <view class="fav-head">
-      <text class="fav-title">我的收藏</text>
-      <text class="fav-count">{{ items.length }} 条</text>
+      <text class="fav-count">{{ items.length }} 条收藏</text>
     </view>
 
     <!-- 空状态 -->
@@ -82,6 +108,45 @@ import { CAREER_RESOURCES } from '@/utils/careerResources';
 
 const FAV_KEY = 'careerResourcesFav';
 
+// ====================== 顶部导航栏尺寸 ======================
+const statusBarHeight = ref(20); // 状态栏高度（px）
+const navBarHeight = ref(44); // 标题栏高度（px）
+const sideWidth = ref(88); // 左右占位宽度（px），右侧避开微信原生胶囊
+const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value);
+
+/** 读取状态栏与胶囊位置，任何一步失败都用默认值兜底 */
+const initNavMetrics = () => {
+  try {
+    const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
+      statusBarHeight?: number;
+      windowWidth?: number;
+    };
+    if (typeof win.statusBarHeight === 'number' && win.statusBarHeight > 0) {
+      statusBarHeight.value = win.statusBarHeight;
+    }
+    // 开发者工具里 getMenuButtonBoundingClientRect 会失败并上报框架错误，直接跳过
+    const device = ((uni as any).getDeviceInfo?.() ?? {}) as { platform?: string };
+    if (device.platform === 'devtools') return;
+    const rect = (uni as any).getMenuButtonBoundingClientRect?.();
+    if (rect && rect.height > 0 && rect.top > 0) {
+      navBarHeight.value = (rect.top - statusBarHeight.value) * 2 + rect.height;
+      sideWidth.value = Math.max(60, (win.windowWidth ?? 375) - rect.left);
+    }
+  } catch {
+    // 取不到就保持默认值
+  }
+};
+
+/** 返回上一页；无上一页（如从分享卡片直接进入）时回首页 */
+const goBack = () => {
+  const pages = getCurrentPages();
+  if (pages.length > 1) {
+    uni.navigateBack();
+  } else {
+    uni.switchTab({ url: '/pages/index/index' });
+  }
+};
+
 const titles = ref<string[]>([]);
 
 const authHeader = () => ({
@@ -148,6 +213,7 @@ const goResources = () => {
 };
 
 onLoad(() => {
+  initNavMetrics();
   loadFavorites();
 });
 </script>
@@ -155,22 +221,62 @@ onLoad(() => {
 <style scoped lang="scss">
 .fav-page {
   min-height: 100vh;
-  padding: calc(var(--status-bar-height, 0px) + 24rpx) 24rpx 60rpx;
+  padding: 0 24rpx 60rpx;
   background: #f5f6f8;
   box-sizing: border-box;
+}
+
+/* ====================== 顶部导航栏 ====================== */
+.custom-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: #ffffff;
+  border-bottom: 1rpx solid #eef0f3;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  padding: 0 12rpx;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+}
+
+.nav-back {
+  font-size: 56rpx;
+  line-height: 1;
+  color: #1f2937;
+  padding: 0 16rpx 8rpx;
+}
+
+.nav-title {
+  flex: 1;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1f2937;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nav-right {
+  height: 100%;
 }
 
 .fav-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 20rpx;
-}
-
-.fav-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #1f2937;
+  margin: 16rpx 0 20rpx;
 }
 
 .fav-count {
