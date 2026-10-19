@@ -17,7 +17,7 @@
             :class="{ 'has-error': showNameError }"
           >
             <uni-icons
-              type="folder"
+              type="folder-add"
               size="16"
               color="#ff7239"
               class="input-icon"
@@ -76,36 +76,26 @@
               :class="{ active: formData.is_public_str === 'true' }"
               @click="selectPerm('true')"
             >
-              <view class="perm-head">
-                <view class="perm-dot">
-                  <uni-icons
-                    v-if="formData.is_public_str === 'true'"
-                    type="checkmarkempty"
-                    size="12"
-                    color="#fff"
-                  ></uni-icons>
-                </view>
-                <text class="perm-name">公开</text>
-              </view>
-              <text class="perm-desc">所有人可以浏览、关注你的知识库</text>
+              <uni-icons
+                type="eye"
+                size="16"
+                :color="formData.is_public_str === 'true' ? '#ffffff' : '#ff7239'"
+                class="perm-icon"
+              ></uni-icons>
+              <text class="perm-name">公开</text>
             </view>
             <view
               class="perm-card"
               :class="{ active: formData.is_public_str === 'false' }"
               @click="selectPerm('false')"
             >
-              <view class="perm-head">
-                <view class="perm-dot">
-                  <uni-icons
-                    v-if="formData.is_public_str === 'false'"
-                    type="checkmarkempty"
-                    size="12"
-                    color="#fff"
-                  ></uni-icons>
-                </view>
-                <text class="perm-name">私有</text>
-              </view>
-              <text class="perm-desc">仅自己查看，其他人无法访问</text>
+              <uni-icons
+                type="locked"
+                size="16"
+                :color="formData.is_public_str === 'false' ? '#ffffff' : '#ff7239'"
+                class="perm-icon"
+              ></uni-icons>
+              <text class="perm-name">私有</text>
             </view>
           </view>
 
@@ -352,20 +342,23 @@ const submit = async () => {
   }
 }
 
-// 权限选项卡片
+// 权限选项：紧凑按钮（图标 + 文字）
 .perm-list {
   display: flex;
-  gap: 16rpx;
+  gap: 20rpx;
   width: 100%;
 }
 
 .perm-card {
   flex: 1;
-  min-width: 0;
-  padding: 20rpx 20rpx 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  padding: 0 20rpx;
   background-color: #f8f9fa;
   border: 1rpx solid #e9ecef;
-  border-radius: 20rpx;
+  border-radius: 38rpx;
   -webkit-tap-highlight-color: transparent;
   transition: all 0.2s ease;
 
@@ -374,30 +367,12 @@ const submit = async () => {
   }
 
   &.active {
-    background-color: #fff7f2;
+    background-color: #ff7239;
     border-color: #ff7239;
   }
 
-  .perm-head {
-    display: flex;
-    align-items: center;
-  }
-
-  .perm-dot {
-    width: 28rpx;
-    height: 28rpx;
-    border-radius: 50%;
-    background-color: #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .perm-icon {
     margin-right: 10rpx;
-    flex-shrink: 0;
-    transition: all 0.2s ease;
-  }
-
-  &.active .perm-dot {
-    background-color: #ff7239;
   }
 
   .perm-name {
@@ -407,19 +382,7 @@ const submit = async () => {
   }
 
   &.active .perm-name {
-    color: #ff7239;
-  }
-
-  .perm-desc {
-    display: block;
-    margin-top: 10rpx;
-    font-size: 22rpx;
-    line-height: 1.5;
-    color: #9ca3af;
-  }
-
-  &.active .perm-desc {
-    color: #c2410c;
+    color: #ffffff;
   }
 }
 
