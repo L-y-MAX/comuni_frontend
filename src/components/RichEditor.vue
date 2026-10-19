@@ -2,6 +2,7 @@
   <view class="rich-editor">
     <!-- 工具栏：先选中文字，再点按钮；不需要记住任何 Markdown 语法 -->
     <scroll-view
+      v-if="!fallback"
       class="re-toolbar"
       scroll-x
       :show-scrollbar="false"
@@ -79,7 +80,7 @@
  * 会写语法，大部分人不会。editor 是所见即所得的富文本，产出 HTML 存在 content 字段，
  * 展示端 showNode 用 marked 渲染时会原样透传 HTML，无需改动。
  */
-import { getCurrentInstance, ref, watch } from 'vue'
+import { getCurrentInstance, onMounted, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -143,60 +144,81 @@ const onFallbackInput = (e: any) => {
 /**
  * 取 EditorContext。
  *
- * 这里是微信端最容易出问题的地方，全部加固：
- *  1. createSelectorQuery / in() / select() 任一步可能因为时机或环境差异拿不到东西，
- *     直接 .context 会抛 "Cannot read property context of null"，所以先判空再调；
- *  2. 节点还没渲染好时自动重试几次，而不是一次失败就永久不可编辑；
- *  3. uni 查询不可用时退回 wx.createSelectorQuery。
+ * 微信端这一步很容易拿不到，历史上踩过两个坑：
+ *  1. `.in()` 传的对象不对（vue3 下要把 mp 的原生组件实例传进去，而不是 vue proxy），
+ *     传错时 select() 什么都查不到，回调里 res.context 为 undefined；
+ *  2. @ready 触发时机偶尔早于节点可查询，需要重试。
+ * 所以这里做成：候选实例依次试 + 每轮多时点重试，全都失败才降级为纯文本。
  */
-const onReady = () => {
-  // 兜底计时器：@ready 触发了但始终拿不到上下文，也要能正常写文章
-  if (!fallbackTimer) {
-    fallbackTimer = setTimeout(() => {
-      if (!ready.value) enableFallback()
-    }, 1500)
+const acquire = (round = 0) => {
+  if (ready.value || fallback.value) return
+  const self: any = instance?.proxy ?? instance
+  const candidates = [self?.$scope, self, instance, null].filter(
+    (c, i, arr) => arr.indexOf(c) === i
+  )
+
+  let pending = candidates.length
+  let got = false
+
+  const finish = () => {
+    pending -= 1
+    if (got || pending > 0) return
+    // 本轮全部失败
+    if (round < 6) {
+      setTimeout(() => acquire(round + 1), 250)
+    } else {
+      enableFallback()
+    }
   }
 
-  const grab = (attempt = 0) => {
+  candidates.forEach((cand) => {
     try {
-      const self = (instance?.proxy ?? instance) as any
       const hasUni = typeof uni !== 'undefined' && typeof uni.createSelectorQuery === 'function'
       const hasWx = typeof wx !== 'undefined' && typeof (wx as any).createSelectorQuery === 'function'
       if (!hasUni && !hasWx) {
-        enableFallback()
+        finish()
         return
       }
       const query: any = hasUni ? uni.createSelectorQuery() : (wx as any).createSelectorQuery()
-      if (self && typeof query.in === 'function') query.in(self)
+      if (cand && typeof query.in === 'function') query.in(cand)
       const node = query.select('#rich-editor')
       if (!node || typeof node.context !== 'function') {
-        if (attempt < 3) return void setTimeout(() => grab(attempt + 1), 120)
-        enableFallback()
+        finish()
         return
       }
       node
         .context((res: any) => {
-          ctx.value = res?.context || null
-          if (!ctx.value) {
-            enableFallback()
-            return
+          const context = res?.context || null
+          if (!got && context) {
+            got = true
+            ctx.value = context
+            ready.value = true
+            if (fallbackTimer) {
+              clearTimeout(fallbackTimer)
+              fallbackTimer = null
+            }
+            if (props.html) context.setContents({ html: props.html })
           }
-          ready.value = true
-          if (fallbackTimer) {
-            clearTimeout(fallbackTimer)
-            fallbackTimer = null
-          }
-          if (props.html) ctx.value.setContents({ html: props.html })
+          finish()
         })
         .exec()
     } catch (err) {
-      console.error('[RichEditor] 获取编辑器上下文失败：', err)
-      if (attempt < 3) setTimeout(() => grab(attempt + 1), 120)
-      else enableFallback()
+      console.warn('[RichEditor] 查询编辑器上下文异常：', err)
+      finish()
     }
-  }
-  grab()
+  })
 }
+
+const onReady = () => acquire(0)
+
+onMounted(() => {
+  // @ready 在部分版本里不触发，挂载后主动再取一次
+  setTimeout(() => acquire(0), 300)
+  // 总兜底：3 秒内既没拿到上下文也没降级，就降级成纯文本，避免出现点了没反应的死按钮
+  setTimeout(() => {
+    if (!ready.value && !fallback.value) enableFallback()
+  }, 3000)
+})
 
 const onInput = (e: any) => {
   // 用户自己敲的内容，回灌会打断光标，所以标记一下
@@ -210,10 +232,17 @@ const onStatusChange = (e: any) => {
   active.value = e?.detail ?? {}
 }
 
-const fmt = (name: string, value?: string) => ctx.value?.format(name, value)
+/** 未就绪时点击工具按钮给出提示，避免"点了没反应"的困惑 */
+const needCtx = (): any => {
+  if (ctx.value) return ctx.value
+  uni.showToast({ title: '编辑器还没就绪，请稍等再试', icon: 'none', duration: 1500 })
+  return null
+}
+
+const fmt = (name: string, value?: string) => needCtx()?.format(name, value)
 const setSize = (value: string) => fmt('fontSize', value)
-const undo = () => ctx.value?.undo()
-const clearFormat = () => ctx.value?.removeFormat()
+const undo = () => needCtx()?.undo()
+const clearFormat = () => needCtx()?.removeFormat()
 
 /**
  * 外部赋值（填充示例、加载已有文章）要同步进编辑器；
