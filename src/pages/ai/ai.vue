@@ -81,7 +81,17 @@
             hover-class="msg-icon-btn-active"
             @click="retryLast"
           >
-            <text class="msg-icon">↻</text>
+            <image
+              v-if="!iconImgBroken"
+              class="msg-icon-img"
+              src="/static/icons/retry.png"
+              mode="aspectFit"
+              @error="iconImgBroken = true"
+            />
+            <text
+              v-else
+              class="msg-icon"
+            >↻</text>
             <text class="msg-icon-label">重新回答</text>
           </view>
           <view
@@ -90,7 +100,17 @@
             hover-class="msg-icon-btn-active"
             @click="copyText(msg.content)"
           >
-            <text class="msg-icon">⧉</text>
+            <image
+              v-if="!iconImgBroken"
+              class="msg-icon-img"
+              src="/static/icons/copy.png"
+              mode="aspectFit"
+              @error="iconImgBroken = true"
+            />
+            <text
+              v-else
+              class="msg-icon"
+            >⧉</text>
             <text class="msg-icon-label">复制</text>
           </view>
           <view
@@ -99,7 +119,17 @@
             hover-class="msg-icon-btn-active"
             @click="regenerate"
           >
-            <text class="msg-icon">⟳</text>
+            <image
+              v-if="!iconImgBroken"
+              class="msg-icon-img"
+              src="/static/icons/regen.png"
+              mode="aspectFit"
+              @error="iconImgBroken = true"
+            />
+            <text
+              v-else
+              class="msg-icon"
+            >⟳</text>
             <text class="msg-icon-label">重新生成</text>
           </view>
           <view
@@ -107,7 +137,17 @@
             hover-class="msg-icon-btn-active"
             @click="saveAnswerToKb(msg.content)"
           >
-            <text class="msg-icon">⤓</text>
+            <image
+              v-if="!iconImgBroken"
+              class="msg-icon-img"
+              src="/static/icons/save.png"
+              mode="aspectFit"
+              @error="iconImgBroken = true"
+            />
+            <text
+              v-else
+              class="msg-icon"
+            >⤓</text>
             <text class="msg-icon-label">存到知识库</text>
           </view>
         </view>
@@ -883,6 +923,9 @@ const openSourceArticle = () => {
   uni.navigateTo({ url: '/pages/knowledge/knowledge' })
 }
 
+/** 图标图片加载失败时整体回退到字符图标（避免破图） */
+const iconImgBroken = ref(false)
+
 // 页面挂载时执行
 onMounted(() => {
   console.log('AI助手页面初始化完成')
@@ -1396,5 +1439,11 @@ onShareTimeline(() => {
   }
   .msg-icon-btn-active {
     background: #e2e8f0;
+  }
+
+  /* 图标图片尺寸：与字符图标视觉等大 */
+  .msg-icon-img {
+    width: 34rpx;
+    height: 34rpx;
   }
 </style>
