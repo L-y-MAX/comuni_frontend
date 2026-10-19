@@ -220,10 +220,8 @@ import {
 } from '@/api/knowledge'
 import { toKbContent } from '@/utils/plainText'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
-import { marked } from 'marked'
 
 // 知识库文章按纯文本/富文本两种形态存在，AI 回答则按 Markdown 渲染（更易读）
-marked.setOptions({ breaks: true })
 
 // 初始化状态库
 const knowledgeStore = useKnowledgeStore()
@@ -803,29 +801,89 @@ const onMessageLongPress = (msg: Message) => {
   })
 }
 
+/** 转义 HTML 特殊字符 */
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** 行内格式：加粗、斜体、行内代码 */
+const inlineMd = (text: string): string => {
+  let t = escapeHtml(text)
+  t = t.replace(/`([^`]+)`/g, '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">$1</code>')
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight:600;color:#111827;">$1</strong>')
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+  return t
+}
+
+/** 标题字号：一级最大，逐级递减 */
+const headingStyle = (level: number): string => {
+  const size = level === 1 ? '38rpx' : level === 2 ? '34rpx' : level === 3 ? '31rpx' : '29rpx'
+  return 'font-size:' + size + ';font-weight:600;color:#111827;line-height:1.5;margin:20rpx 0 12rpx;'
+}
+
 /**
- * 把 AI 回答渲染成 rich-text 可用的 HTML。
- * rich-text 不吃外部 CSS，所以这里给列表/段落/代码块注入内联样式，
- * 解决"有序列表没有缩进、段落挤在一起、代码块没背景"的问题。
+ * Markdown → rich-text 可渲染的 HTML（零依赖）。
+ * 支持标题、加粗/斜体、行内代码、代码块、有序/无序列表与段落间距，
+ * 让模型输出的层级（大标题、小标题、加粗）真正体现出来。
  */
-const renderAnswerHtml = (text: string): string => {
-  if (!text) return ''
-  let html = ''
-  try {
-    html = marked.parse(text) as string
-  } catch {
-    return ''
+const renderAnswerHtml = (markdown: string): string => {
+  if (!markdown) return ''
+  const srcLines = String(markdown).replace(/\r\n/g, '\n').split('\n')
+  const out: string[] = []
+  let inCode = false
+  let listType: '' | 'ul' | 'ol' = ''
+  const closeList = () => {
+    if (listType) {
+      out.push(`</${listType}>`)
+      listType = ''
+    }
   }
-  return html
-    .replace(/<pre>/g, '<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;font-size:24rpx;line-height:1.6;white-space:pre;margin:14rpx 0;">')
-    .replace(/<code>/g, '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">')
-    .replace(/<h1>/g, '<h1 style="font-size:34rpx;margin:18rpx 0 10rpx;">')
-    .replace(/<h2>/g, '<h2 style="font-size:32rpx;margin:18rpx 0 10rpx;">')
-    .replace(/<h3>/g, '<h3 style="font-size:30rpx;margin:16rpx 0 8rpx;">')
-    .replace(/<p>/g, '<p style="margin:14rpx 0;line-height:1.75;">')
-    .replace(/<ul>/g, '<ul style="padding-left:40rpx;margin:14rpx 0;">')
-    .replace(/<ol>/g, '<ol style="padding-left:40rpx;margin:14rpx 0;">')
-    .replace(/<li>/g, '<li style="margin:8rpx 0;line-height:1.7;">')
+
+  for (const raw of srcLines) {
+    const line = raw.replace(/\s+$/, '')
+    if (/^\s*```/.test(line)) {
+      closeList()
+      if (!inCode) {
+        out.push('<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;white-space:pre;font-size:24rpx;line-height:1.6;margin:14rpx 0;">')
+        inCode = true
+      } else {
+        out.push('</pre>')
+        inCode = false
+      }
+      continue
+    }
+    if (inCode) {
+      out.push(escapeHtml(raw) + '\n')
+      continue
+    }
+    if (!line.trim()) {
+      closeList()
+      continue
+    }
+    const heading = line.match(/^(#{1,4})\s+(.*)$/)
+    if (heading) {
+      closeList()
+      out.push(`<div style="${headingStyle(heading[1].length)}">${inlineMd(heading[2])}</div>`)
+      continue
+    }
+    const bullet = line.match(/^\s*[-*+]\s+(.*)$/)
+    const ordered = line.match(/^\s*(\d+)[.)]\s+(.*)$/)
+    if (bullet || ordered) {
+      const type: 'ul' | 'ol' = bullet ? 'ul' : 'ol'
+      if (listType !== type) {
+        closeList()
+        out.push(type === 'ul' ? '<ul style="padding-left:40rpx;margin:12rpx 0;">' : '<ol style="padding-left:40rpx;margin:12rpx 0;">')
+        listType = type
+      }
+      const text = bullet ? bullet[1] : ordered ? ordered[2] : ''
+      out.push(`<li style="margin:8rpx 0;line-height:1.7;">${inlineMd(text)}</li>`)
+      continue
+    }
+    closeList()
+    out.push(`<p style="margin:14rpx 0;line-height:1.75;">${inlineMd(line)}</p>`)
+  }
+  closeList()
+  if (inCode) out.push('</pre>')
+  return out.join('')
 }
 
 // 页面挂载时执行
