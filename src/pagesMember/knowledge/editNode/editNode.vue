@@ -75,7 +75,7 @@
             >
               <textarea
                 v-model="formData.content"
-                placeholder="请输入文章内容（支持Markdown）"
+                placeholder="请输入文章内容（纯文本，可用换行分段）"
                 class="content-textarea"
                 :maxlength="maxInputLength"
                 :focused="contentInputFocused"
@@ -97,6 +97,8 @@
 import { onLoad, onReady, onBackPress } from '@dcloudio/uni-app'
 import { computed, reactive, ref, getCurrentInstance, nextTick } from 'vue'
 import { marked } from 'marked'
+// 知识库正文按纯文本使用：开启 breaks，让普通换行也能分段（否则会被合并成一行）
+marked.setOptions({ breaks: true })
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'
@@ -136,6 +138,7 @@ import type { KnowledgeNode } from '@/types/knowledge'
 
 // 直接引入接口文件中的方法（无需重复封装请求）
 import { getKnowledgeNodeDetail, addKnowledgeNode, updateKnowledgeNode } from '@/api/knowledge'
+import { toKbContent } from '@/utils/plainText'
 
 // ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========
 declare type UniFormsInstance = {
@@ -503,6 +506,9 @@ const handleBtnClick = async () => {
  * 提交表单（直接使用接口文件的add/update方法）
  */
 const submit = async (isFromBack?: boolean) => {
+  // 知识库按纯文本存储：把 Markdown 还原成普通文字再提交
+  formData.content = toKbContent(formData.content)
+
   try {
     if (type.value === 'edit') {
       // 编辑模式：调用updateKnowledgeNode（内置creator/knowledge_base处理）

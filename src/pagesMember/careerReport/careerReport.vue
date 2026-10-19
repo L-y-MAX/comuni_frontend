@@ -219,7 +219,7 @@
 
           <view
             class="goal-block"
-            @click="editGoal('shortTermGoal')"
+            @click="openGoalDialog('shortTermGoal')"
           >
             <view class="goal-head">
               <text class="goal-label">短期目标（1–3个月）</text>
@@ -230,13 +230,49 @@
 
           <view
             class="goal-block"
-            @click="editGoal('longTermGoal')"
+            @click="openGoalDialog('longTermGoal')"
           >
             <view class="goal-head">
               <text class="goal-label">长期目标</text>
               <text class="goal-edit">编辑</text>
             </view>
             <text class="goal-text">{{ report.longTermGoal }}</text>
+          </view>
+
+          <!-- 目标编辑弹窗：uni.showModal 的 editable 只有单行输入框，放不下目标描述，
+               这里改自绘 textarea 弹窗，宽度 86%、高度不小于 260rpx -->
+          <view
+            v-if="goalEditing"
+            class="goal-mask"
+            @click="closeGoalDialog"
+          />
+          <view
+            v-if="goalEditing"
+            class="goal-dialog"
+            @click.stop
+          >
+            <text class="goal-dialog-title">{{ goalEditing === 'shortTermGoal' ? '编辑短期目标' : '编辑长期目标' }}</text>
+            <textarea
+              v-model="goalDraft"
+              class="goal-dialog-textarea"
+              :maxlength="600"
+              placeholder="写下你的目标，建议包含时间范围和可验证的结果"
+              :fixed="true"
+              :adjust-position="true"
+            />
+            <view class="goal-dialog-foot">
+              <text class="goal-dialog-count">{{ goalDraft.length }}/600</text>
+              <view class="goal-dialog-btns">
+                <text
+                  class="goal-dialog-btn cancel"
+                  @click="closeGoalDialog"
+                >取消</text>
+                <text
+                  class="goal-dialog-btn save"
+                  @click="saveGoal"
+                >保存</text>
+              </view>
+            </view>
           </view>
 
           <text class="sub-title">行业需求与发展趋势</text>
@@ -578,28 +614,35 @@ const toggleTask = (taskId: string) => {
   updateHistoryEntry(report.value);
 };
 
-/** 编辑职业目标（计划书要求支持手动修改） */
-const editGoal = (field: 'shortTermGoal' | 'longTermGoal') => {
+/** 目标编辑弹窗状态 */
+const goalEditing = ref<'shortTermGoal' | 'longTermGoal' | null>(null);
+const goalDraft = ref('');
+
+/** 打开目标编辑弹窗（计划书要求支持手动修改） */
+const openGoalDialog = (field: 'shortTermGoal' | 'longTermGoal') => {
   if (!report.value) return;
-  const current = report.value[field];
-  uni.showModal({
-    title: field === 'shortTermGoal' ? '编辑短期目标' : '编辑长期目标',
-    editable: true,
-    placeholderText: current,
-    content: current,
-    success: (res) => {
-      if (!res.confirm) return;
-      const next = (res.content ?? '').trim();
-      if (!next) {
-        uni.showToast({ title: '目标不能为空', icon: 'none', duration: 1500 });
-        return;
-      }
-      report.value = refreshReportMarkdown({ ...report.value!, [field]: next });
-      saveReport();
-      updateHistoryEntry(report.value);
-      uni.showToast({ title: '已保存', icon: 'success', duration: 1200 });
-    },
-  });
+  goalEditing.value = field;
+  goalDraft.value = report.value[field] || '';
+};
+
+const closeGoalDialog = () => {
+  goalEditing.value = null;
+  goalDraft.value = '';
+};
+
+const saveGoal = () => {
+  const field = goalEditing.value;
+  if (!report.value || !field) return;
+  const next = goalDraft.value.trim();
+  if (!next) {
+    uni.showToast({ title: '目标不能为空', icon: 'none', duration: 1500 });
+    return;
+  }
+  report.value = refreshReportMarkdown({ ...report.value, [field]: next });
+  saveReport();
+  updateHistoryEntry(report.value);
+  closeGoalDialog();
+  uni.showToast({ title: '已保存', icon: 'success', duration: 1200 });
 };
 
 const goAbilityProfile = () => {
@@ -1504,4 +1547,74 @@ onShareAppMessage(() => ({
   font-style: italic;
   line-height: 1.5;
 }
+
+  /* 目标编辑弹窗：宽度 86%，高度以 260rpx 起步、最多 46vh */
+  .goal-mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 900;
+  }
+  .goal-dialog {
+    position: fixed;
+    left: 7%;
+    right: 7%;
+    top: 20%;
+    z-index: 901;
+    background: #ffffff;
+    border-radius: 20rpx;
+    padding: 30rpx 28rpx 24rpx;
+    box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.18);
+  }
+  .goal-dialog-title {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 18rpx;
+  }
+  .goal-dialog-textarea {
+    width: 100%;
+    min-height: 260rpx;
+    max-height: 46vh;
+    box-sizing: border-box;
+    padding: 18rpx 20rpx;
+    font-size: 28rpx;
+    line-height: 1.6;
+    color: #333333;
+    background: #f8fafc;
+    border: 1rpx solid #e5e7eb;
+    border-radius: 12rpx;
+  }
+  .goal-dialog-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20rpx;
+  }
+  .goal-dialog-count {
+    font-size: 22rpx;
+    color: #9ca3af;
+  }
+  .goal-dialog-btns {
+    display: flex;
+    align-items: center;
+  }
+  .goal-dialog-btn {
+    padding: 14rpx 34rpx;
+    border-radius: 999rpx;
+    font-size: 28rpx;
+    margin-left: 16rpx;
+  }
+  .goal-dialog-btn.cancel {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  .goal-dialog-btn.save {
+    background: #2563eb;
+    color: #ffffff;
+  }
 </style>

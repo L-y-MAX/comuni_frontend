@@ -83,7 +83,7 @@
             >
               <textarea
                 v-model="formData.content"
-                placeholder="请输入文章内容（支持Markdown）"
+                placeholder="请输入文章内容（纯文本，可用换行分段）"
                 class="content-textarea"
                 :maxlength="maxInputLength"
                 :focused="contentInputFocused"
@@ -122,6 +122,8 @@
 import { onLoad, onReady, onBackPress } from '@dcloudio/uni-app'
 import { computed, reactive, ref, getCurrentInstance, nextTick } from 'vue'
 import { marked } from 'marked'
+// 知识库正文按纯文本使用：开启 breaks，让普通换行也能分段（否则会被合并成一行）
+marked.setOptions({ breaks: true })
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'
@@ -157,6 +159,7 @@ hljs.registerLanguage('sql', sql)
 hljs.registerLanguage('markdown', markdown)
 import { markedHighlight } from 'marked-highlight'
 import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
+import { toKbContent } from '@/utils/plainText'
 
 // ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========
 declare type UniFormsInstance = {
@@ -459,56 +462,18 @@ const renderMarkdownAsync = async () => {
  * 用模板字符串会和外层的反引号冲突。
  */
 const SAMPLE_ARTICLE_TEMPLATE = [
-  '# 我的第一篇知识库文章',
+  '知识库正文示例（纯文本，不需要任何 Markdown 语法）',
   '',
-  '这是一篇**示例文章**，用来演示知识库里能怎么写。你可以直接改，把它换成自己的内容。',
+  '一、直接换行分段就好',
+  '空一行就是新的一段，不用记任何符号。',
   '',
-  '## 一、为什么要把笔记放进知识库',
+  '二、条目用「· 」开头',
+  '· 第一点：写清楚要记录的事项',
+  '· 第二点：补充例子或数据',
+  '· 第三点：记下待办与疑问',
   '',
-  '面试题、项目复盘、学习笔记放在一起，秋招前翻一遍，比重头找资料快得多。',
-  '',
-  '## 二、支持 Markdown 排版',
-  '',
-  '- **加粗**、*斜体*、`行内代码`',
-  '- 有序列表：',
-  '',
-  '1. 先把知识点拆成小标题',
-  '2. 每条都配一个自己的例子',
-  '3. 定期回来看，删掉已经掌握的',
-  '',
-  '> 引用块适合放结论、面试官原话，或者一句话总结。',
-  '',
-  '## 三、代码也能放进来',
-  '',
-  '```js',
-  '// 面试常问：手写防抖',
-  'function debounce(fn, delay = 300) {',
-  '  let timer = null',
-  '  return (...args) => {',
-  '    if (timer) clearTimeout(timer)',
-  '    timer = setTimeout(() => fn(...args), delay)',
-  '  }',
-  '}',
-  '```',
-  '',
-  '## 四、用表格做对比',
-  '',
-  '| 方案 | 优点 | 缺点 |',
-  '| --- | --- | --- |',
-  '| 直接读缓存 | 简单 | 多实例容易不一致 |',
-  '| 集中管理 | 一致性好 | 多一层封装 |',
-  '',
-  '## 五、写完还能做什么',
-  '',
-  '保存后回到文章详情页，点右上角「问 AI」，可以：',
-  '',
-  '- 让它**概括这篇的要点**',
-  '- 让它**逐段解释代码**',
-  '- 让它**出几道相关的面试题**',
-  '',
-  '---',
-  '',
-  '把上面这些删掉，换成你自己的内容就可以发布了。',
+  '三、粘贴 Markdown 也没关系',
+  '系统会自动把 **加粗**、## 标题、| 表格 | 还原成普通文字，存进知识库的是干净的纯文本。',
 ].join('\n')
 
 /** 真正把示例内容写进编辑框，并立刻刷新预览 */
@@ -587,6 +552,9 @@ const handleBtnClick = async () => {
  * 提交表单（新增文章）
  */
 const submit = async (isFromBack?: boolean) => {
+  // 知识库按纯文本存储：把粘贴进来的 Markdown 还原成普通文字再提交
+  formData.content = toKbContent(formData.content)
+
   try {
     // 新增模式：调用addKnowledgeNode
     const res = await addKnowledgeNode({

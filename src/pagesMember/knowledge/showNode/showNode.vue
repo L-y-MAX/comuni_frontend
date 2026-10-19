@@ -359,6 +359,8 @@ import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { getCurrentInstance, nextTick, onMounted, reactive, ref } from 'vue'
 import { getKnowledgeNodeDetail } from '@/api/knowledge'
 import { marked } from 'marked'
+// 知识库正文按纯文本使用：开启 breaks，让普通换行也能分段（否则会被合并成一行）
+marked.setOptions({ breaks: true })
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'

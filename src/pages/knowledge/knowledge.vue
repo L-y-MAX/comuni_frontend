@@ -69,7 +69,7 @@
           <view class="guide-step">
             <text class="guide-num">2</text>
             <text class="guide-text"
-              >选中这个知识库，点「新增文章」。正文支持 Markdown：标题、列表、表格、代码块</text
+              >选中这个知识库，点「新增文章」。正文为纯文本，直接换行分段即可</text
             >
           </view>
           <view class="guide-step">

@@ -164,6 +164,7 @@ import {
   getKnowledgeBaseList,
   getKnowledgeNodeListByKBId,
 } from '@/api/knowledge'
+import { toKbContent } from '@/utils/plainText'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
 
 // 初始化状态库
@@ -408,6 +409,8 @@ const verifyQuotes = (answer: string) => {
  * 把 AI 回答存进我自己的某个知识库（选库 -> 写入）。
  */
 const saveAnswerToKb = async (content: string) => {
+  // AI 回答常带 Markdown（**加粗**、## 标题、表格），进知识库前还原成纯文本
+  content = toKbContent(content)
   try {
     const res: any = await getKnowledgeBaseList()
     const kbs: any[] = pickList(res)
