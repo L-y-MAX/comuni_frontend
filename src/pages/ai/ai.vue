@@ -15,22 +15,7 @@
       >
         正在针对《{{ articleTitle }}》回答。想换一篇文章，去知识库打开它，再点右上角「问 AI」
       </view>
-      <view
-        v-else
-        class="ai-guide"
-      >
-        <view class="ai-guide-title">AI 助手怎么用</view>
-        <view class="ai-guide-text">这个助手是针对「知识库里的某篇文章」提问的，先选一篇文章：</view>
-        <view class="ai-guide-step">1. 去知识库，打开一篇文章</view>
-        <view class="ai-guide-step">2. 在文章详情页右上角点「问 AI」</view>
-        <view class="ai-guide-step">3. 回到这里，就能让它概括要点、解释代码、出面试题</view>
-        <button
-          class="ai-guide-btn"
-          @click="goKnowledge"
-        >
-          去知识库选一篇文章
-        </button>
-      </view>
+      <!-- 使用引导已改为弹窗，见页面底部 -->
 
       <!-- 聊天消息列表 -->
       <view
@@ -208,6 +193,38 @@
       >
         选择笔记作为上下文
       </text>
+      <text
+
+    <!-- 使用引导弹窗 -->
+    <view
+      v-if="guideVisible"
+      class="guide-mask"
+      @click="closeGuide"
+    />
+    <view
+      v-if="guideVisible"
+      class="guide-card"
+      @click.stop
+    >
+      <text class="guide-title">AI 助手怎么用</text>
+      <text class="guide-text">这个助手是针对知识库内容提问的，先给它一个上下文：</text>
+      <text class="guide-step">1. 点「选择笔记作为上下文」，选整个知识库或某一篇文章</text>
+      <text class="guide-step">2. 输入问题后点发送，回答会带上原文核对与来源</text>
+      <text class="guide-step">3. 也可以点下方推荐问题，先填进输入框再发送</text>
+      <view class="guide-actions">
+        <text
+          class="guide-btn ghost"
+          @click="closeGuide"
+        >知道了</text>
+        <text
+          class="guide-btn primary"
+          @click="goKnowledgeFromGuide"
+        >去知识库选文章</text>
+      </view>
+    </view>
+        class="mount-help"
+        @click="openGuide"
+      >怎么用</text>
     </view>
 
     <view class="input-area">
@@ -932,8 +949,19 @@ const openSourceArticle = () => {
 /** 图标图片加载失败时整体回退到字符图标（避免破图） */
 const iconImgBroken = ref(false)
 
+/** 使用引导弹窗 */
+const guideVisible = ref(false)
+const openGuide = () => { guideVisible.value = true }
+const closeGuide = () => { guideVisible.value = false }
+const goKnowledgeFromGuide = () => {
+  closeGuide()
+  goKnowledge()
+}
+
 // 页面挂载时执行
 onMounted(() => {
+  // 第一次进来还没选上下文时，先把用法弹出来
+  if (!mountedNoteName.value) guideVisible.value = true
   console.log('AI助手页面初始化完成')
 
   // 获取跳转传递的prompt参数
@@ -1451,5 +1479,77 @@ onShareTimeline(() => {
   .msg-icon-img {
     width: 34rpx;
     height: 34rpx;
+  }
+
+  /* 「怎么用」入口 */
+  .mount-help {
+    margin-left: auto;
+    padding: 6rpx 16rpx;
+    font-size: 22rpx;
+    color: #2563eb;
+    background: #eff6ff;
+    border-radius: 999rpx;
+  }
+
+  /* 使用引导弹窗 */
+  .guide-mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 900;
+  }
+  .guide-card {
+    position: fixed;
+    left: 8%;
+    right: 8%;
+    top: 22%;
+    z-index: 901;
+    background: #ffffff;
+    border-radius: 24rpx;
+    padding: 34rpx 30rpx 26rpx;
+    box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.18);
+  }
+  .guide-title {
+    display: block;
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 14rpx;
+  }
+  .guide-text {
+    display: block;
+    font-size: 26rpx;
+    line-height: 1.6;
+    color: #475569;
+    margin-bottom: 16rpx;
+  }
+  .guide-step {
+    display: block;
+    font-size: 25rpx;
+    line-height: 1.7;
+    color: #334155;
+    margin-bottom: 10rpx;
+  }
+  .guide-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 26rpx;
+  }
+  .guide-btn {
+    margin-left: 16rpx;
+    padding: 14rpx 30rpx;
+    border-radius: 999rpx;
+    font-size: 26rpx;
+  }
+  .guide-btn.ghost {
+    color: #475569;
+    background: #f1f5f9;
+  }
+  .guide-btn.primary {
+    color: #ffffff;
+    background: #2563eb;
   }
 </style>
