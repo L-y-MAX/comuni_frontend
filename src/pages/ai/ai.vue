@@ -84,7 +84,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/retry.png"
+              src="/static/icons/regen.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -233,8 +233,14 @@
         @click="onMainButton"
         :disabled="!isLoading && (!inputContent.trim() || inputContent.length > maxInputLength)"
       >
+        <image
+          v-if="isLoading && !iconImgBroken"
+          class="send-icon"
+          src="/static/icons/stop.png"
+          mode="aspectFit"
+        />
         <text
-          v-if="isLoading"
+          v-else-if="isLoading"
           class="send-stop-text"
         >停止</text>
         <image
