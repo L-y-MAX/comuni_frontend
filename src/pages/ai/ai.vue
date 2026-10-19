@@ -75,33 +75,41 @@
           v-if="!msg.isUser"
           class="msg-actions"
         >
-          <text
+          <view
             v-if="isErrorMsg(msg)"
-            class="msg-op retry"
+            class="msg-icon-btn retry"
+            hover-class="msg-icon-btn-active"
             @click="retryLast"
           >
-            重新回答
-          </text>
-          <text
+            <text class="msg-icon">↻</text>
+            <text class="msg-icon-label">重新回答</text>
+          </view>
+          <view
             v-else
-            class="msg-op"
+            class="msg-icon-btn"
+            hover-class="msg-icon-btn-active"
             @click="copyText(msg.content)"
           >
-            复制
-          </text>
-          <text
+            <text class="msg-icon">⧉</text>
+            <text class="msg-icon-label">复制</text>
+          </view>
+          <view
             v-if="!isErrorMsg(msg)"
-            class="msg-op"
+            class="msg-icon-btn"
+            hover-class="msg-icon-btn-active"
             @click="regenerate"
           >
-            重新生成
-          </text>
-          <text
-            class="msg-save"
+            <text class="msg-icon">⟳</text>
+            <text class="msg-icon-label">重新生成</text>
+          </view>
+          <view
+            class="msg-icon-btn save"
+            hover-class="msg-icon-btn-active"
             @click="saveAnswerToKb(msg.content)"
           >
-            存到知识库
-          </text>
+            <text class="msg-icon">⤓</text>
+            <text class="msg-icon-label">存到知识库</text>
+          </view>
         </view>
       </view>
 
@@ -1345,5 +1353,45 @@ onShareTimeline(() => {
     margin-top: 6rpx;
     font-size: 22rpx;
     color: #94a3b8;
+  }
+
+  /* 操作图标按钮：默认只显示图标，hover 时展开文字（开发者工具/桌面端） */
+  .msg-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8rpx 12rpx;
+    margin-right: 12rpx;
+    border-radius: 10rpx;
+    background: #f1f5f9;
+  }
+  .msg-icon-btn.save {
+    background: #fff3ed;
+  }
+  .msg-icon {
+    font-size: 28rpx;
+    line-height: 1;
+    color: #475569;
+  }
+  .msg-icon-btn.save .msg-icon {
+    color: #FF7239;
+  }
+  .msg-icon-btn.retry .msg-icon {
+    color: #2563eb;
+  }
+  .msg-icon-label {
+    display: none; /* 默认不显示文字 */
+    margin-left: 8rpx;
+    font-size: 22rpx;
+    color: #475569;
+    white-space: nowrap;
+  }
+  .msg-icon-btn.save .msg-icon-label {
+    color: #FF7239;
+  }
+  .msg-icon-btn:hover .msg-icon-label {
+    display: inline; /* 鼠标悬停时显示文字 */
+  }
+  .msg-icon-btn-active {
+    background: #e2e8f0;
   }
 </style>
