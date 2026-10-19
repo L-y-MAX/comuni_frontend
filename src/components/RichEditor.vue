@@ -108,7 +108,12 @@ const SIZES = [
 ]
 
 const instance = getCurrentInstance()
-const ctx = ref<any>(null)
+/**
+ * EditorContext 必须用**普通变量**持有，不能放进 ref/reactive：
+ * 微信端的视图数据要做结构化克隆，原生 context 对象不可克隆，
+ * 放进响应式状态会在每次 publish/ready 时报 "An object could not be cloned"。
+ */
+let editorCtx: any = null
 const ready = ref(false)
 const active = ref<Record<string, any>>({})
 /** 本次变更是否来自用户输入（用于跳过回灌） */
@@ -191,7 +196,7 @@ const acquire = (round = 0) => {
           const context = res?.context || null
           if (!got && context) {
             got = true
-            ctx.value = context
+            editorCtx = context
             ready.value = true
             if (fallbackTimer) {
               clearTimeout(fallbackTimer)
@@ -227,14 +232,20 @@ const onInput = (e: any) => {
   emit('change')
 }
 
-/** 工具栏高亮跟着光标所在位置同步 */
+/** 工具栏高亮跟着光标所在位置同步（只取简单字段，复杂对象不进响应式状态） */
 const onStatusChange = (e: any) => {
-  active.value = e?.detail ?? {}
+  const d = e?.detail || {}
+  active.value = {
+    bold: !!d.bold,
+    italic: !!d.italic,
+    underline: !!d.underline,
+    fontSize: typeof d.fontSize === 'string' ? d.fontSize : '',
+  }
 }
 
 /** 未就绪时点击工具按钮给出提示，避免"点了没反应"的困惑 */
 const needCtx = (): any => {
-  if (ctx.value) return ctx.value
+  if (editorCtx) return editorCtx
   uni.showToast({ title: '编辑器还没就绪，请稍等再试', icon: 'none', duration: 1500 })
   return null
 }
@@ -260,13 +271,13 @@ watch(
       fallbackText.value = String(value).replace(/<[^>]+>/g, '').trim()
       return
     }
-    if (!ready.value || !ctx.value) return
-    ctx.value.setContents({ html: value || '' })
+    if (!ready.value || !editorCtx) return
+    editorCtx.setContents({ html: value || '' })
   }
 )
 
 defineExpose({
-  setHtml: (html: string) => ctx.value?.setContents({ html }),
+  setHtml: (html: string) => editorCtx?.setContents({ html }),
 })
 </script>
 
