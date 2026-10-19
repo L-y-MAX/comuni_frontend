@@ -136,6 +136,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { syncLoginState } from '@/pages/my/my'
+import { baseURL } from '@/utils/request'
 
 // ========== 类型定义 ==========
 /** 通用登录返回数据结构 */

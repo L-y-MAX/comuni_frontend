@@ -283,6 +283,7 @@ interface Message {
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useKnowledgeStore } from '@/stores/knowledge'
 import { toKbContent } from '@/utils/plainText'
+import { baseURL } from '@/utils/request'
 import {
   addKnowledgeNode,
   getKnowledgeBaseList,

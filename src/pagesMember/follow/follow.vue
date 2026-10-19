@@ -109,6 +109,7 @@
 <script setup lang="ts">
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import { baseURL } from '@/utils/request'
 // 状态管理
 const activeTab = ref<'following' | 'follower'>('following') // 当前激活的tab
 const isLoading = ref(true) // 加载状态

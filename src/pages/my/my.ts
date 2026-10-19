@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { baseURL } from '@/utils/request'
 
 // 响应式数据
 export const userAvatar = ref('')

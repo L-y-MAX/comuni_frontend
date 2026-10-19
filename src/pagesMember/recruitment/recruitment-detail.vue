@@ -317,6 +317,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { baseURL } from '@/utils/request'
 
 // 定义数据类型（和列表页一致）
 interface RecruitmentItem {

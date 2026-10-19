@@ -240,6 +240,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { baseURL } from '@/utils/request'
 
 // ========== 通用折叠状态管理 ==========
 const collapseStates = ref<Record<string, boolean>>({
