@@ -894,14 +894,16 @@ onShareTimeline(() => {
   max-width: 60%;
 }
 
-.message-item {
-  display: flex;
-  margin-bottom: 30rpx;
-  max-width: 80%;
-  animation: fadeIn 0.3s ease forwards;
-  opacity: 0;
-  transform: translateY(10rpx);
-}
+  .message-item {
+    display: flex;
+    flex-direction: column; /* 竖直排列：正文 → 溯源 → 操作区 */
+    align-items: flex-start;
+    margin-bottom: 30rpx;
+    max-width: 85%;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(10rpx);
+  }
 
 @keyframes fadeIn {
   to {
@@ -911,8 +913,8 @@ onShareTimeline(() => {
 }
 
 .user-message {
-  flex-direction: row-reverse;
-  margin-left: auto;
+    align-items: flex-end;
+    margin-left: auto;
 }
 
 .ai-message {
@@ -927,7 +929,7 @@ onShareTimeline(() => {
   line-height: 1.6;
   word-wrap: break-word;
   word-break: break-all;
-    max-width: 85%; /* 手机阅读不撑满 */
+    max-width: 100%;
 }
 
 .user-message .message-content {
