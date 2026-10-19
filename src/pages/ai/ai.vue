@@ -194,6 +194,10 @@
         选择笔记作为上下文
       </text>
       <text
+        class="mount-help"
+        @click="openGuide"
+      >怎么用</text>
+    </view>
 
     <!-- 使用引导弹窗 -->
     <view
@@ -221,10 +225,6 @@
           @click="goKnowledgeFromGuide"
         >去知识库选文章</text>
       </view>
-    </view>
-        class="mount-help"
-        @click="openGuide"
-      >怎么用</text>
     </view>
 
     <view class="input-area">
