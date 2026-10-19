@@ -37,6 +37,7 @@
         v-for="(msg, index) in messages"
         :key="index"
         :class="['message-item', msg.isUser ? 'user-message' : 'ai-message']"
+          @longpress="onMessageLongPress(msg)"
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
         <view class="message-content">
@@ -58,6 +59,27 @@
             :class="{ bad: verifyQuotes(msg.content).failed > 0 }"
           >
             引用核对：{{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可在原文中找到
+          </text>
+          <text
+            v-if="isErrorMsg(msg)"
+            class="msg-op retry"
+            @click="retryLast"
+          >
+            重新回答
+          </text>
+          <text
+            v-else
+            class="msg-op"
+            @click="copyText(msg.content)"
+          >
+            复制
+          </text>
+          <text
+            v-if="!isErrorMsg(msg)"
+            class="msg-op"
+            @click="regenerate"
+          >
+            重新生成
           </text>
           <text
             class="msg-save"
@@ -144,10 +166,16 @@
       </view>
       <button
         class="send-btn"
-        @click="sendMessage"
-        :disabled="!inputContent.trim() || isLoading || inputContent.length > maxInputLength"
+        :class="{ stopping: isLoading }"
+        @click="onMainButton"
+        :disabled="!isLoading && (!inputContent.trim() || inputContent.length > maxInputLength)"
       >
+        <text
+          v-if="isLoading"
+          class="send-stop-text"
+        >停止</text>
         <image
+          v-else
           class="send-icon"
           src="/static/icons/send.png"
           mode="aspectFit"
@@ -753,6 +781,74 @@ const renderAnswer = (markdown: string): string => {
   }
 }
 
+/** 失败/降级气泡：显示「重新回答」而不是常规操作 */
+const isErrorMsg = (m: Message): boolean =>
+  !m.isUser && (m.content.includes('模型暂时不可用') || m.content.includes('抱歉，创建请求失败'))
+
+/** 复制到剪贴板 */
+const copyText = (text: string) => {
+  if (!text) return
+  uni.setClipboardData({
+    data: text,
+    success: () => uni.showToast({ title: '已复制', icon: 'none', duration: 1200 }),
+  })
+}
+
+/** 最近一条用户提问（重试与重新生成共用） */
+const lastQuestionText = (): string => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].isUser) return messages.value[i].content
+  }
+  return ''
+}
+
+/** 停止生成：清掉轮询，保留已显示内容 */
+const stopGenerating = () => {
+  if (pollTimer.value) {
+    clearInterval(pollTimer.value)
+    pollTimer.value = null
+  }
+  isLoading.value = false
+  uni.showToast({ title: '已停止生成', icon: 'none', duration: 1200 })
+}
+
+/** 主按钮：加载中即停止，否则发送 */
+const onMainButton = () => {
+  if (isLoading.value) return stopGenerating()
+  sendMessage()
+}
+
+/** 重新回答：清掉失败提示后重问同一个问题 */
+const retryLast = () => {
+  const question = lastQuestionText()
+  if (!question) return
+  messages.value = messages.value.filter((m) => !isErrorMsg(m))
+  inputContent.value = question
+  sendMessage()
+}
+
+/** 重新生成：用同一个问题再问一次 */
+const regenerate = () => {
+  const question = lastQuestionText()
+  if (!question) return
+  inputContent.value = question
+  sendMessage()
+}
+
+/** 长按气泡菜单 */
+const onMessageLongPress = (msg: Message) => {
+  const items = msg.isUser ? ['复制'] : ['复制', '重新生成', '存到知识库']
+  uni.showActionSheet({
+    itemList: items,
+    success: (res) => {
+      if (res.tapIndex === 0) return copyText(msg.content)
+      if (res.tapIndex === 1 && !msg.isUser) regenerate()
+      if (res.tapIndex === 2 && !msg.isUser) saveAnswerToKb(msg.content)
+    },
+    fail: () => {},
+  })
+}
+
 // 页面挂载时执行
 onMounted(() => {
   console.log('AI助手页面初始化完成')
@@ -1166,4 +1262,26 @@ onShareTimeline(() => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+  /* 操作区按钮：胶囊样式，字号 26rpx 保证看得见 */
+  .msg-op {
+    font-size: 26rpx;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 10rpx 22rpx;
+    border-radius: 999rpx;
+  }
+  .msg-op.retry {
+    color: #ffffff;
+    background: #2563eb;
+  }
+  /* 发送按钮的停止态 */
+  .send-btn.stopping {
+    background: #ef4444;
+  }
+  .send-stop-text {
+    font-size: 24rpx;
+    color: #ffffff;
+    line-height: 1;
+  }
 </style>
