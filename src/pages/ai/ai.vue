@@ -1244,12 +1244,12 @@ onShareTimeline(() => {
 
 /* AI 回答下方的操作区 */
 .msg-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 14rpx;
-}
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18rpx;
+    margin-top: 16rpx;
+  }
 
 .msg-verify {
   font-size: 21rpx;
@@ -1265,12 +1265,12 @@ onShareTimeline(() => {
 }
 
 .msg-save {
-  font-size: 21rpx;
-  color: #FF7239;
-  border: 2rpx solid #FF7239;
-  border-radius: 8rpx;
-  padding: 2rpx 12rpx;
-}
+    font-size: 26rpx;
+    color: #ffffff;
+    background: #FF7239;
+    border-radius: 999rpx;
+    padding: 10rpx 22rpx;
+  }
 
 /* 上下文挂载栏 */
 .mount-bar {
@@ -1359,17 +1359,21 @@ onShareTimeline(() => {
   .msg-source {
     margin-top: 8rpx;
   }
-  .msg-source-text {
-    font-size: 22rpx;
-    color: #94a3b8;
-  }
-  .msg-op {
-    margin-right: 22rpx;
+.msg-source-text {
     font-size: 24rpx;
     color: #64748b;
   }
-  .msg-op.retry {
-    color: #2563eb;
+.msg-op {
+    /* msg-op 加大：原来 24rpx 太小几乎看不见 */
+    font-size: 26rpx;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 10rpx 22rpx;
+    border-radius: 999rpx;
+  }
+.msg-op.retry {
+    color: #ffffff;
+    background: #2563eb;
   }
   .loading-dots {
     display: flex;
@@ -1395,9 +1399,9 @@ onShareTimeline(() => {
     align-items: center;
     margin-top: 10rpx;
   }
-  .msg-source-toggle {
+.msg-source-toggle {
     margin-left: 12rpx;
-    font-size: 22rpx;
+    font-size: 24rpx;
     color: #2563eb;
   }
   .source-cards {
