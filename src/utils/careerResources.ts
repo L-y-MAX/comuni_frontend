@@ -268,7 +268,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-resume-one-page',
     theme: 'guide',
     title: '简历控制在一页：先做减法再做加法',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['简历'],
     summary:
       '应届生的简历主要靠「信息密度」取胜，不靠篇幅。一页的约束会强迫你只留下与目标岗位相关的经历，招聘方也能在十几秒内看完。',
@@ -279,7 +279,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-resume-keywords',
     theme: 'guide',
     title: '按岗位要求对齐关键词，而不是按你的经历顺序写',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['简历', '投递'],
     summary:
       '很多简历被筛掉不是能力不够，而是「岗位要的词」在简历里找不到。用人岗匹配页列出的岗位要求技能逐条对照，把已经具备但没写出来的补上。',
@@ -291,7 +291,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-resume-star',
     theme: 'guide',
     title: '用 STAR 把经历写成可验证的成果',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['简历'],
     summary:
       '把一段经历拆成情境、任务、行动、结果四段，其中「结果」尽量量化。量化过的描述比形容词可信得多，也更容易在面试中被追问时有话可说。',
@@ -302,7 +302,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-resume-skill-level',
     theme: 'guide',
     title: '技能别写「精通」：分级表述更经得起追问',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['简历', '面试'],
     summary:
       '把技能分成「熟练使用 / 了解 / 正在学习」三档，并给每档配一个证据。写「精通」但答不出底层原理，反而会拉低整份简历的可信度。',
@@ -313,7 +313,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-interview-intro',
     theme: 'guide',
     title: '自我介绍用 60 秒讲清三件事',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['面试'],
     summary:
       '结构固定为：我是谁（专业与年级）→ 我能做什么（与岗位最相关的两段经历）→ 我为什么来（对这家企业或岗位的具体了解）。不要复述简历全文。',
@@ -324,7 +324,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-interview-gap',
     theme: 'guide',
     title: '被问到不会的问题：承认边界 + 给出思路',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['面试'],
     summary:
       '面试官问超出你知识范围的问题很常见，考察的往往不是答案本身，而是你面对未知时的处理方式。直接硬编比承认不会更扣分。',
@@ -335,7 +335,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-interview-cross',
     theme: 'guide',
     title: '跨专业求职：把可迁移能力讲成证据',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['面试', '投递'],
     summary:
       '专业不对口时，招聘方关心的是「你能不能补上」。用岗位图谱里的横移路径说明你已经研究过这条转型路线的成本与补课计划。',
@@ -346,7 +346,7 @@ const GUIDE_RESOURCES: CareerResource[] = [
     id: 'guide-apply-tiered',
     theme: 'guide',
     title: '分档投递：把匹配度当筛选器而不是结论',
-    source: '职途智行 · 平台整理',
+    source: 'Comuni 职途 · 平台整理',
     tags: ['投递'],
     summary:
       '匹配度高不等于会录用，匹配度低也不等于不能投。合理做法是按匹配度分三档：主投、冲刺、保底，避免把全部精力压在一家公司。',

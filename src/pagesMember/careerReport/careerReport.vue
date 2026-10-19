@@ -450,7 +450,7 @@
 
       <view class="page-footer-source">
         <text class="source-text">
-          本报告由职途智行根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考
+          本报告由 Comuni 职途 根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考
         </text>
       </view>
     </scroll-view>

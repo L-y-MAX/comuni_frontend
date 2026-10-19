@@ -465,7 +465,7 @@ const buildMarkdown = (report: CareerReport): string => {
   lines.push('');
   lines.push('---');
   lines.push('');
-  lines.push('> 本报告由「职途智行」根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考，不作为招聘录用依据。');
+  lines.push('> 本报告由「Comuni 职途」根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考，不作为招聘录用依据。');
 
   return lines.join('\n');
 };
