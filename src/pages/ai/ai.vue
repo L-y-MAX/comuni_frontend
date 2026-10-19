@@ -931,15 +931,14 @@ onShareTimeline(() => {
   overflow: hidden;
 }
 
-.chat-container {
-  flex: 1;
-  padding: 20rpx;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  box-sizing: border-box;
-  height: calc(100vh - 120rpx);
-  overflow: hidden;
-}
+  .chat-container {
+    flex: 1;
+    min-height: 0; /* 关键：允许在 flex 里被压缩，避免把底部输入区顶出屏幕 */
+    padding: 20rpx;
+    box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
 .system-message {
   text-align: center;
@@ -1087,6 +1086,7 @@ onShareTimeline(() => {
   box-sizing: border-box;
   padding: 10rpx 0;
   white-space: nowrap;
+    flex-shrink: 0; /* 顶部栏不参与压缩 */
 }
 
 .prompt-tips-inner {
@@ -1122,6 +1122,7 @@ onShareTimeline(() => {
   box-sizing: border-box;
   z-index: 10;
   max-height: 300rpx;
+    flex-shrink: 0; /* 顶部栏不参与压缩 */
 }
 
 /* 输入框外层容器（恢复原有样式） */
@@ -1277,6 +1278,7 @@ onShareTimeline(() => {
   display: flex;
   align-items: center;
   padding: 12rpx 24rpx 4rpx;
+    flex-shrink: 0; /* 顶部栏不参与压缩 */
 }
 
 .mount-btn {
