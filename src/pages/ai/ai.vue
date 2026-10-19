@@ -56,16 +56,37 @@
         v-for="(msg, index) in messages"
         :key="index"
         :class="['message-item', msg.isUser ? 'user-message' : 'ai-message']"
+        @longpress="onMessageLongPress(msg)"
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
-        <view class="message-content">{{ msg.content }}</view>
+        <view class="message-content">
+          <rich-text
+            v-if="!msg.isUser && msg.html"
+            :nodes="msg.html"
+          />
+          <text v-else>{{ msg.content }}</text>
+        </view>
 
-        <!-- 溯源：只说明依据，文字尽量短 -->
+        <!-- 溯源：默认折叠在气泡正文底部，展开显示来源卡片 -->
         <view
           v-if="!msg.isUser && verifyQuotes(msg.content).total"
           class="msg-source"
+          @click="toggleSource(index)"
         >
-          <text class="msg-source-text">原文核对 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }}</text>
+          <text class="msg-source-text">参考来源 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可核对</text>
+          <text class="msg-source-toggle">{{ openSourceIndex === index ? '收起' : '展开' }}</text>
+        </view>
+        <view
+          v-if="!msg.isUser && verifyQuotes(msg.content).total && openSourceIndex === index"
+          class="source-cards"
+        >
+          <view
+            class="source-card"
+            @click="openSourceArticle"
+          >
+            <text class="source-card-title">{{ mountedNoteName || '未挂载上下文' }}</text>
+            <text class="source-card-sub">来自你挂载的知识库内容 · 点击查看原文</text>
+          </view>
         </view>
 
         <!-- 操作区：复制 / 重新生成 / 存到知识库（与溯源分开，避免混淆） -->
@@ -145,6 +166,9 @@
       <view class="input-wrapper">
         <textarea
           class="input-box"
+            :adjust-position="true"
+            :cursor-spacing="100"
+            @focus="scrollToBottom"
           v-model="inputContent"
           placeholder="请输入你的问题..."
           @confirm="
@@ -183,6 +207,8 @@
 interface Message {
   content: string
   isUser: boolean
+  /** AI 回答的渲染 HTML（用户消息不用） */
+  html?: string
 }
 
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
@@ -194,6 +220,10 @@ import {
 } from '@/api/knowledge'
 import { toKbContent } from '@/utils/plainText'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
+import { marked } from 'marked'
+
+// 知识库文章按纯文本/富文本两种形态存在，AI 回答则按 Markdown 渲染（更易读）
+marked.setOptions({ breaks: true })
 
 // 初始化状态库
 const knowledgeStore = useKnowledgeStore()
@@ -583,6 +613,7 @@ const pollTaskResult = async (taskId: string) => {
     pollTimer.value = null
     messages.value.push({
       content: answer,
+      html: renderAnswerHtml(answer),
       isUser: false,
     })
     scrollToBottom()
@@ -746,6 +777,55 @@ const regenerate = () => {
   if (!question) return
   inputContent.value = question
   sendMessage()
+}
+
+/** 溯源展开状态（同时只展开一条） */
+const openSourceIndex = ref(-1)
+const toggleSource = (index: number) => {
+  openSourceIndex.value = openSourceIndex.value === index ? -1 : index
+}
+
+/** 点来源卡片：跳到知识库查看原文 */
+const openSourceArticle = () => {
+  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
+}
+
+/** 长按气泡菜单：AI 可复制/重新生成，用户消息只能复制 */
+const onMessageLongPress = (msg: Message) => {
+  const items = msg.isUser ? ['复制'] : ['复制', '重新生成']
+  uni.showActionSheet({
+    itemList: items,
+    success: (res) => {
+      if (res.tapIndex === 0) return copyText(msg.content)
+      if (res.tapIndex === 1 && !msg.isUser) regenerate()
+    },
+    fail: () => {},
+  })
+}
+
+/**
+ * 把 AI 回答渲染成 rich-text 可用的 HTML。
+ * rich-text 不吃外部 CSS，所以这里给列表/段落/代码块注入内联样式，
+ * 解决"有序列表没有缩进、段落挤在一起、代码块没背景"的问题。
+ */
+const renderAnswerHtml = (text: string): string => {
+  if (!text) return ''
+  let html = ''
+  try {
+    html = marked.parse(text) as string
+  } catch {
+    return ''
+  }
+  return html
+    .replace(/<pre>/g, '<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;font-size:24rpx;line-height:1.6;white-space:pre;margin:14rpx 0;">')
+    .replace(/<code>/g, '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">')
+    .replace(/<h1>/g, '<h1 style="font-size:34rpx;margin:18rpx 0 10rpx;">')
+    .replace(/<h2>/g, '<h2 style="font-size:32rpx;margin:18rpx 0 10rpx;">')
+    .replace(/<h3>/g, '<h3 style="font-size:30rpx;margin:16rpx 0 8rpx;">')
+    .replace(/<p>/g, '<p style="margin:14rpx 0;line-height:1.75;">')
+    .replace(/<ul>/g, '<ul style="padding-left:40rpx;margin:14rpx 0;">')
+    .replace(/<ol>/g, '<ol style="padding-left:40rpx;margin:14rpx 0;">')
+    .replace(/<li>/g, '<li style="margin:8rpx 0;line-height:1.7;">')
 }
 
 // 页面挂载时执行
@@ -1247,5 +1327,37 @@ onShareTimeline(() => {
     font-size: 24rpx;
     color: #ffffff;
     line-height: 1;
+  }
+
+  /* 溯源折叠与来源卡片 */
+  .msg-source {
+    display: flex;
+    align-items: center;
+    margin-top: 10rpx;
+  }
+  .msg-source-toggle {
+    margin-left: 12rpx;
+    font-size: 22rpx;
+    color: #2563eb;
+  }
+  .source-cards {
+    margin-top: 10rpx;
+  }
+  .source-card {
+    padding: 16rpx 20rpx;
+    background: #f8fafc;
+    border: 1rpx solid #e2e8f0;
+    border-radius: 12rpx;
+  }
+  .source-card-title {
+    display: block;
+    font-size: 26rpx;
+    color: #334155;
+  }
+  .source-card-sub {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: #94a3b8;
   }
 </style>
