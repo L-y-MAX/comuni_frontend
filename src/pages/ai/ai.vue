@@ -1,24 +1,5 @@
 <template>
   <view class="ai-page">
-    <!-- 上下文：会话级信息，放在对话区顶部而不是消息流底部 -->
-    <view class="mount-bar">
-      <text
-        v-if="mountedNoteName"
-        class="mount-chip"
-        @click="unmountNote"
-      >
-        上下文：{{ mountedNoteName }}
-        <text class="mount-chip-x">✕</text>
-      </text>
-      <text
-        v-else
-        class="mount-btn"
-        @click="mountNote"
-      >
-        ＋ 选择上下文（整库或单篇）
-      </text>
-    </view>
-
     <!-- 聊天记录区域 -->
     <scroll-view
       class="chat-container"
@@ -103,17 +84,16 @@
 
     <!-- 示例问题：横向滚动，问题变多也不会挤占聊天区域高度 -->
     <scroll-view
-      v-if="visiblePrompts.length"
+      v-if="hasArticle"
       class="prompt-tips"
       scroll-x
     >
       <view class="prompt-tips-inner">
         <view
-          v-for="p in visiblePrompts"
+          v-for="p in examplePrompts"
           :key="p"
           class="prompt-item"
           @click="usePrompt(p)"
-          @longpress="removePrompt(p)"
         >
           {{ p }}
         </view>
@@ -121,8 +101,23 @@
     </scroll-view>
 
     <!-- 输入区域 -->
-    <!-- 上下文已移到对话区顶部 -->
-
+    <!-- 上下文：AI 页自己就能选一篇文章，不必先去知识库绕一圈 -->
+    <view class="mount-bar">
+      <text
+        v-if="mountedNoteName"
+        class="mount-chip"
+        @click="unmountNote"
+      >
+        上下文：{{ mountedNoteName }}  ✕
+      </text>
+      <text
+        v-else
+        class="mount-btn"
+        @click="mountNote"
+      >
+        选择笔记作为上下文
+      </text>
+    </view>
 
     <view class="input-area">
       <view class="input-wrapper">
@@ -169,7 +164,6 @@ import {
   getKnowledgeBaseList,
   getKnowledgeNodeListByKBId,
 } from '@/api/knowledge'
-import { toKbContent } from '@/utils/plainText'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
 
 // 初始化状态库
@@ -368,23 +362,11 @@ const pickList = (res: any): any[] => {
 /**
  * 预设能力按钮：填入并直接发送，省掉"点两次"的操作。
  */
-/** 快捷提问：点击只填进输入框，由用户再点发送，避免误触直接发起请求 */
 const usePrompt = (p: string) => {
+  // 必须直接写 inputContent：fillPrompt 并不会把值写进输入框，
+  // 而 sendMessage 开头就是 if (!content) return，会静默什么都不做。
   inputContent.value = p
-  uni.showToast({ title: '已填入输入框，确认后点发送', icon: 'none', duration: 1200 })
-}
-
-/** 推荐问题列表（长按可删除单条） */
-const promptList = ref<string[]>([...examplePrompts])
-
-/** 空白会话展示较多推荐；已有对话时只留 2 条，避免挤占屏幕 */
-const visiblePrompts = computed(() =>
-  messages.value.length ? promptList.value.slice(0, 2) : promptList.value.slice(0, 6)
-)
-
-const removePrompt = (p: string) => {
-  promptList.value = promptList.value.filter((item) => item !== p)
-  uni.showToast({ title: '已移除该推荐', icon: 'none', duration: 1200 })
+  sendMessage()
 }
 
 /**
@@ -426,8 +408,6 @@ const verifyQuotes = (answer: string) => {
  * 把 AI 回答存进我自己的某个知识库（选库 -> 写入）。
  */
 const saveAnswerToKb = async (content: string) => {
-  // AI 回答常带 Markdown（**加粗**、## 标题、表格），进知识库前还原成纯文本
-  content = toKbContent(content)
   try {
     const res: any = await getKnowledgeBaseList()
     const kbs: any[] = pickList(res)
@@ -770,19 +750,19 @@ onShareTimeline(() => {
   line-height: 1.6;
   word-wrap: break-word;
   word-break: break-all;
-    max-width: 85%; /* 手机阅读不撑满 */
+  max-width: calc(100% - 80rpx);
 }
 
 .user-message .message-content {
   background-color: #007bff;
   color: #ffffff;
-    border-radius: 22rpx 6rpx 22rpx 22rpx; /* 用户气泡右上角小圆角 */
+  border-bottom-right-radius: 6rpx;
 }
 
 .ai-message .message-content {
   background-color: #f0f0f0;
   color: #333333;
-    border-radius: 6rpx 22rpx 22rpx 22rpx; /* AI 气泡左上角小圆角 */
+  border-bottom-left-radius: 6rpx;
 }
 
 /* 返回底部按钮样式 */
@@ -1082,59 +1062,4 @@ onShareTimeline(() => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
-  /* 上下文栏（对话区顶部） */
-  .mount-bar {
-    display: flex;
-    align-items: center;
-    padding: 12rpx 24rpx;
-    background: #ffffff;
-    border-bottom: 1rpx solid #f1f5f9;
-  }
-  .mount-chip {
-    display: flex;
-    align-items: center;
-    max-width: 100%;
-    padding: 8rpx 18rpx;
-    font-size: 24rpx;
-    color: #475569;
-    background: #f1f5f9;
-    border-radius: 999rpx;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  .mount-chip-x {
-    margin-left: 10rpx;
-    font-size: 20rpx;
-    color: #94a3b8;
-  }
-  .mount-btn {
-    padding: 8rpx 18rpx;
-    font-size: 24rpx;
-    color: #2563eb;
-    background: #eff6ff;
-    border-radius: 999rpx;
-  }
-
-  /* 快捷提问：浅底胶囊，弱化橙色 */
-  .prompt-tips-inner {
-    display: flex;
-    align-items: center;
-    padding: 10rpx 20rpx;
-    gap: 14rpx;
-  }
-  .prompt-item {
-    flex: none;
-    max-width: 46vw;
-    padding: 12rpx 22rpx;
-    font-size: 24rpx;
-    line-height: 1.4;
-    color: #475569;
-    background: #f8fafc;
-    border: 1rpx solid #e2e8f0;
-    border-radius: 999rpx;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 </style>
