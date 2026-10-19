@@ -88,7 +88,7 @@
         v-model="keyword"
         class="search-input"
         type="text"
-        placeholder="搜索关键词，如：补贴"
+        placeholder="搜索关键词，如：补贴、双选会、创业"
         placeholder-class="search-ph"
         confirm-type="search"
       />
@@ -135,7 +135,7 @@
               :class="{ active: activeTag === g }"
               @tap="toggleTag(g)"
             >
-              {{ g }}
+              {{ g }}({{ tagCount(g) }})
             </text>
           </view>
         </scroll-view>
@@ -187,8 +187,15 @@
         <view
           v-if="item.advice"
           class="res-advice"
+          @tap.stop="toggleAdvice(item)"
         >
-          <text class="res-advice-label">怎么用</text>
+          <text class="res-advice-label">使用指引</text>
+          <text class="res-advice-toggle">{{ isAdviceOpen(item) ? '收起' : '展开' }}</text>
+        </view>
+        <view
+          v-if="item.advice && isAdviceOpen(item)"
+          class="res-advice-body"
+        >
           <text class="res-advice-text">{{ item.advice }}</text>
         </view>
 
@@ -218,7 +225,7 @@
           >
             <text class="copy-btn-text">复制官方链接</text>
           </view>
-          <text class="copy-hint">小程序内不能直接打开外部网页，复制后请在浏览器访问</text>
+          <text class="copy-hint">小程序无法直接打开外链，复制后前往浏览器访问</text>
         </view>
       </view>
 
@@ -355,6 +362,19 @@ const currentThemeMeta = computed(
 );
 
 /** 该主题下的全部条目数（未筛选） */
+/** 各卡片「使用指引」折叠状态（key 用标题，不依赖下标） */
+const adviceOpen = ref<Record<string, boolean>>({});
+const adviceKey = (item: CareerResource): string => item.title;
+const toggleAdvice = (item: CareerResource) => {
+  const k = adviceKey(item);
+  adviceOpen.value = { ...adviceOpen.value, [k]: !adviceOpen.value[k] };
+};
+const isAdviceOpen = (item: CareerResource): boolean => !!adviceOpen.value[adviceKey(item)];
+
+/** 标签计数：当前主题下该标签的资源数 */
+const tagCount = (tag: ResourceTag): number =>
+  resourcesByTheme(activeTheme.value).filter((it) => it.tags && it.tags.includes(tag)).length;
+
 const themeTotal = computed(() => resourcesByTheme(activeTheme.value).length);
 
 /** 列表标题随分类变化 */
@@ -1091,4 +1111,17 @@ $bg: #f7f8fa;
   line-height: 1.8;
   margin-bottom: 8rpx;
 }
+
+  /* 「使用指引」折叠：展开链接 + 折叠正文块 */
+  .res-advice-toggle {
+    margin-left: 12rpx;
+    font-size: 22rpx;
+    color: #FF7239;
+  }
+  .res-advice-body {
+    margin-top: 10rpx;
+    padding: 16rpx 18rpx;
+    background: #fff8f4;
+    border-radius: 12rpx;
+  }
 </style>
