@@ -152,7 +152,7 @@
 				{
 					"path": "addKb",
 					"style": {
-						"navigationBarTitleText": "添加知识库"
+						"navigationBarTitleText": "新建知识库"
 					}
 				}
 			]
