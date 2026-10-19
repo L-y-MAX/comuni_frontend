@@ -26,8 +26,12 @@
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
         <view class="message-content">
-          <!-- 纯文本兜底显示：content 已去掉 Markdown 符号，保证一定能看到答案 -->
-          <text>{{ msg.content }}</text>
+          <!-- 富文本优先：html 由 renderAnswer 生成；渲染缺失时回退纯文本 -->
+          <rich-text
+            v-if="!msg.isUser && msg.html"
+            :nodes="msg.html"
+          />
+          <text v-else>{{ msg.content }}</text>
         </view>
 
         <!-- 溯源：默认折叠在气泡正文底部，展开显示来源卡片 -->
@@ -293,8 +297,8 @@ const knowledgeStore = useKnowledgeStore()
 const scrollRef = ref<HTMLElement | null>(null)
 
 // 后端接口地址 - 修改为异步任务接口地址
-const taskApiUrl = 'http://localhost:8000/api/v1/ai/ai-chat/task/'
-const resultApiUrl = 'http://localhost:8000/api/v1/ai/ai-chat/result/'
+const taskApiUrl = `${baseURL}/api/v1/ai/ai-chat/task/`
+const resultApiUrl = `${baseURL}/api/v1/ai/ai-chat/result/`
 
 // 响应式数据 - 指定messages类型
 const messages = ref<Message[]>([]) // 关键修复：指定数组元素类型

@@ -227,7 +227,7 @@ const handleLogin = async (): Promise<void> => {
   try {
     // 调用统一的密码登录接口
     const res = await uni.request({
-      url: 'http://localhost:8000/api/v1/auth/password/login/',
+      url: `${baseURL}/api/v1/auth/password/login/`,
       method: 'POST',
       data: {
         username: username.value.trim(),
@@ -306,7 +306,7 @@ const wxLogin = async (): Promise<void> => {
     // 2. 调用后端微信登录接口
     // 直接接收响应对象
     const response = await uni.request({
-      url: 'http://localhost:8000/api/v1/auth/wechat/mini/login/',
+      url: `${baseURL}/api/v1/auth/wechat/mini/login/`,
       method: 'POST',
       timeout: REQUEST_TIMEOUT,
       header: {
