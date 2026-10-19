@@ -144,6 +144,16 @@
             <!-- 摘要 -->
             <text class="result-summary">{{ r.summary }}</text>
 
+            <!-- 信息不足提示：不展开详情也能看到，解释匹配度为何被限制 -->
+            <view
+              v-if="r.informationInsufficient"
+              class="result-insufficient"
+            >
+              <text class="result-insufficient-text">
+                岗位要求信息不足：原文仅能解析出 {{ r.evaluatedDimCount }}/10 项可评估要求，匹配度仅供参考
+              </text>
+            </view>
+
             <!-- 展开详情 -->
             <view
               class="expand-trigger"
@@ -747,6 +757,21 @@ onShareAppMessage(() => ({
   line-height: 1.7;
   margin-top: 20rpx;
   display: block;
+}
+
+/* 信息不足提示条 */
+.result-insufficient {
+  margin-top: 14rpx;
+  padding: 14rpx 20rpx;
+  border-radius: 12rpx;
+  background: #fff7ed;
+  border: 1rpx solid #fed7aa;
+}
+
+.result-insufficient-text {
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #b45309;
 }
 
 // ========== 展开 ==========

@@ -248,6 +248,15 @@ export interface MatchResult {
   summary: string;
   /** 是否为基础匹配（两侧画像任一来自本地规则解析） */
   isRuleBased: boolean;
+
+  /** 真正参与加权打分的维度数（岗位提了有效要求的维度） */
+  evaluatedDimCount: number;
+  /**
+   * 岗位要求信息是否不足：可评估维度过少时匹配度不可靠。
+   * 例如岗位原文没写要求、画像只解析出 1 项要求，此时「满足 1/1」会算出 100%，
+   * 必须单独标注并封顶，否则用户会把「已知要求满足」误读成「岗位匹配」。
+   */
+  informationInsufficient: boolean;
 }
 
 // ====================== 常量 ======================
@@ -263,3 +272,11 @@ export const INSUFFICIENT_INFO_CONFIDENCE = 0.35;
 
 /** 硬技能缺口扣分上限 */
 export const MAX_SKILL_PENALTY = 12;
+
+/**
+ * 可评估维度下限：参与加权的维度少于此数时，匹配度视为「信息不足」。
+ * 见过真实案例：岗位原文没写要求，画像只解析出「专业技能 60 分」一项，
+ * 学生 88 分 → 达成度 100% → 总评 100%。这在数学上自洽，但会误导用户，
+ * 所以低于该阈值时不再照常归一化，而是按信息完整度封顶并在界面上说明。
+ */
+export const MIN_EVALUABLE_DIMS = 3;

@@ -41,6 +41,7 @@ import type { StudentProfile } from '@/types/studentProfile';
 import {
   MATCH_CATEGORIES,
   MAX_SKILL_PENALTY,
+  MIN_EVALUABLE_DIMS,
   SATISFY_TOLERANCE,
   COVERAGE_SATISFY_THRESHOLD,
   INSUFFICIENT_INFO_CONFIDENCE,
@@ -284,6 +285,21 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   // 真正参与打分的维度（剔除了岗位未提要求的项）
   const activeGaps = gaps.filter((g) => g.effectiveWeight > 0);
 
+  // 可评估维度太少时，匹配度不可靠（见 types/jobMatch.ts 中 MIN_EVALUABLE_DIMS 的说明）。
+  // 真实案例：岗位原文没写要求，画像只解析出「专业技能 60 分」一项，学生 88 分
+  // → 唯一维度达成度 100% → 总评 100%，用户会误以为「完全匹配这个岗位」。
+  const evaluatedDimCount = activeGaps.length;
+  const informationInsufficient = evaluatedDimCount < MIN_EVALUABLE_DIMS;
+
+  /**
+   * 信息不足时的匹配度上限：按「可评估维度占比」线性折算。
+   * 只评估了 1/10 项要求时上限 = 30 + 70 × 0.1 = 37%；
+   * 表达的语义是「我们只测量了这么多维度」，而不是「你只达成了这么多」。
+   */
+  const infoCap = informationInsufficient
+    ? Math.round(CORE_GATE_FLOOR + (100 - CORE_GATE_FLOOR) * (evaluatedDimCount / gaps.length))
+    : 100;
+
   // ---------- 2. 四大类目得分 ----------
   const categories: MatchCategoryResult[] = MATCH_CATEGORIES.map((cat) => {
     const inCat = gaps.filter((g) => cat.dimensions.includes(g.key));
@@ -378,12 +394,26 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     }
   }
 
+  // ---------- 4.6 信息不足封顶 ----------
+  // 可评估维度太少时（岗位没写要求 / 画像只解析出一两项），不能按「满足已知要求」
+  // 直接照常归一化——否则「满足唯一一项要求」就是 100%，用户会误读为岗位完全匹配。
+  let infoNote = '';
+  if (informationInsufficient && infoCap < matchScore) {
+    matchScore = infoCap;
+    infoNote =
+      `岗位要求信息不足：原文只解析出 ${evaluatedDimCount}/10 项可评估的要求，` +
+      `匹配度按信息完整度封顶为 ${infoCap}%，仅代表已知要求的满足程度，不代表岗位整体匹配`;
+  }
+
   const matchLevel = scoreToMatchLevel(matchScore);
 
   // ---------- 5. 关键短板 ----------
   const criticalGaps: string[] = [];
 
-  // 5a. 门槛封顶说明（最重要，放最前，避免用户看到分数骤降却不知道原因）
+  // 5a. 信息不足说明（最优先，先解释清楚为什么分数被限制）
+  if (infoNote) criticalGaps.push(infoNote);
+
+  // 5b. 门槛封顶说明（放最前，避免用户看到分数骤降却不知道原因）
   if (gateNote) criticalGaps.push(gateNote);
 
   // 5a. 硬技能缺失（优先级最高）
@@ -457,7 +487,11 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   });
 
   if (!suggestions.length) {
-    suggestions.push('当前各项要求均已达成，建议把相关经历补充得更具体，突出可量化的成果');
+    suggestions.push(
+      informationInsufficient
+        ? '岗位要求信息不足：建议先补全岗位信息或重新生成岗位画像，再评估匹配度（当前结果仅代表已知项）'
+        : '当前各项要求均已达成，建议把相关经历补充得更具体，突出可量化的成果'
+    );
   }
 
   // ---------- 7. 置信度 ----------
@@ -477,6 +511,7 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     missingCerts,
     weakDims,
     matchLevel,
+    informationInsufficient,
   });
 
   return {
@@ -499,6 +534,8 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     confidence,
     summary,
     isRuleBased: student.parse_method === 'rule' || job.parse_method === 'rule',
+    evaluatedDimCount,
+    informationInsufficient,
   };
 };
 
@@ -514,6 +551,7 @@ interface SummaryInput {
   missingCerts: number;
   weakDims: DimensionGap[];
   matchLevel: ReturnType<typeof scoreToMatchLevel>;
+  informationInsufficient: boolean;
 }
 
 const buildSummary = (input: SummaryInput): string => {
@@ -527,6 +565,7 @@ const buildSummary = (input: SummaryInput): string => {
     missingCerts,
     weakDims,
     matchLevel,
+    informationInsufficient,
   } = input;
 
   const prefix = enterpriseName ? `${enterpriseName}的` : '';
@@ -539,8 +578,14 @@ const buildSummary = (input: SummaryInput): string => {
   };
 
   const parts: string[] = [
-    `你与${prefix}${jobName}岗位的综合匹配度为 ${matchScore}%，${levelText[matchLevel] ?? ''}。`,
-    `十大维度中已有 ${satisfiedCount}/${totalCount} 项达到岗位要求。`,
+    `你与${prefix}${jobName}岗位的综合匹配度为 ${matchScore}%，${
+      informationInsufficient
+        ? '但可评估的要求太少，该分数仅供参考'
+        : levelText[matchLevel] ?? ''
+    }。`,
+    informationInsufficient
+      ? `十维中只有 ${totalCount} 项可评估（其中 ${satisfiedCount} 项已满足）。`
+      : `十大维度中已有 ${satisfiedCount}/${totalCount} 项达到岗位要求。`,
   ];
 
   const shortfalls: string[] = [];
@@ -552,6 +597,8 @@ const buildSummary = (input: SummaryInput): string => {
 
   if (shortfalls.length) {
     parts.push(`主要不足：${shortfalls.join('；')}。`);
+  } else if (informationInsufficient) {
+    parts.push('建议先补全岗位信息或重新生成岗位画像，再评估匹配度。');
   } else {
     parts.push('未发现明显短板。');
   }
