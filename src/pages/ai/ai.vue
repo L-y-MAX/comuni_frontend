@@ -1359,9 +1359,12 @@ onShareTimeline(() => {
   .msg-icon-btn {
     display: inline-flex;
     align-items: center;
-    padding: 8rpx 12rpx;
-    margin-right: 12rpx;
-    border-radius: 10rpx;
+    justify-content: center;
+    min-width: 56rpx;
+    height: 56rpx;
+    padding: 0 14rpx;
+    margin-right: 14rpx;
+    border-radius: 999rpx; /* 完整圆角，更圆润 */
     background: #f1f5f9;
   }
   .msg-icon-btn.save {
