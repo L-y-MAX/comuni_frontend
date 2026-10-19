@@ -718,13 +718,15 @@ onShareTimeline(() => {
 }
 
 .message-item {
-  display: flex;
-  margin-bottom: 30rpx;
-  max-width: 80%;
-  animation: fadeIn 0.3s ease forwards;
-  opacity: 0;
-  transform: translateY(10rpx);
-}
+    display: flex;
+    flex-direction: column; /* 正文 → 核对 → 按钮 竖直排列 */
+    align-items: flex-start;
+    margin-bottom: 30rpx;
+    max-width: 85%;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(10rpx);
+  }
 
 @keyframes fadeIn {
   to {
@@ -734,9 +736,9 @@ onShareTimeline(() => {
 }
 
 .user-message {
-  flex-direction: row-reverse;
-  margin-left: auto;
-}
+    align-items: flex-end; /* 用户消息靠右 */
+    margin-left: auto;
+  }
 
 .ai-message {
   margin-right: auto;
@@ -744,14 +746,14 @@ onShareTimeline(() => {
 
 .message-content {
     white-space: pre-wrap;
-  padding: 20rpx 25rpx;
-  border-radius: 22rpx;
-  font-size: 30rpx;
-  line-height: 1.6;
-  word-wrap: break-word;
-  word-break: break-all;
-  max-width: calc(100% - 80rpx);
-}
+    padding: 20rpx 25rpx;
+    border-radius: 22rpx;
+    font-size: 30rpx;
+    line-height: 1.6;
+    word-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
+  }
 
 .user-message .message-content {
   background-color: #007bff;
@@ -1015,7 +1017,7 @@ onShareTimeline(() => {
 }
 
 .msg-verify {
-  font-size: 21rpx;
+    font-size: 24rpx;
   color: #16a34a;
   background: #f0fdf4;
   border-radius: 8rpx;
@@ -1028,12 +1030,12 @@ onShareTimeline(() => {
 }
 
 .msg-save {
-  font-size: 21rpx;
-  color: #FF7239;
-  border: 2rpx solid #FF7239;
-  border-radius: 8rpx;
-  padding: 2rpx 12rpx;
-}
+    font-size: 26rpx;
+    color: #ffffff;
+    background: #FF7239;
+    border-radius: 999rpx;
+    padding: 10rpx 22rpx;
+  }
 
 /* 上下文挂载栏 */
 .mount-bar {
