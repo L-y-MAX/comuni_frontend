@@ -60,35 +60,52 @@
       >
         <view class="message-content">{{ msg.content }}</view>
 
-        <!-- 仅 AI 回答：引用核对 + 存回知识库 -->
+        <!-- 溯源：只说明依据，文字尽量短 -->
+        <view
+          v-if="!msg.isUser && verifyQuotes(msg.content).total"
+          class="msg-source"
+        >
+          <text class="msg-source-text">原文核对 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }}</text>
+        </view>
+
+        <!-- 操作区：复制 / 重新生成 / 存到知识库（与溯源分开，避免混淆） -->
         <view
           v-if="!msg.isUser"
           class="msg-actions"
         >
           <text
-            v-if="verifyQuotes(msg.content).total"
-            class="msg-verify"
-            :class="{ bad: verifyQuotes(msg.content).failed > 0 }"
-          >
-            引用核对：{{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可在原文中找到
-          </text>
+            v-if="isErrorMsg(msg)"
+            class="msg-op retry"
+            @click="retryLast"
+          >重新回答</text>
+          <text
+            v-else
+            class="msg-op"
+            @click="copyText(msg.content)"
+          >复制</text>
+          <text
+            v-if="!isErrorMsg(msg)"
+            class="msg-op"
+            @click="regenerate"
+          >重新生成</text>
           <text
             class="msg-save"
             @click="saveAnswerToKb(msg.content)"
-          >
-            存到知识库
-          </text>
+          >存到知识库</text>
         </view>
       </view>
 
-      <!-- 加载中提示 -->
+      <!-- 思考中：打字三点 + 文字 -->
       <view
         v-if="isLoading"
         class="loading-indicator"
       >
-        <view class="loading-dot"></view>
-        <view class="loading-dot"></view>
-        <view class="loading-dot"></view>
+        <view class="loading-dots">
+          <view class="loading-dot"></view>
+          <view class="loading-dot"></view>
+          <view class="loading-dot"></view>
+        </view>
+        <text class="loading-text">思考中…</text>
       </view>
     </scroll-view>
 
@@ -143,10 +160,16 @@
       </view>
       <button
         class="send-btn"
-        @click="sendMessage"
-        :disabled="!inputContent.trim() || isLoading || inputContent.length > maxInputLength"
+        :class="{ stopping: isLoading }"
+        @click="onMainButton"
+        :disabled="!isLoading && (!inputContent.trim() || inputContent.length > maxInputLength)"
       >
+        <text
+          v-if="isLoading"
+          class="send-stop-text"
+        >停止</text>
         <image
+          v-else
           class="send-icon"
           src="/static/icons/send.png"
           mode="aspectFit"
@@ -671,6 +694,60 @@ const sendMessage = async () => {
   }
 }
 
+/** 失败/降级气泡：展示「重新回答」而非常规操作 */
+const isErrorMsg = (m: Message): boolean =>
+  !m.isUser && (m.content.includes('模型暂时不可用') || m.content.includes('抱歉，创建请求失败'))
+
+/** 复制到剪贴板 */
+const copyText = (text: string) => {
+  if (!text) return
+  uni.setClipboardData({
+    data: text,
+    success: () => uni.showToast({ title: '已复制', icon: 'none', duration: 1200 }),
+  })
+}
+
+/** 取最近一条用户提问（重试与重新生成共用） */
+const lastQuestionText = (): string => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].isUser) return messages.value[i].content
+  }
+  return ''
+}
+
+/** 停止生成：清掉轮询，已显示内容保留 */
+const stopGenerating = () => {
+  if (pollTimer.value) {
+    clearInterval(pollTimer.value)
+    pollTimer.value = null
+  }
+  isLoading.value = false
+  uni.showToast({ title: '已停止生成', icon: 'none', duration: 1200 })
+}
+
+/** 主按钮：加载中即停止，否则发送 */
+const onMainButton = () => {
+  if (isLoading.value) return stopGenerating()
+  sendMessage()
+}
+
+/** 重新回答：清掉失败提示后重新提问 */
+const retryLast = () => {
+  const question = lastQuestionText()
+  if (!question) return
+  messages.value = messages.value.filter((m) => !isErrorMsg(m))
+  inputContent.value = question
+  sendMessage()
+}
+
+/** 重新生成：用同一个问题再问一次 */
+const regenerate = () => {
+  const question = lastQuestionText()
+  if (!question) return
+  inputContent.value = question
+  sendMessage()
+}
+
 // 页面挂载时执行
 onMounted(() => {
   console.log('AI助手页面初始化完成')
@@ -1136,5 +1213,39 @@ onShareTimeline(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* 溯源与操作区分离 */
+  .msg-source {
+    margin-top: 8rpx;
+  }
+  .msg-source-text {
+    font-size: 22rpx;
+    color: #94a3b8;
+  }
+  .msg-op {
+    margin-right: 22rpx;
+    font-size: 24rpx;
+    color: #64748b;
+  }
+  .msg-op.retry {
+    color: #2563eb;
+  }
+  .loading-dots {
+    display: flex;
+    align-items: center;
+  }
+  .loading-text {
+    margin-left: 12rpx;
+    font-size: 24rpx;
+    color: #94a3b8;
+  }
+  .send-btn.stopping {
+    background: #ef4444;
+  }
+  .send-stop-text {
+    font-size: 24rpx;
+    color: #ffffff;
+    line-height: 1;
   }
 </style>
