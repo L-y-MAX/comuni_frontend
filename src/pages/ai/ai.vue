@@ -547,7 +547,8 @@ const pollTaskResult = async (taskId: string) => {
     clearInterval(pollTimer.value!)
     pollTimer.value = null
     messages.value.push({
-      content: answer,
+      // 正文同时保存纯文本版本：即使富文本渲染失败，回退显示也不会有 ** 号
+      content: toKbContent(answer),
       html: renderAnswer(answer),
       isUser: false,
     })
