@@ -339,6 +339,11 @@ const initNavMetrics = () => {
       statusBarHeight.value = win.statusBarHeight;
     }
 
+    // 开发者工具里 getMenuButtonBoundingClientRect 会失败并上报框架错误，
+    // 即使 try/catch 也拦不住那条上报，所以在 devtools 环境直接用默认值
+    const _device = ((uni as any).getDeviceInfo?.() ?? {}) as { platform?: string };
+    if (_device.platform === 'devtools') return;
+
     const rect = (
       uni as unknown as {
         getMenuButtonBoundingClientRect?: () => {

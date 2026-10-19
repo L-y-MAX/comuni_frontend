@@ -26,11 +26,8 @@
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
         <view class="message-content">
-          <rich-text
-            v-if="!msg.isUser && msg.html"
-            :nodes="msg.html"
-          />
-          <text v-else>{{ msg.content }}</text>
+          <!-- 纯文本兜底显示：content 已去掉 Markdown 符号，保证一定能看到答案 -->
+          <text>{{ msg.content }}</text>
         </view>
 
         <!-- 溯源：默认折叠在气泡正文底部，展开显示来源卡片 -->
