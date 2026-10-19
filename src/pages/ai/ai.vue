@@ -39,7 +39,13 @@
         :class="['message-item', msg.isUser ? 'user-message' : 'ai-message']"
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
-        <view class="message-content">{{ msg.content }}</view>
+        <view class="message-content">
+          <rich-text
+            v-if="!msg.isUser && msg.html"
+            :nodes="msg.html"
+          />
+          <text v-else>{{ msg.content }}</text>
+        </view>
 
         <!-- 仅 AI 回答：引用核对 + 存回知识库 -->
         <view
@@ -155,6 +161,8 @@
 interface Message {
   content: string
   isUser: boolean
+  /** AI 回答的渲染 HTML（用户消息不用） */
+  html?: string
 }
 
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
@@ -540,6 +548,7 @@ const pollTaskResult = async (taskId: string) => {
     pollTimer.value = null
     messages.value.push({
       content: answer,
+      html: renderAnswer(answer),
       isUser: false,
     })
     scrollToBottom()
@@ -648,6 +657,97 @@ const sendMessage = async () => {
       clearInterval(pollTimer.value)
       pollTimer.value = null
     }
+  }
+}
+
+/** 转义 HTML 特殊字符 */
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** 行内格式：行内代码、加粗、斜体 */
+const inlineMd = (text: string): string => {
+  let t = escapeHtml(text)
+  t = t.replace(/`([^`]+)`/g, '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">$1</code>')
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight:600;color:#111827;">$1</strong>')
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+  return t
+}
+
+/** 标题字号：级别越高字越大 */
+const headingSize = (level: number): string => {
+  if (level <= 1) return '36rpx'
+  if (level === 2) return '33rpx'
+  if (level === 3) return '30rpx'
+  return '29rpx'
+}
+
+/**
+ * Markdown → rich-text 可渲染的 HTML（零依赖）。
+ * 处理标题（逐级放大）、加粗、斜体、行内代码、代码块、有序/无序列表与段落间距。
+ * 任何异常都返回空串，模板会回落到纯文本，不会出现空气泡。
+ */
+const renderAnswer = (markdown: string): string => {
+  try {
+    if (!markdown) return ''
+    const rows = String(markdown).replace(/\r\n/g, '\n').split('\n')
+    const out: string[] = []
+    let inCode = false
+    let listType: '' | 'ul' | 'ol' = ''
+    const closeList = () => {
+      if (listType) {
+        out.push(listType === 'ul' ? '</ul>' : '</ol>')
+        listType = ''
+      }
+    }
+    for (const raw of rows) {
+      const line = raw.replace(/\s+$/, '')
+      if (/^\s*```/.test(line)) {
+        closeList()
+        if (!inCode) {
+          out.push('<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;white-space:pre;font-size:24rpx;line-height:1.6;margin:14rpx 0;">')
+          inCode = true
+        } else {
+          out.push('</pre>')
+          inCode = false
+        }
+        continue
+      }
+      if (inCode) {
+        out.push(escapeHtml(raw) + '\n')
+        continue
+      }
+      if (!line.trim()) {
+        closeList()
+        continue
+      }
+      const heading = line.match(/^(#{1,4})\s+(.*)$/)
+      if (heading) {
+        closeList()
+        out.push(`<div style="font-size:${headingSize(heading[1].length)};font-weight:600;color:#111827;margin:18rpx 0 10rpx;">${inlineMd(heading[2])}</div>`)
+        continue
+      }
+      const bullet = line.match(/^\s*[-*+]\s+(.*)$/)
+      const ordered = line.match(/^\s*(\d+)[.)]\s+(.*)$/)
+      if (bullet || ordered) {
+        const type: 'ul' | 'ol' = bullet ? 'ul' : 'ol'
+        if (listType !== type) {
+          closeList()
+          out.push(type === 'ul' ? '<ul style="padding-left:38rpx;margin:12rpx 0;">' : '<ol style="padding-left:38rpx;margin:12rpx 0;">')
+          listType = type
+        }
+        const text = bullet ? bullet[1] : ordered ? ordered[2] : ''
+        out.push(`<li style="margin:8rpx 0;line-height:1.7;">${inlineMd(text)}</li>`)
+        continue
+      }
+      closeList()
+      out.push(`<p style="margin:12rpx 0;line-height:1.75;">${inlineMd(line)}</p>`)
+    }
+    closeList()
+    if (inCode) out.push('</pre>')
+    return out.join('')
+  } catch (e) {
+    console.warn('[AI] Markdown 渲染失败，回落纯文本：', e)
+    return ''
   }
 }
 
