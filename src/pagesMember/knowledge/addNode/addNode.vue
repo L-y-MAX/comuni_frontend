@@ -81,18 +81,12 @@
               scroll-with-animation
               scroll-boundary="inside"
             >
-              <textarea
-                v-model="formData.content"
-                placeholder="请输入文章内容（纯文本，可用换行分段）"
-                class="content-textarea"
+              <RichEditor
+                v-model:html="formData.content"
                 :maxlength="maxInputLength"
-                :focused="contentInputFocused"
-                @focus="handleContentFocus"
-                @blur="contentInputFocused = false"
-                @input="handleContentInputSync"
-                @touchmove.stop="true"
-                resize="none"
-              ></textarea>
+                placeholder="在这里写正文：选中文字后点上方按钮即可加粗、调字号"
+                @change="handleContentInputSync"
+              />
             </scroll-view>
           </view>
         </uni-forms-item>
@@ -159,7 +153,8 @@ hljs.registerLanguage('sql', sql)
 hljs.registerLanguage('markdown', markdown)
 import { markedHighlight } from 'marked-highlight'
 import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
-import { toKbContent } from '@/utils/plainText'
+import RichEditor from '@/components/RichEditor.vue'
+import { textToHtml } from '@/utils/plainText'
 
 // ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========
 declare type UniFormsInstance = {
@@ -478,7 +473,7 @@ const SAMPLE_ARTICLE_TEMPLATE = [
 
 /** 真正把示例内容写进编辑框，并立刻刷新预览 */
 const applySampleTemplate = () => {
-  formData.content = SAMPLE_ARTICLE_TEMPLATE
+  formData.content = textToHtml(SAMPLE_ARTICLE_TEMPLATE)
   renderMarkdownAsync()
 }
 
@@ -552,8 +547,8 @@ const handleBtnClick = async () => {
  * 提交表单（新增文章）
  */
 const submit = async (isFromBack?: boolean) => {
-  // 知识库按纯文本存储：把粘贴进来的 Markdown 还原成普通文字再提交
-  formData.content = toKbContent(formData.content)
+  // 正文由富文本编辑器产出 HTML，这里只做空值收敛（展示端 marked 会透传 HTML）
+  formData.content = String(formData.content || "").trim()
 
   try {
     // 新增模式：调用addKnowledgeNode

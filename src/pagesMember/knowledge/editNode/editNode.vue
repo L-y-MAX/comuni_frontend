@@ -73,18 +73,12 @@
               scroll-with-animation
               scroll-boundary="inside"
             >
-              <textarea
-                v-model="formData.content"
-                placeholder="请输入文章内容（纯文本，可用换行分段）"
-                class="content-textarea"
+              <RichEditor
+                v-model:html="formData.content"
                 :maxlength="maxInputLength"
-                :focused="contentInputFocused"
-                @focus="handleContentFocus"
-                @blur="contentInputFocused = false"
-                @input="handleContentInputSync"
-                @touchmove.stop="true"
-                resize="none"
-              ></textarea>
+                placeholder="在这里写正文：选中文字后点上方按钮即可加粗、调字号"
+                @change="handleContentInputSync"
+              />
             </scroll-view>
           </view>
         </uni-forms-item>
@@ -138,7 +132,8 @@ import type { KnowledgeNode } from '@/types/knowledge'
 
 // 直接引入接口文件中的方法（无需重复封装请求）
 import { getKnowledgeNodeDetail, addKnowledgeNode, updateKnowledgeNode } from '@/api/knowledge'
-import { toKbContent } from '@/utils/plainText'
+import RichEditor from '@/components/RichEditor.vue'
+import { looksLikeHtml, textToHtml } from '@/utils/plainText'
 
 // ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========
 declare type UniFormsInstance = {
@@ -443,7 +438,8 @@ const fetchNodeDetail = async (id: string) => {
   try {
     const res = (await getKnowledgeNodeDetail(id)) as KnowledgeNode
     formData.name = res.name
-    formData.content = res.content
+      // 历史文章可能是纯文本/Markdown，富文本编辑器需要 HTML 才能保留分段
+      formData.content = looksLikeHtml(res.content) ? res.content : textToHtml(res.content)
     formData.description = res.description
     formData.knowledge_base_id = res.knowledge_base_id
 
@@ -506,8 +502,8 @@ const handleBtnClick = async () => {
  * 提交表单（直接使用接口文件的add/update方法）
  */
 const submit = async (isFromBack?: boolean) => {
-  // 知识库按纯文本存储：把 Markdown 还原成普通文字再提交
-  formData.content = toKbContent(formData.content)
+  // 正文由富文本编辑器产出 HTML，这里只做空值收敛（展示端 marked 会透传 HTML）
+  formData.content = String(formData.content || "").trim()
 
   try {
     if (type.value === 'edit') {
