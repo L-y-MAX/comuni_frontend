@@ -46,6 +46,10 @@
            原来是固定的三栏大数字（总条数 / 官方来源 / 主题数），
            筛选之后数字一动不动，看起来像「不符合条件的还在展示」。 -->
       <text class="hero-summary">{{ heroSummary }}</text>
+      <text
+        class="hero-help"
+        @tap.stop="showHelp"
+      >使用说明</text>
     </view>
 
     <!-- ============================================================
@@ -220,6 +224,15 @@
           class="res-actions"
         >
           <view
+            class="fav-btn"
+            @tap.stop="toggleFav(item)"
+          >
+            <text
+              class="fav-icon"
+              :class="{ on: isFav(item) }"
+            >{{ isFav(item) ? '★' : '☆' }}</text>
+          </view>
+          <view
             class="ai-btn"
             @tap.stop="askAi(item)"
           >
@@ -270,7 +283,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app';
 import {
   CAREER_RESOURCES,
   RESOURCE_LINKAGE_NOTE,
@@ -391,6 +404,30 @@ const askAi = (item: CareerResource) => {
       uni.removeStorageSync("aiPendingPrompt");
       uni.showToast({ title: '打开 AI 助手失败', icon: 'none' });
     },
+  });
+};
+
+/** 收藏（本地持久化，存标题） */
+const FAV_KEY = "careerResourcesFav";
+const favorites = ref<string[]>((uni.getStorageSync(FAV_KEY) || []) as string[]);
+const favKeyOf = (item: CareerResource): string => item.title;
+const isFav = (item: CareerResource): boolean => favorites.value.includes(favKeyOf(item));
+const toggleFav = (item: CareerResource) => {
+  const k = favKeyOf(item);
+  favorites.value = favorites.value.includes(k)
+    ? favorites.value.filter((t) => t !== k)
+    : [...favorites.value, k];
+  uni.setStorageSync(FAV_KEY, favorites.value);
+  uni.showToast({ title: isFav(item) ? '已收藏' : '已取消收藏', icon: 'none', duration: 1200 });
+};
+
+/** 使用说明：来源与免责 */
+const showHelp = () => {
+  uni.showModal({
+    title: '资源使用说明',
+    content: DISCLAIMERS.join('\n'),
+    showCancel: false,
+    confirmText: '知道了',
   });
 };
 
@@ -557,6 +594,12 @@ const copyLink = (item: CareerResource) => {
 };
 
 // ====================== 页面加载 ======================
+
+/** 分享给好友（微信原生胶囊菜单触发） */
+onShareAppMessage(() => ({
+  title: '就业政策与校招资源｜仅官方来源，不转载原文',
+  path: '/pagesMember/careerResources/careerResources',
+}));
 
 onLoad((options) => {
   initNavMetrics();
@@ -1157,5 +1200,32 @@ $bg: #f7f8fa;
   .ai-btn-text {
     font-size: 22rpx;
     color: #2563eb;
+  }
+
+  /* 收藏星标 */
+  .fav-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8rpx 16rpx;
+    border-radius: 999rpx;
+    background: #fff8f4;
+    border: 1rpx solid #fde3d3;
+    margin-right: 14rpx;
+  }
+  .fav-icon {
+    font-size: 26rpx;
+    color: #c0c4cc;
+  }
+  .fav-icon.on {
+    color: #FF7239;
+  }
+
+  /* hero 里的使用说明入口 */
+  .hero-help {
+    display: inline-block;
+    margin-top: 10rpx;
+    font-size: 22rpx;
+    color: #fff2ea;
+    text-decoration: underline;
   }
 </style>
