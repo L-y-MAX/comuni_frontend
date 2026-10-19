@@ -284,6 +284,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app';
+import { baseURL } from '@/utils/request';
 import {
   CAREER_RESOURCES,
   RESOURCE_LINKAGE_NOTE,
@@ -412,13 +413,51 @@ const FAV_KEY = "careerResourcesFav";
 const favorites = ref<string[]>((uni.getStorageSync(FAV_KEY) || []) as string[]);
 const favKeyOf = (item: CareerResource): string => item.title;
 const isFav = (item: CareerResource): boolean => favorites.value.includes(favKeyOf(item));
+/** 收藏接口鉴权头 */
+const favAuthHeader = () => ({
+  Authorization: `JWT ${uni.getStorageSync('accessToken') || ''}`,
+  'Content-Type': 'application/json',
+});
+
+/** 收藏/取消：先更新本地，再同步后端；后端失败也不影响界面（下次进页会以服务端为准） */
 const toggleFav = (item: CareerResource) => {
   const k = favKeyOf(item);
-  favorites.value = favorites.value.includes(k)
+  const wasFav = favorites.value.includes(k);
+  favorites.value = wasFav
     ? favorites.value.filter((t) => t !== k)
     : [...favorites.value, k];
   uni.setStorageSync(FAV_KEY, favorites.value);
-  uni.showToast({ title: isFav(item) ? '已收藏' : '已取消收藏', icon: 'none', duration: 1200 });
+  uni.showToast({ title: wasFav ? '已取消收藏' : '已收藏', icon: 'none', duration: 1200 });
+  const req = wasFav
+    ? { url: `${baseURL}/api/v1/employment/career-resource-favorites/?title=${encodeURIComponent(k)}`, method: 'DELETE' as const }
+    : { url: `${baseURL}/api/v1/employment/career-resource-favorites/`, method: 'POST' as const, data: { title: k } };
+  uni.request({
+    ...req,
+    header: favAuthHeader(),
+    timeout: 8000,
+    fail: () => console.warn('[收藏] 同步失败，仅保留本地状态'),
+  });
+};
+
+/** 进页拉取服务端收藏，失败时沿用本地缓存 */
+const loadFavorites = async () => {
+  if (!uni.getStorageSync('accessToken')) return;
+  try {
+    const res: any = await uni.request({
+      url: `${baseURL}/api/v1/employment/career-resource-favorites/`,
+      method: 'GET',
+      header: favAuthHeader(),
+      timeout: 8000,
+    });
+    const body = Array.isArray(res) ? res[1] : res;
+    const titles = body?.data?.titles;
+    if (body?.statusCode === 200 && Array.isArray(titles)) {
+      favorites.value = titles.map(String);
+      uni.setStorageSync(FAV_KEY, favorites.value);
+    }
+  } catch (e) {
+    console.warn('[收藏] 拉取失败，使用本地缓存', e);
+  }
 };
 
 /** 使用说明：来源与免责 */
@@ -602,6 +641,7 @@ onShareAppMessage(() => ({
 }));
 
 onLoad((options) => {
+  loadFavorites();
   initNavMetrics();
 
   // 支持从首页搜索结果带 ?focus=<id> 直接定位到某一条
