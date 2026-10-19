@@ -149,7 +149,7 @@
         />
         <view class="resource-entry-texts">
           <text class="resource-entry-title">知识库</text>
-          <text class="resource-entry-desc">收藏与管理 Markdown 文档</text>
+          <text class="resource-entry-desc">收藏笔记与资料，支持富文本排版和 AI 问答</text>
         </view>
       </view>
       <text class="resource-entry-arrow">›</text>

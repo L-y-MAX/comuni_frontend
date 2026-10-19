@@ -116,7 +116,7 @@ export const FEATURE_NAV_GROUPS: FeatureNavGroup[] = [
       {
         key: 'knowledge',
         name: '知识库',
-        desc: '收藏与管理 Markdown 文档',
+        desc: '收藏笔记与资料，支持富文本排版和 AI 问答',
         type: 'page',
         path: '/pages/knowledge/knowledge',
       },
