@@ -48,18 +48,33 @@
           <text v-else>{{ msg.content }}</text>
         </view>
 
+        <!-- 溯源：默认折叠在气泡正文底部，展开显示来源卡片 -->
+        <view
+          v-if="!msg.isUser && verifyQuotes(msg.content).total"
+          class="msg-source"
+          @click="toggleSource(index)"
+        >
+          <text class="msg-source-text">参考来源 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可核对</text>
+          <text class="msg-source-toggle">{{ openSourceIndex === index ? '收起' : '展开' }}</text>
+        </view>
+        <view
+          v-if="!msg.isUser && verifyQuotes(msg.content).total && openSourceIndex === index"
+          class="source-cards"
+        >
+          <view
+            class="source-card"
+            @click="openSourceArticle"
+          >
+            <text class="source-card-title">{{ mountedNoteName || '未挂载上下文' }}</text>
+            <text class="source-card-sub">来自你挂载的知识库内容 · 点击查看原文</text>
+          </view>
+        </view>
+
         <!-- 仅 AI 回答：引用核对 + 存回知识库 -->
         <view
           v-if="!msg.isUser"
           class="msg-actions"
         >
-          <text
-            v-if="verifyQuotes(msg.content).total"
-            class="msg-verify"
-            :class="{ bad: verifyQuotes(msg.content).failed > 0 }"
-          >
-            引用核对：{{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可在原文中找到
-          </text>
           <text
             v-if="isErrorMsg(msg)"
             class="msg-op retry"
@@ -849,6 +864,17 @@ const onMessageLongPress = (msg: Message) => {
   })
 }
 
+/** 溯源展开状态：同时只展开一条 */
+const openSourceIndex = ref(-1)
+const toggleSource = (index: number) => {
+  openSourceIndex.value = openSourceIndex.value === index ? -1 : index
+}
+
+/** 点来源卡片：去知识库查看原文 */
+const openSourceArticle = () => {
+  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
+}
+
 // 页面挂载时执行
 onMounted(() => {
   console.log('AI助手页面初始化完成')
@@ -1283,5 +1309,41 @@ onShareTimeline(() => {
     font-size: 24rpx;
     color: #ffffff;
     line-height: 1;
+  }
+
+  /* 溯源折叠与来源卡片 */
+  .msg-source {
+    display: flex;
+    align-items: center;
+    margin-top: 12rpx;
+  }
+  .msg-source-text {
+    font-size: 24rpx;
+    color: #64748b;
+  }
+  .msg-source-toggle {
+    margin-left: 12rpx;
+    font-size: 24rpx;
+    color: #2563eb;
+  }
+  .source-cards {
+    margin-top: 10rpx;
+  }
+  .source-card {
+    padding: 16rpx 20rpx;
+    background: #f8fafc;
+    border: 1rpx solid #e2e8f0;
+    border-radius: 12rpx;
+  }
+  .source-card-title {
+    display: block;
+    font-size: 26rpx;
+    color: #334155;
+  }
+  .source-card-sub {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: #94a3b8;
   }
 </style>
