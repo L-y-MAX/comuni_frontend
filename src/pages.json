@@ -326,6 +326,18 @@
 					}
 				}
 			]
+		},
+		{
+			"root": "pagesMember/careerFavorites",
+			"pages": [
+				{
+					"path": "careerFavorites",
+					"style": {
+						"navigationBarTitleText": "我的收藏",
+						"navigationStyle": "custom"
+					}
+				}
+			]
 		}
 	]
 }

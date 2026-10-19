@@ -97,6 +97,25 @@
             />
           </view>
         </view>
+        <!-- 我的收藏：展示从就业政策页收藏的资源 -->
+        <view
+          class="form-item"
+          :class="{ active: activeItemId === 'favorites' }"
+          @click="navigateToCareerFavorites"
+          @touchstart="() => setActiveItem('favorites')"
+          @touchend="() => clearActiveItem()"
+        >
+          <view class="form-label">
+            <text class="label-text">我的收藏</text>
+          </view>
+          <view class="form-control">
+            <image
+              class="forward-icon"
+              src="https://youupro.xyz/notes/static/icons/forward.png"
+              mode="aspectFit"
+            />
+          </view>
+        </view>
         <!-- 岗位招聘入口已移到首页，此处不再保留 -->
         <!-- 功能说明（替换原会员权益） -->
         <view
@@ -251,6 +270,21 @@ const openInstructionManual = () => {
         duration: 2000,
       })
       console.error('跳转功能说明页面失败：', err)
+    },
+  })
+}
+
+// 我的收藏：跳转收藏列表页
+const navigateToCareerFavorites = () => {
+  uni.navigateTo({
+    url: '/pagesMember/careerFavorites/careerFavorites',
+    fail: (err) => {
+      uni.showToast({
+        title: '跳转失败，请重试',
+        icon: 'none',
+        duration: 2000,
+      })
+      console.error('跳转我的收藏页面失败：', err)
     },
   })
 }
