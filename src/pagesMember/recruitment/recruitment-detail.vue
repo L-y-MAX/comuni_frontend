@@ -115,7 +115,7 @@
               >
                 {{ isIntroExpanded ? detail.enterprise_intro : getCollapsedIntro }}
                 <text
-                  v-if="detail.enterprise_intro.length > 100"
+                  v-if="(detail.enterprise_intro || '').length > 100"
                   class="toggle-btn"
                   @click="toggleIntroExpand"
                 >
