@@ -1,7 +1,7 @@
 {
-  "name": "comuni-career",
+  "name": "zhiyin-xingtu",
   "version": "0.1.0",
-  "description": "Comuni 职途 · AI 就业能力提升与生涯规划小程序",
+  "description": "职引星途 · AI 生涯规划与人岗匹配小程序",
   "scripts": {
     "dev:custom": "uni -p",
     "dev:h5": "uni",

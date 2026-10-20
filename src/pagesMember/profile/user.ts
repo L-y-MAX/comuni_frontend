@@ -1,7 +1,7 @@
 // /stores/user.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { UserInfo, VipInfo } from '@/types/user'
+import type { UserInfo, VipInfo } from './types/user'
 
 export const useUserStore = defineStore('user', () => {
   // 初始化用户信息和VIP信息

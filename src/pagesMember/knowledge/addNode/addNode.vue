@@ -153,7 +153,7 @@ hljs.registerLanguage('sql', sql)
 hljs.registerLanguage('markdown', markdown)
 import { markedHighlight } from 'marked-highlight'
 import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
-import RichEditor from '@/components/RichEditor.vue'
+import RichEditor from './components/RichEditor.vue'
 import { textToHtml } from '@/utils/plainText'
 
 // ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========

@@ -1,7 +1,7 @@
 /**
  * 个性化职业生涯发展报告 —— 数据模型
  *
- * 对应计划书《Comuni 职途》核心功能板块(4)，报告必须包含五个部分：
+ * 对应计划书《职引星途》核心功能板块(4)，报告必须包含五个部分：
  *   1. 职业探索与人岗匹配分析 —— 量化呈现契合度与差距，明确适配岗位与优化方向
  *   2. 职业目标设定与职业路径规划 —— 结合匹配结果与个人意愿，给出清晰晋升路径
  *   3. 分阶段个性化成长计划 —— 短期（1–3个月）、中期（4–12个月）可执行方案
@@ -16,8 +16,8 @@
  *     两者由同一份数据生成，保证内容一致。
  */
 
-import type { AbilityDimensionKey, ParseSource } from './jobProfile';
-import type { MatchResult } from './jobMatch';
+import type { AbilityDimensionKey, ParseSource } from '@/types/jobProfile';
+import type { MatchResult } from './jobMatchTypes';
 
 // ====================== 成长计划任务 ======================
 

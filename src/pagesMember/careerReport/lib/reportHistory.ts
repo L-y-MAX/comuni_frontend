@@ -11,8 +11,8 @@
  *   3. **新的在前**：列表按生成时间倒序，符合"看最近一次"的高频诉求。
  */
 
-import type { CareerReport } from '@/types/careerReport';
-import { calcTaskProgress } from '@/types/careerReport';
+import type { CareerReport } from './careerReportTypes';
+import { calcTaskProgress } from './careerReportTypes';
 
 /** 历史记录存储键 */
 export const REPORT_HISTORY_STORAGE_KEY = 'careerReportHistory';

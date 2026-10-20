@@ -21,7 +21,7 @@
         v-model="searchKeyword"
         class="search-input"
         type="text"
-        placeholder="Search with Comuni"
+        placeholder="Search with 职引星途"
         @confirm="handleSearch"
         @focus="handleInputFocus"
         @blur="handleInputBlur"

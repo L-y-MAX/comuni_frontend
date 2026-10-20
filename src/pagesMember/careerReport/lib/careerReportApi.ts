@@ -25,7 +25,7 @@
  */
 
 import { baseURL } from '@/utils/request';
-import type { CareerReport } from '@/types/careerReport';
+import type { CareerReport } from './careerReportTypes';
 
 // ====================== 端点 ======================
 

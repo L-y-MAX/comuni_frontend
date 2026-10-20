@@ -180,7 +180,7 @@ import {
   loadReportHistory,
   removeHistoryEntry,
   type ReportHistoryEntry,
-} from '@/utils/reportHistory';
+} from './lib/reportHistory';
 
 // ====================== 状态 ======================
 

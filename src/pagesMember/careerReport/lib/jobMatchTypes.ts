@@ -1,7 +1,7 @@
 /**
  * 人岗智能匹配 —— 数据模型
  *
- * 对应计划书《Comuni 职途》核心功能板块(3)「人岗智能匹配与职业探索」：
+ * 对应计划书《职引星途》核心功能板块(3)「人岗智能匹配与职业探索」：
  * 以岗位画像与学生能力画像为基础，通过向量相似度计算实现精准人岗匹配，
  * 从**专业技能、证书水平、实践经历、综合素质**四大维度综合计算匹配度，
  * 并明确指出具体不足项（如"MySQL、Redis 熟练度不足、计算机二级未获取、实践经历偏少"），
@@ -25,8 +25,8 @@
  * 若后端改用真实向量模型，只需替换 utils/jobMatch.ts 的打分函数，接口结构无需改动。
  */
 
-import type { AbilityDimensionKey } from './jobProfile';
-import type { SkillProficiency } from './studentProfile';
+import type { AbilityDimensionKey } from '@/types/jobProfile';
+import type { SkillProficiency } from '@/types/studentProfile';
 
 // ====================== 四大类目 ======================
 

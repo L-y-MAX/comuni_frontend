@@ -132,7 +132,7 @@ import type { KnowledgeNode } from '@/types/knowledge'
 
 // 直接引入接口文件中的方法（无需重复封装请求）
 import { getKnowledgeNodeDetail, addKnowledgeNode, updateKnowledgeNode } from '@/api/knowledge'
-import RichEditor from '@/components/RichEditor.vue'
+import RichEditor from './components/RichEditor.vue'
 import { looksLikeHtml, textToHtml } from '@/utils/plainText'
 
 // ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========

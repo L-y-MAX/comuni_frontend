@@ -12,10 +12,10 @@
  *   3. 结构化数据与 Markdown 全文由同一份数据生成，保证界面看到的就是导出的内容。
  */
 
-import { DIMENSION_ADVICE, rankJobsByMatch } from '@/utils/jobMatch';
+import { DIMENSION_ADVICE, rankJobsByMatch } from './jobMatch';
 import { buildJobGraph } from './jobGraph';
 import type { AbilityDimensionKey, JobProfile, ParseSource } from '@/types/jobProfile';
-import type { MatchResult } from '@/types/jobMatch';
+import type { MatchResult } from './jobMatchTypes';
 import type { StudentProfile } from '@/types/studentProfile';
 import {
   CAREER_REPORT_STORAGE_KEY,
@@ -25,7 +25,7 @@ import {
   type EvaluationMilestone,
   type GrowthTask,
   type PlanPhase,
-} from '@/types/careerReport';
+} from './careerReportTypes';
 
 // ====================== 选项 ======================
 
@@ -465,7 +465,7 @@ const buildMarkdown = (report: CareerReport): string => {
   lines.push('');
   lines.push('---');
   lines.push('');
-  lines.push('> 本报告由「Comuni 职途」根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考，不作为招聘录用依据。');
+  lines.push('> 本报告由「职引星途」根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考，不作为招聘录用依据。');
 
   return lines.join('\n');
 };

@@ -53,7 +53,7 @@ import {
   type MatchCategoryResult,
   type MatchResult,
   type SkillGap,
-} from '@/types/jobMatch';
+} from './jobMatchTypes';
 
 // ====================== 调参常量 ======================
 

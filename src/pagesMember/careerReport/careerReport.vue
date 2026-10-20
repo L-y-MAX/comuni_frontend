@@ -450,7 +450,7 @@
 
       <view class="page-footer-source">
         <text class="source-text">
-          本报告由 Comuni 职途 根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考
+          本报告由 职引星途 根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考
         </text>
       </view>
     </scroll-view>
@@ -468,17 +468,17 @@ import {
   type CareerReport,
   type PlanPhase,
   type TaskPriority,
-} from '@/types/careerReport';
-import { MATCH_LEVEL_COLOR, type DimensionGap, type MatchLevel } from '@/types/jobMatch';
+} from './lib/careerReportTypes';
+import { MATCH_LEVEL_COLOR, type DimensionGap, type MatchLevel } from './lib/jobMatchTypes';
 import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile';
 import { buildCareerReport, refreshReportMarkdown } from './lib/careerReport';
-import { getSampleJobProfiles } from '@/utils/jobProfileSamples';
+import { getSampleJobProfiles } from './lib/jobProfileSamples';
 import { exportCareerReport, type ExportFormat } from './lib/careerReportApi';
 import {
   getHistoryEntry,
   pushReportHistory,
   updateHistoryEntry,
-} from '@/utils/reportHistory';
+} from './lib/reportHistory';
 
 // ====================== 状态 ======================
 

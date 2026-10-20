@@ -350,14 +350,14 @@ import {
   type DimensionGap,
   type MatchLevel,
   type MatchResult,
-} from '@/types/jobMatch';
+} from './lib/jobMatchTypes';
 import {
   STUDENT_PROFILE_STORAGE_KEY,
   type StudentProfile,
 } from '@/types/studentProfile';
-import { matchStudentToJob, rankJobsByMatch } from '@/utils/jobMatch';
-import { getSampleJobProfiles } from '@/utils/jobProfileSamples';
-import { fetchRecruitmentByCreditCode, generateJobProfile } from '@/api/jobProfile';
+import { matchStudentToJob, rankJobsByMatch } from './lib/jobMatch';
+import { getSampleJobProfiles } from './lib/jobProfileSamples';
+import { fetchRecruitmentByCreditCode, generateJobProfile } from './lib/jobProfileApi';
 
 // ====================== 状态 ======================
 

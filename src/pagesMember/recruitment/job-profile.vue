@@ -421,8 +421,8 @@ import {
   fetchRecruitmentList,
   generateJobProfile,
   type RecruitmentRecord,
-} from '@/api/jobProfile';
-import { SAMPLE_RECRUITMENTS } from '@/utils/jobProfileSamples';
+} from './lib/jobProfileApi';
+import { SAMPLE_RECRUITMENTS } from './lib/jobProfileSamples';
 import { parseJobProfileByRules } from '@/utils/jobProfileParser';
 
 // 招聘原始记录的类型与读取函数统一由 @/api/jobProfile 提供

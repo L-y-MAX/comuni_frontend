@@ -333,7 +333,7 @@ onPullDownRefresh(() => {
 // 分享给好友（胶囊按钮三点菜单触发）
 onShareAppMessage(() => {
   return {
-    title: `${userName.value}的个人中心 - Comuni 职途`, // 动态显示用户名
+    title: `${userName.value}的个人中心 - 职引星途`, // 动态显示用户名
     path: '/pages/my/my', // 分享后打开的页面路径
     imageUrl: 'https://youupro.xyz/notes/static/logo.png', // 分享卡片图片（可选）
     desc: '快来查看我的个人中心，一起探索就业与生涯规划吧！', // 分享描述（可选）
@@ -343,7 +343,7 @@ onShareAppMessage(() => {
 // 分享到朋友圈（胶囊按钮三点菜单触发）
 onShareTimeline(() => {
   return {
-    title: `${userName.value}的个人中心 - Comuni 职途`, // 朋友圈分享标题
+    title: `${userName.value}的个人中心 - 职引星途`, // 朋友圈分享标题
     path: '/pages/my/my', // 分享后打开的页面路径
     imageUrl: 'https://youupro.xyz/notes/static/logo.png', // 朋友圈分享图片（可选）
   }
