@@ -45,7 +45,27 @@ function normalizeForMatch(s) {
   return String(s || '')
     .toLowerCase()
     .replace(/[\s\u3000]+/g, '')
-    .replace(/[，。、；：！？（）【】“”‘’]/g, (c) => ({ '，': ',', '。': '.', '、': ',', '；': ';', '：': ':', '！': '!', '？': '?', '（': '(', '）': ')', '【': '[', '】': ']', '“': '"', '”': '"', '‘': "'", '’': "'" })[c] || c)
+    .replace(
+      /[，。、；：！？（）【】“”‘’]/g,
+      (c) =>
+        ({
+          '，': ',',
+          '。': '.',
+          '、': ',',
+          '；': ';',
+          '：': ':',
+          '！': '!',
+          '？': '?',
+          '（': '(',
+          '）': ')',
+          '【': '[',
+          '】': ']',
+          '“': '"',
+          '”': '"',
+          '‘': "'",
+          '’': "'",
+        })[c] || c,
+    )
 }
 
 /** 把输入对象拼成一段原文（与提示词里的 <原文> 一致） */
@@ -148,7 +168,9 @@ function validateStudentAnalysis(payload, input = {}) {
     const finalScore = Number.isInteger(score) && score >= 0 && score <= 100 ? score : NEUTRAL_SCORE
     const derived = scoreToLevel(finalScore)
     if (raw.level && LEVELS.includes(raw.level) && raw.level !== derived) {
-      warnings.push(`${meta.key}: level(${raw.level}) 与 score(${finalScore}) 档位不一致，按 score 归一`)
+      warnings.push(
+        `${meta.key}: level(${raw.level}) 与 score(${finalScore}) 档位不一致，按 score 归一`,
+      )
     }
 
     out.push({

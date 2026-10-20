@@ -8,7 +8,9 @@ export const userDesc = ref('点击查看个人信息')
 // 会员状态响应式变量
 export const isVip = ref<boolean>(false)
 // 登录状态：初始值基于本地存储（页面加载时就同步真实状态）
-export const isLogged = ref<boolean>(!!(uni.getStorageSync('accessToken') && uni.getStorageSync('userInfo')))
+export const isLogged = ref<boolean>(
+  !!(uni.getStorageSync('accessToken') && uni.getStorageSync('userInfo')),
+)
 export const vipExpireDate = ref<string>('')
 
 /**
@@ -43,7 +45,8 @@ export const getUserInfo = () => {
   } else {
     // 未登录时重置基础信息
     userName.value = '我的账号'
-    userAvatar.value = 'https://youupro.xyz/notes/static/my-avatar/my-avatar.png'
+    userAvatar.value =
+      'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/my-avatar/my-avatar.png'
     userDesc.value = '点击查看个人信息'
   }
 }
@@ -73,7 +76,7 @@ export const fetchVipInfoFromServer = async () => {
       withCredentials: true,
       // 后端要求 CSRF 校验，需添加 X-CSRFToken 头（根据实际情况）
       header: {
-        'Authorization': `JWT ${accessToken}`
+        Authorization: `JWT ${accessToken}`,
       },
     })
 
@@ -194,18 +197,19 @@ export const logout = () => {
 const clearLoginState = () => {
   // 1. 精准清除登录相关数据
   const removeKeys = [
-    'accessToken',    // 用户登录令牌
-    'refreshToken',   // 刷新令牌
-    'userInfo',       // 用户信息对象
-    'vipInfo',        // vip 判断
+    'accessToken', // 用户登录令牌
+    'refreshToken', // 刷新令牌
+    'userInfo', // 用户信息对象
+    'vipInfo', // vip 判断
   ]
-  removeKeys.forEach(key => {
+  removeKeys.forEach((key) => {
     uni.removeStorageSync(key)
   })
 
   // 2. 重置响应式数据
   userName.value = '我的账号'
-  userAvatar.value = 'https://youupro.xyz/notes/static/my-avatar/my-avatar.png'
+  userAvatar.value =
+    'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/my-avatar/my-avatar.png'
   userDesc.value = '点击查看个人信息'
   isVip.value = false
   isLogged.value = false

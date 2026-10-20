@@ -12,17 +12,23 @@
           class="re-btn bold"
           :class="{ on: active.bold }"
           @click="fmt('bold')"
-        >B</text>
+        >
+          B
+        </text>
         <text
           class="re-btn italic"
           :class="{ on: active.italic }"
           @click="fmt('italic')"
-        >I</text>
+        >
+          I
+        </text>
         <text
           class="re-btn underline"
           :class="{ on: active.underline }"
           @click="fmt('underline')"
-        >U</text>
+        >
+          U
+        </text>
 
         <view class="re-sep" />
 
@@ -32,14 +38,36 @@
           class="re-btn size"
           :class="{ on: active.fontSize === s.value }"
           @click="setSize(s.value)"
-        >{{ s.label }}</text>
+        >
+          {{ s.label }}
+        </text>
 
         <view class="re-sep" />
 
-        <text class="re-btn" @click="fmt('header', 'H2')">标题</text>
-        <text class="re-btn" @click="fmt('list', 'bullet')">· 列表</text>
-        <text class="re-btn" @click="undo">撤销</text>
-        <text class="re-btn" @click="clearFormat">清格式</text>
+        <text
+          class="re-btn"
+          @click="fmt('header', 'H2')"
+        >
+          标题
+        </text>
+        <text
+          class="re-btn"
+          @click="fmt('list', 'bullet')"
+        >
+          · 列表
+        </text>
+        <text
+          class="re-btn"
+          @click="undo"
+        >
+          撤销
+        </text>
+        <text
+          class="re-btn"
+          @click="clearFormat"
+        >
+          清格式
+        </text>
       </view>
     </scroll-view>
 
@@ -59,7 +87,9 @@
       v-else
       class="re-fallback"
     >
-      <text class="re-fallback-tip">当前环境无法加载富文本编辑器，已切换为纯文本模式（仍可正常保存）</text>
+      <text class="re-fallback-tip">
+        当前环境无法加载富文本编辑器，已切换为纯文本模式（仍可正常保存）
+      </text>
       <textarea
         class="re-fallback-input"
         :value="fallbackText"
@@ -92,7 +122,7 @@ const props = withDefaults(
     html: '',
     placeholder: '在这里写正文：选中文字后点上方按钮即可加粗、调字号',
     maxlength: 500000,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -159,7 +189,7 @@ const acquire = (round = 0) => {
   if (ready.value || fallback.value) return
   const self: any = instance?.proxy ?? instance
   const candidates = [self?.$scope, self, instance, null].filter(
-    (c, i, arr) => arr.indexOf(c) === i
+    (c, i, arr) => arr.indexOf(c) === i,
   )
 
   let pending = candidates.length
@@ -179,7 +209,8 @@ const acquire = (round = 0) => {
   candidates.forEach((cand) => {
     try {
       const hasUni = typeof uni !== 'undefined' && typeof uni.createSelectorQuery === 'function'
-      const hasWx = typeof wx !== 'undefined' && typeof (wx as any).createSelectorQuery === 'function'
+      const hasWx =
+        typeof wx !== 'undefined' && typeof (wx as any).createSelectorQuery === 'function'
       if (!hasUni && !hasWx) {
         finish()
         return
@@ -268,12 +299,14 @@ watch(
     }
     if (value === undefined || value === null) return
     if (fallback.value) {
-      fallbackText.value = String(value).replace(/<[^>]+>/g, '').trim()
+      fallbackText.value = String(value)
+        .replace(/<[^>]+>/g, '')
+        .trim()
       return
     }
     if (!ready.value || !editorCtx) return
     editorCtx.setContents({ html: value || '' })
-  }
+  },
 )
 
 defineExpose({

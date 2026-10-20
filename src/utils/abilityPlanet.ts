@@ -34,12 +34,12 @@
  * 第一个维度从 12 点方向开始（即 -90 度），顺时针排列。
  */
 
-import type { AbilityDimensionKey, AbilityLevel } from '@/types/jobProfile';
+import type { AbilityDimensionKey, AbilityLevel } from '@/types/jobProfile'
 
 // ====================== 雷达骨架 ======================
 
 /** 雷达外圈半径（占容器边长的百分比） */
-export const RADAR_RADIUS_PERCENT = 30;
+export const RADAR_RADIUS_PERCENT = 30
 
 /**
  * 维度标签所在半径（占容器边长的百分比）
@@ -47,10 +47,10 @@ export const RADAR_RADIUS_PERCENT = 30;
  * 必须明显大于雷达外圈半径：需求明确要求「十个维度文字标签全部放到雷达外圈
  * 外部，不要挤在图内部」。两者相差 10% ≈ 63rpx，正好容纳四字标签。
  */
-export const LABEL_RADIUS_PERCENT = 40;
+export const LABEL_RADIUS_PERCENT = 40
 
 /** 分割圈：按雷达半径的比例画同心圆（只做参考，视觉最弱） */
-export const GRID_RING_RATIOS = [0.25, 0.5, 0.75, 1] as const;
+export const GRID_RING_RATIOS = [0.25, 0.5, 0.75, 1] as const
 
 // ====================== 气泡 ======================
 
@@ -60,8 +60,8 @@ export const GRID_RING_RATIOS = [0.25, 0.5, 0.75, 1] as const;
  * 不直接映射到 0~1：下限留 0.3 让低分气泡不至于挤在圆心，
  * 上限留 0.86 让满分气泡不会压到外圈外侧的维度标签。
  */
-export const SCORE_RADIUS_MIN_RATIO = 0.3;
-export const SCORE_RADIUS_MAX_RATIO = 0.86;
+export const SCORE_RADIUS_MIN_RATIO = 0.3
+export const SCORE_RADIUS_MAX_RATIO = 0.86
 
 /**
  * 气泡直径区间（rpx）
@@ -69,8 +69,8 @@ export const SCORE_RADIUS_MAX_RATIO = 0.86;
  * 上限是硬约束：需求点名禁止气泡过大导致相邻气泡碰撞，
  * 这里封顶 52rpx，配合 36° 的角距，任意两颗之间至少留 40rpx 空隙。
  */
-export const BUBBLE_SIZE_MIN = 30;
-export const BUBBLE_SIZE_MAX = 52;
+export const BUBBLE_SIZE_MIN = 30
+export const BUBBLE_SIZE_MAX = 52
 
 /**
  * 分值 → 视觉档位
@@ -78,83 +78,83 @@ export const BUBBLE_SIZE_MAX = 52;
  * 只决定气泡配色，和「用直径表达分值」这条主轴无关。
  * 三档按需求给定：≥80 暖橘 / 70~79 浅橙黄 / <70 浅灰。
  */
-export type PlanetTier = 'high' | 'mid' | 'low';
+export type PlanetTier = 'high' | 'mid' | 'low'
 
 export const scoreToTier = (score: number): PlanetTier => {
-  if (score >= 80) return 'high';
-  if (score >= 70) return 'mid';
-  return 'low';
-};
+  if (score >= 80) return 'high'
+  if (score >= 70) return 'mid'
+  return 'low'
+}
 
 // ====================== 类型 ======================
 
 export interface RadarNodeInput {
-  key: AbilityDimensionKey;
-  label: string;
-  score: number;
-  level: AbilityLevel;
+  key: AbilityDimensionKey
+  label: string
+  score: number
+  level: AbilityLevel
 }
 
 /** 一根轴：维度标签位置 + 轴线绘制参数 */
 export interface RadarAxis {
-  key: AbilityDimensionKey;
-  label: string;
-  score: number;
-  level: AbilityLevel;
+  key: AbilityDimensionKey
+  label: string
+  score: number
+  level: AbilityLevel
   /** 轴方向角（度），0 度为右侧，-90 度为 12 点方向 */
-  angleDeg: number;
+  angleDeg: number
   /** 维度标签中心位置（占容器边长百分比） */
-  labelXPercent: number;
-  labelYPercent: number;
+  labelXPercent: number
+  labelYPercent: number
   /** 轴线：从圆心到外圈的一段线，用 rotate 绘制 */
-  lineMidXPercent: number;
-  lineMidYPercent: number;
-  lineLengthPercent: number;
-  lineAngleDeg: number;
+  lineMidXPercent: number
+  lineMidYPercent: number
+  lineLengthPercent: number
+  lineAngleDeg: number
 }
 
 /** 一颗顶点气泡 */
 export interface RadarBubble extends RadarNodeInput {
-  tier: PlanetTier;
+  tier: PlanetTier
   /** 气泡中心（占容器边长百分比） */
-  xPercent: number;
-  yPercent: number;
+  xPercent: number
+  yPercent: number
   /** 该顶点到圆心的距离（占容器边长百分比） */
-  radiusPercent: number;
+  radiusPercent: number
   /** 该顶点半径占雷达半径的比例（0~1，便于断言） */
-  radiusRatio: number;
+  radiusRatio: number
   /** 气泡直径（rpx） */
-  sizeRpx: number;
-  angleDeg: number;
-  index: number;
+  sizeRpx: number
+  angleDeg: number
+  index: number
 }
 
 /** 轮廓折线的一条边（用一条旋转的细线绘制，角度精确，不依赖 clip-path） */
 export interface RadarEdge {
-  midXPercent: number;
-  midYPercent: number;
-  lengthPercent: number;
-  angleDeg: number;
+  midXPercent: number
+  midYPercent: number
+  lengthPercent: number
+  angleDeg: number
 }
 
 export interface RadarLayout {
-  axes: RadarAxis[];
-  bubbles: RadarBubble[];
-  edges: RadarEdge[];
+  axes: RadarAxis[]
+  bubbles: RadarBubble[]
+  edges: RadarEdge[]
   /** 供 `clip-path: polygon(...)` 使用的顶点串 */
-  polygonPoints: string;
+  polygonPoints: string
   /** 分割圈半径（占容器边长百分比） */
-  gridRings: number[];
+  gridRings: number[]
   /** 雷达外圈半径（占容器边长百分比） */
-  radiusPercent: number;
+  radiusPercent: number
   /** 维度标签半径（占容器边长百分比） */
-  labelRadiusPercent: number;
+  labelRadiusPercent: number
 }
 
 // ====================== 计算 ======================
 
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const round2 = (v: number) => Number(v.toFixed(2));
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
+const round2 = (v: number) => Number(v.toFixed(2))
 
 /**
  * 分值 → 顶点半径比例（相对雷达半径）
@@ -163,17 +163,17 @@ const round2 = (v: number) => Number(v.toFixed(2));
  * 端点值对不上常量，后续断言与阈值比较都会莫名其妙地失败。
  */
 export const scoreToRadiusRatio = (score: number): number => {
-  const r = clamp01(score / 100);
+  const r = clamp01(score / 100)
   return Number(
-    (SCORE_RADIUS_MIN_RATIO + (SCORE_RADIUS_MAX_RATIO - SCORE_RADIUS_MIN_RATIO) * r).toFixed(4)
-  );
-};
+    (SCORE_RADIUS_MIN_RATIO + (SCORE_RADIUS_MAX_RATIO - SCORE_RADIUS_MIN_RATIO) * r).toFixed(4),
+  )
+}
 
 /** 分值 → 气泡直径（rpx） */
 export const scoreToBubbleSize = (score: number): number => {
-  const r = clamp01(score / 100);
-  return Math.round(BUBBLE_SIZE_MIN + (BUBBLE_SIZE_MAX - BUBBLE_SIZE_MIN) * r);
-};
+  const r = clamp01(score / 100)
+  return Math.round(BUBBLE_SIZE_MIN + (BUBBLE_SIZE_MAX - BUBBLE_SIZE_MIN) * r)
+}
 
 /**
  * 生成「雷达骨架 + 顶点气泡」布局。
@@ -181,16 +181,16 @@ export const scoreToBubbleSize = (score: number): number => {
  * @param dimensions 十个维度（顺序即轴的顺序，建议按 JOB_DIMENSIONS 顺序传入）
  */
 export const buildRadarLayout = (dimensions: RadarNodeInput[]): RadarLayout => {
-  const total = dimensions.length || 1;
+  const total = dimensions.length || 1
 
-  const axes: RadarAxis[] = [];
-  const bubbles: RadarBubble[] = [];
+  const axes: RadarAxis[] = []
+  const bubbles: RadarBubble[] = []
 
   dimensions.forEach((dim, index) => {
-    const angleDeg = round2((360 / total) * index - 90);
-    const rad = (angleDeg * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
+    const angleDeg = round2((360 / total) * index - 90)
+    const rad = (angleDeg * Math.PI) / 180
+    const cos = Math.cos(rad)
+    const sin = Math.sin(rad)
 
     // 维度标签：固定摆在雷达外圈之外的同心圆上
     axes.push({
@@ -203,10 +203,10 @@ export const buildRadarLayout = (dimensions: RadarNodeInput[]): RadarLayout => {
       lineMidYPercent: round2(50 + (RADAR_RADIUS_PERCENT / 2) * sin),
       lineLengthPercent: RADAR_RADIUS_PERCENT,
       lineAngleDeg: angleDeg,
-    });
+    })
 
-    const radiusRatio = scoreToRadiusRatio(dim.score);
-    const radiusPercent = RADAR_RADIUS_PERCENT * radiusRatio;
+    const radiusRatio = scoreToRadiusRatio(dim.score)
+    const radiusPercent = RADAR_RADIUS_PERCENT * radiusRatio
 
     bubbles.push({
       ...dim,
@@ -218,21 +218,21 @@ export const buildRadarLayout = (dimensions: RadarNodeInput[]): RadarLayout => {
       radiusRatio: Number(radiusRatio.toFixed(4)),
       sizeRpx: scoreToBubbleSize(dim.score),
       index,
-    });
-  });
+    })
+  })
 
   // 轮廓折线：把相邻两个顶点连成一条旋转细线（含首尾闭合）
   const edges: RadarEdge[] = bubbles.map((b, i) => {
-    const next = bubbles[(i + 1) % bubbles.length];
-    const dx = next.xPercent - b.xPercent;
-    const dy = next.yPercent - b.yPercent;
+    const next = bubbles[(i + 1) % bubbles.length]
+    const dx = next.xPercent - b.xPercent
+    const dy = next.yPercent - b.yPercent
     return {
       midXPercent: round2((b.xPercent + next.xPercent) / 2),
       midYPercent: round2((b.yPercent + next.yPercent) / 2),
       lengthPercent: round2(Math.hypot(dx, dy)),
       angleDeg: round2((Math.atan2(dy, dx) * 180) / Math.PI),
-    };
-  });
+    }
+  })
 
   return {
     axes,
@@ -242,14 +242,14 @@ export const buildRadarLayout = (dimensions: RadarNodeInput[]): RadarLayout => {
     gridRings: GRID_RING_RATIOS.map((r) => round2(RADAR_RADIUS_PERCENT * r)),
     radiusPercent: RADAR_RADIUS_PERCENT,
     labelRadiusPercent: LABEL_RADIUS_PERCENT,
-  };
-};
+  }
+}
 
 /** 校验布局是否都落在容器内（供自检使用，避免圆点/标签被裁掉） */
 export const isRadarInsideBounds = (layout: RadarLayout, padding = 1): boolean => {
-  const within = (v: number) => v >= padding && v <= 100 - padding;
+  const within = (v: number) => v >= padding && v <= 100 - padding
   return (
     layout.bubbles.every((b) => within(b.xPercent) && within(b.yPercent)) &&
     layout.axes.every((a) => within(a.labelXPercent) && within(a.labelYPercent))
-  );
-};
+  )
+}

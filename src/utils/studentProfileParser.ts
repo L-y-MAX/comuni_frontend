@@ -23,7 +23,7 @@ import {
   type AbilityDimensionKey,
   type AbilityLevel,
   type ParseSource,
-} from '@/types/jobProfile';
+} from '@/types/jobProfile'
 import {
   BADGE_DEFINITIONS,
   COMPLETENESS_FIELDS_ORDER,
@@ -44,7 +44,7 @@ import {
   type StudentProfileInput,
   type StudentSkillItem,
   type SkillProficiency,
-} from '@/types/studentProfile';
+} from '@/types/studentProfile'
 import {
   CERT_KEYWORDS,
   clampText,
@@ -58,14 +58,14 @@ import {
   scoreByCertCount,
   scoreByHits,
   scoreBySkillCount,
-} from '@/utils/jobProfileParser';
+} from '@/utils/jobProfileParser'
 
 // ====================== 熟练度判定 ======================
 
 /** 「熟练」类措辞 */
-const PROFICIENT_MARKERS = ['熟练', '精通', '掌握', '擅长', '深入', '熟练使用'];
+const PROFICIENT_MARKERS = ['熟练', '精通', '掌握', '擅长', '深入', '熟练使用']
 /** 「了解」类措辞 */
-const BASIC_MARKERS = ['了解', '接触', '入门', '初步', '基本了解', '学习中'];
+const BASIC_MARKERS = ['了解', '接触', '入门', '初步', '基本了解', '学习中']
 
 /**
  * 判断学生对某项技能的熟练度声明。
@@ -77,17 +77,17 @@ const BASIC_MARKERS = ['了解', '接触', '入门', '初步', '基本了解', '
  * 取值来源是学生自己的措辞，而非岗位要求，因此与岗位侧的 must/preferred 不是一回事。
  */
 const judgeProficiency = (text: string, idx: number, keywordLength: number): SkillProficiency => {
-  const BOUNDARY = /[。！？；;\n\r，,]/;
-  let start = idx;
-  while (start > 0 && !BOUNDARY.test(text[start - 1])) start -= 1;
-  let end = idx;
-  while (end < text.length && !BOUNDARY.test(text[end])) end += 1;
-  const sentence = text.slice(start, end);
+  const BOUNDARY = /[。！？；;\n\r，,]/
+  let start = idx
+  while (start > 0 && !BOUNDARY.test(text[start - 1])) start -= 1
+  let end = idx
+  while (end < text.length && !BOUNDARY.test(text[end])) end += 1
+  const sentence = text.slice(start, end)
 
-  if (PROFICIENT_MARKERS.some((m) => sentence.includes(m))) return 'proficient';
-  if (BASIC_MARKERS.some((m) => sentence.includes(m))) return 'basic';
-  return 'unknown';
-};
+  if (PROFICIENT_MARKERS.some((m) => sentence.includes(m))) return 'proficient'
+  if (BASIC_MARKERS.some((m) => sentence.includes(m))) return 'basic'
+  return 'unknown'
+}
 
 /**
  * 综合某项技能的**所有出现位置**取最明确的熟练度声明。
@@ -99,109 +99,105 @@ const judgeProficiency = (text: string, idx: number, keywordLength: number): Ski
 const strongestProficiency = (
   text: string,
   positions: number[],
-  keywordLength: number
+  keywordLength: number,
 ): SkillProficiency => {
-  const all = positions.map((p) => judgeProficiency(text, p, keywordLength));
-  if (all.includes('proficient')) return 'proficient';
-  if (all.includes('basic')) return 'basic';
-  return 'unknown';
-};
+  const all = positions.map((p) => judgeProficiency(text, p, keywordLength))
+  if (all.includes('proficient')) return 'proficient'
+  if (all.includes('basic')) return 'basic'
+  return 'unknown'
+}
 
 /** 厂商认证模式（与岗位侧保持一致的口径） */
 const VENDOR_CERT_PATTERN =
-  /(阿里云|华为|思科|腾讯云|红帽|Oracle|微软|Adobe|Autodesk|达索|用友|金蝶|SAP)\s*(?:相关)?\s*认证/g;
+  /(阿里云|华为|思科|腾讯云|红帽|Oracle|微软|Adobe|Autodesk|达索|用友|金蝶|SAP)\s*(?:相关)?\s*认证/g
 
 // ====================== 抽取 ======================
 
 /** 从语料中抽取学生具备的技能 */
-const extractStudentSkills = (
-  text: string
-): { skills: StudentSkillItem[]; evidence: string[] } => {
-  const skills: StudentSkillItem[] = [];
-  const evidence: string[] = [];
+const extractStudentSkills = (text: string): { skills: StudentSkillItem[]; evidence: string[] } => {
+  const skills: StudentSkillItem[] = []
+  const evidence: string[] = []
 
   Object.entries(SKILL_DICTIONARY).forEach(([category, words]) => {
     words.forEach((word) => {
-      const positions = findOccurrences(text, word);
-      if (!positions.length) return;
-      if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return;
+      const positions = findOccurrences(text, word)
+      if (!positions.length) return
+      if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return
 
-      const idx = positions[0];
+      const idx = positions[0]
       skills.push({
         name: word,
         category,
         proficiency: strongestProficiency(text, positions, word.length),
-      });
+      })
 
-      if (evidence.length < 6) evidence.push(evidenceAround(text, idx, word.length));
-    });
-  });
+      if (evidence.length < 6) evidence.push(evidenceAround(text, idx, word.length))
+    })
+  })
 
-  return { skills, evidence };
-};
+  return { skills, evidence }
+}
 
 /** 从语料中抽取学生持有的证书 */
-const extractStudentCerts = (text: string): { certificates: StudentCertItem[]; evidence: string[] } => {
-  const certificates: StudentCertItem[] = [];
-  const evidence: string[] = [];
+const extractStudentCerts = (
+  text: string,
+): { certificates: StudentCertItem[]; evidence: string[] } => {
+  const certificates: StudentCertItem[] = []
+  const evidence: string[] = []
 
   const push = (name: string, idx: number, len: number) => {
-    if (certificates.some((c) => c.name.toLowerCase() === name.toLowerCase())) return;
-    certificates.push({ name });
-    if (evidence.length < 4) evidence.push(evidenceAround(text, idx, len));
-  };
+    if (certificates.some((c) => c.name.toLowerCase() === name.toLowerCase())) return
+    certificates.push({ name })
+    if (evidence.length < 4) evidence.push(evidenceAround(text, idx, len))
+  }
 
   CERT_KEYWORDS.forEach((word) => {
-    const positions = findOccurrences(text, word);
-    if (!positions.length) return;
-    push(word, positions[0], word.length);
-  });
+    const positions = findOccurrences(text, word)
+    if (!positions.length) return
+    push(word, positions[0], word.length)
+  })
 
   // 厂商认证模式匹配。用 exec 循环而非 String.prototype.matchAll：
   // matchAll 是 ES2020，开发者工具 ES5 转换时会产生对
   // `@swc/helpers/_/_wrap_reg_exp` 的依赖，而该 helper 不会进产物，
   // 会导致小程序启动报 "module 'common/@swc/helpers/...' is not defined"。
-  const certPattern = new RegExp(VENDOR_CERT_PATTERN.source, 'g');
-  let certMatch: RegExpExecArray | null = certPattern.exec(text);
+  const certPattern = new RegExp(VENDOR_CERT_PATTERN.source, 'g')
+  let certMatch: RegExpExecArray | null = certPattern.exec(text)
   while (certMatch !== null) {
-    const vendor = certMatch[1];
-    if (vendor) push(`${vendor}认证`, certMatch.index, vendor.length + 2);
-    if (certMatch.index === certPattern.lastIndex) certPattern.lastIndex += 1;
-    certMatch = certPattern.exec(text);
+    const vendor = certMatch[1]
+    if (vendor) push(`${vendor}认证`, certMatch.index, vendor.length + 2)
+    if (certMatch.index === certPattern.lastIndex) certPattern.lastIndex += 1
+    certMatch = certPattern.exec(text)
   }
 
-  return { certificates, evidence };
-};
+  return { certificates, evidence }
+}
 
 // ====================== 完整度 ======================
 
 /** 这几个字段属于短字段，只要有内容即视为填满 */
-const SHORT_FIELDS: CompletenessField[] = ['major', 'grade', 'target_job'];
+const SHORT_FIELDS: CompletenessField[] = ['major', 'grade', 'target_job']
 
 /** 计算信息完整度及其明细 */
 export const calcCompleteness = (
-  input: StudentProfileInput
+  input: StudentProfileInput,
 ): { completeness: number; detail: CompletenessDetail[]; missing: string[] } => {
-  const detail: CompletenessDetail[] = [];
-  const missing: string[] = [];
-  let total = 0;
+  const detail: CompletenessDetail[] = []
+  const missing: string[] = []
+  let total = 0
 
   COMPLETENESS_FIELDS_ORDER.forEach((field) => {
-    const fullScore = COMPLETENESS_WEIGHTS[field];
-    const raw = String((input as unknown as Record<string, unknown>)[field] ?? '').trim();
+    const fullScore = COMPLETENESS_WEIGHTS[field]
+    const raw = String((input as unknown as Record<string, unknown>)[field] ?? '').trim()
 
-    let ratio = 0;
+    let ratio = 0
     if (raw) {
-      ratio = SHORT_FIELDS.includes(field)
-        ? 1
-        : raw.length >= FIELD_SUFFICIENT_LENGTH
-          ? 1
-          : 0.5;
+      ratio = SHORT_FIELDS.includes(field) ? 1 : raw.length >= FIELD_SUFFICIENT_LENGTH ? 1 : 0.5
     }
 
-    const score = Math.round(fullScore * ratio);
-    total += score;
-    if (!raw) missing.push(COMPLETENESS_FIELD_LABEL[field]);
+    const score = Math.round(fullScore * ratio)
+    total += score
+    if (!raw) missing.push(COMPLETENESS_FIELD_LABEL[field])
 
     detail.push({
       field,
@@ -210,11 +206,11 @@ export const calcCompleteness = (
       ratio,
       score,
       fullScore,
-    });
-  });
+    })
+  })
 
-  return { completeness: Math.min(100, total), detail, missing };
-};
+  return { completeness: Math.min(100, total), detail, missing }
+}
 
 // ====================== 竞争力 ======================
 
@@ -225,50 +221,55 @@ export const calcCompleteness = (
  * 信息填得越少，评分越保守（完整度 0 时只有加权分的 65%）。
  * 这样避免"只填两三个字却得到高分"的虚高结果。
  */
-export const calcCompetitiveness = (dimensions: StudentDimension[], completeness: number): number => {
+export const calcCompetitiveness = (
+  dimensions: StudentDimension[],
+  completeness: number,
+): number => {
   const weighted = JOB_DIMENSIONS.reduce((sum, meta) => {
-    const dim = dimensions.find((d) => d.key === meta.key);
-    return sum + (dim?.score ?? 50) * meta.defaultWeight;
-  }, 0);
+    const dim = dimensions.find((d) => d.key === meta.key)
+    return sum + (dim?.score ?? 50) * meta.defaultWeight
+  }, 0)
 
-  const factor = 0.65 + 0.35 * (Math.max(0, Math.min(100, completeness)) / 100);
-  return Math.max(0, Math.min(100, Math.round(weighted * factor)));
-};
+  const factor = 0.65 + 0.35 * (Math.max(0, Math.min(100, completeness)) / 100)
+  return Math.max(0, Math.min(100, Math.round(weighted * factor)))
+}
 
 // ====================== 徽章 ======================
 
 /** 根据维度结果判定徽章墙 */
 export const buildBadges = (dimensions: StudentDimension[]): StudentBadge[] => {
-  const scoreOf = (key: AbilityDimensionKey) => dimensions.find((d) => d.key === key)?.score ?? 0;
+  const scoreOf = (key: AbilityDimensionKey) => dimensions.find((d) => d.key === key)?.score ?? 0
 
   return BADGE_DEFINITIONS.map((def) => {
     // 单维度徽章
     if (def.dimension && typeof def.threshold === 'number') {
-      const score = scoreOf(def.dimension);
+      const score = scoreOf(def.dimension)
       return {
         id: def.id,
         name: def.name,
-        icon: def.icon,        name_en: def.name_en,
+        icon: def.icon,
+        name_en: def.name_en,
         condition: def.condition,
         dimension: def.dimension,
         unlocked: score >= def.threshold,
         progress: def.threshold > 0 ? Math.min(1, Number((score / def.threshold).toFixed(3))) : 0,
-      };
+      }
     }
 
     // 全局徽章：所有维度都不低于阈值
-    const threshold = def.allDimensionsAbove ?? 80;
-    const passed = dimensions.filter((d) => d.score >= threshold).length;
+    const threshold = def.allDimensionsAbove ?? 80
+    const passed = dimensions.filter((d) => d.score >= threshold).length
     return {
       id: def.id,
       name: def.name,
-      icon: def.icon,      name_en: def.name_en,
+      icon: def.icon,
+      name_en: def.name_en,
       condition: def.condition,
       unlocked: dimensions.length > 0 && passed === dimensions.length,
       progress: dimensions.length ? Number((passed / dimensions.length).toFixed(3)) : 0,
-    };
-  });
-};
+    }
+  })
+}
 
 // ====================== 总述 ======================
 
@@ -278,37 +279,36 @@ const buildSummary = (
   strengths: AbilityDimensionKey[],
   weaknesses: AbilityDimensionKey[],
   completeness: number,
-  competitiveness: number
+  competitiveness: number,
 ): string => {
-  const labelOf = (key: AbilityDimensionKey) =>
-    dimensions.find((d) => d.key === key)?.label ?? key;
+  const labelOf = (key: AbilityDimensionKey) => dimensions.find((d) => d.key === key)?.label ?? key
 
-  const gradeText = input.grade ? `${GRADE_LABEL[input.grade as GradeKey]}·` : '';
-  const majorText = input.major ? `${input.major}` : '本专业';
-  const targetText = input.target_job ? `，意向岗位为${input.target_job}` : '';
+  const gradeText = input.grade ? `${GRADE_LABEL[input.grade as GradeKey]}·` : ''
+  const majorText = input.major ? `${input.major}` : '本专业'
+  const targetText = input.target_job ? `，意向岗位为${input.target_job}` : ''
 
   const strengthText = strengths.length
     ? `优势集中在${strengths.map(labelOf).join('、')}`
-    : '暂未识别出明显优势维度';
+    : '暂未识别出明显优势维度'
 
   const weaknessText = weaknesses.length
     ? `${weaknesses.map(labelOf).join('、')}是当前相对短板`
-    : '暂未识别出明确短板';
+    : '暂未识别出明确短板'
 
   const completenessText =
     completeness >= 85
       ? '信息填写较为完整，评分可信度较高'
       : completeness >= 60
         ? `信息完整度 ${completeness}%，补充更多经历可让评分更准确`
-        : `信息完整度仅 ${completeness}%，当前评分可能偏低，建议补齐项目与实习经历`;
+        : `信息完整度仅 ${completeness}%，当前评分可能偏低，建议补齐项目与实习经历`
 
   return (
     `你是${gradeText}${majorText}学生${targetText}。` +
     `综合就业竞争力评分 ${competitiveness} 分，${strengthText}，${weaknessText}。` +
     `${completenessText}。` +
     `本画像由本地关键词规则解析生成；接入 DeepSeek 大模型解析后，可从简历原文中抽取更细的能力证据。`
-  );
-};
+  )
+}
 
 // ====================== 主入口 ======================
 
@@ -329,8 +329,8 @@ const buildCorpus = (input: StudentProfileInput): string =>
       input.resume_text,
     ]
       .filter(Boolean)
-      .join('\n')
-  );
+      .join('\n'),
+  )
 
 /**
  * 本地规则解析入口：把学生填写的信息解析为十维能力画像。
@@ -340,16 +340,16 @@ const buildCorpus = (input: StudentProfileInput): string =>
 // ====================== 解析明细（把评分过程写清楚） ======================
 
 /** 命中 0 个信号词时的中性基准分与置信度（与 scoreByHits / confidenceByHits 保持一致） */
-const NEUTRAL_SCORE = 50;
-const NEUTRAL_CONFIDENCE = 0.25;
+const NEUTRAL_SCORE = 50
+const NEUTRAL_CONFIDENCE = 0.25
 
 /** 「信息不足」阈值（与界面 abilityProfile.vue 的 INFO_THRESHOLD 一致），只用于文案 */
-const INFO_THRESHOLD_FOR_TEXT = 0.35;
+const INFO_THRESHOLD_FOR_TEXT = 0.35
 
 /** 一项技能都没识别出来时只说明"没写"，不代表能力差，置信度压低到信息不足阈值以下 */
-const SKILL_EMPTY_CONFIDENCE = 0.2;
+const SKILL_EMPTY_CONFIDENCE = 0.2
 /** 同理：一项证书都没识别出来时 */
-const CERT_EMPTY_CONFIDENCE = 0.3;
+const CERT_EMPTY_CONFIDENCE = 0.3
 
 /** 补充建议：按依据类型给出，不描述具体算法细节，避免与实现脱节 */
 const ADVICE_BY_KIND: Record<DimensionParseDetail['kind'], string> = {
@@ -358,22 +358,22 @@ const ADVICE_BY_KIND: Record<DimensionParseDetail['kind'], string> = {
   skill:
     '按「技能 + 熟练度」的写法补充，例如「熟练使用 Vue3」：识别出的技能越多、标注「熟练」的越多，分值越高。',
   certificate: '补充已取得证书的全称，例如「全国计算机等级考试二级」：每多一项证书，分值上升一档。',
-};
+}
 
 /** 把依据词表拆成「已命中」与「还没命中」两份，后者用于告诉用户补充什么能加分 */
 const splitSignals = (
   text: string,
   keywords: string[],
-  missLimit = 8
+  missLimit = 8,
 ): { matched: string[]; missed: string[] } => {
-  const matched: string[] = [];
-  const missed: string[] = [];
+  const matched: string[] = []
+  const missed: string[] = []
   keywords.forEach((kw) => {
-    if (findOccurrences(text, kw).length > 0) matched.push(kw);
-    else if (missed.length < missLimit) missed.push(kw);
-  });
-  return { matched, missed };
-};
+    if (findOccurrences(text, kw).length > 0) matched.push(kw)
+    else if (missed.length < missLimit) missed.push(kw)
+  })
+  return { matched, missed }
+}
 
 /** 软性维度的解析明细：由「信号词命中数」决定 */
 const buildKeywordDetail = (
@@ -381,9 +381,9 @@ const buildKeywordDetail = (
   keywords: string[],
   hitCount: number,
   score: number,
-  confidence: number
+  confidence: number,
 ): DimensionParseDetail => {
-  const { matched, missed } = splitSignals(text, keywords);
+  const { matched, missed } = splitSignals(text, keywords)
   return {
     kind: 'keyword',
     matched_keywords: matched,
@@ -401,18 +401,18 @@ const buildKeywordDetail = (
         ? `置信度 = 0.35 + 命中数 ${hitCount} × 0.12 = ${confidence.toFixed(2)}（上限 0.80）：命中越多，这条结论的原文依据越足。`
         : `命中数为 0，置信度直接取 ${NEUTRAL_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值，所以只作参考。`,
     advice: ADVICE_BY_KIND.keyword,
-  };
-};
+  }
+}
 
 /** 专业技能维度的解析明细：由「识别到的技能数 + 标注熟练的数量」决定 */
 const buildSkillDetail = (
   skills: StudentSkillItem[],
   proficientCount: number,
   score: number,
-  confidence: number
+  confidence: number,
 ): DimensionParseDetail => {
-  const dictSize = Object.values(SKILL_DICTIONARY).reduce((n, words) => n + words.length, 0);
-  const names = skills.map((s) => s.name);
+  const dictSize = Object.values(SKILL_DICTIONARY).reduce((n, words) => n + words.length, 0)
+  const names = skills.map((s) => s.name)
   return {
     kind: 'skill',
     matched_keywords: names,
@@ -429,14 +429,14 @@ const buildSkillDetail = (
       ? `置信度 = 0.4 + 技能数 ${skills.length} × 0.08 = ${confidence.toFixed(2)}（上限 0.90）。`
       : `未识别到技能，置信度取 ${SKILL_EMPTY_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值。`,
     advice: ADVICE_BY_KIND.skill,
-  };
-};
+  }
+}
 
 /** 证书维度的解析明细：由「识别到的证书数」决定 */
 const buildCertDetail = (
   certificates: StudentCertItem[],
   score: number,
-  confidence: number
+  confidence: number,
 ): DimensionParseDetail => ({
   kind: 'certificate',
   matched_keywords: certificates.map((c) => c.name),
@@ -452,23 +452,23 @@ const buildCertDetail = (
     ? `置信度 = 0.4 + 证书数 ${certificates.length} × 0.15 = ${confidence.toFixed(2)}（上限 0.85）。`
     : `未识别到证书，置信度取 ${CERT_EMPTY_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值。`,
   advice: ADVICE_BY_KIND.certificate,
-});
+})
 
 export const parseStudentProfileByRules = (input: StudentProfileInput): StudentProfile => {
-  const corpus = buildCorpus(input);
+  const corpus = buildCorpus(input)
 
-  const { skills, evidence: skillEvidence } = extractStudentSkills(corpus);
-  const { certificates, evidence: certEvidence } = extractStudentCerts(corpus);
-  const proficientCount = skills.filter((s) => s.proficiency === 'proficient').length;
+  const { skills, evidence: skillEvidence } = extractStudentSkills(corpus)
+  const { certificates, evidence: certEvidence } = extractStudentCerts(corpus)
+  const proficientCount = skills.filter((s) => s.proficiency === 'proficient').length
 
   const dimensions: StudentDimension[] = JOB_DIMENSIONS.map((meta) => {
     // ---- 专业技能：由识别出的技能数量与熟练程度决定 ----
     if (meta.key === 'professional_skill') {
-      const score = scoreBySkillCount(skills.length, proficientCount);
+      const score = scoreBySkillCount(skills.length, proficientCount)
       // 一项技能都没识别出来时，只说明"没写"，不代表能力差，
       // 因此置信度给到 0.2（低于界面的「信息不足」阈值 0.35），
       // 从而不会被误判为短板。
-      const confidence = skills.length ? Math.min(0.9, 0.4 + skills.length * 0.08) : 0.2;
+      const confidence = skills.length ? Math.min(0.9, 0.4 + skills.length * 0.08) : 0.2
 
       return {
         key: meta.key,
@@ -480,15 +480,15 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
         evidence: skillEvidence,
         skills,
         parse_detail: buildSkillDetail(skills, proficientCount, score, confidence),
-      };
+      }
     }
 
     // ---- 证书资质：由证书数量决定 ----
     if (meta.key === 'certificate') {
-      const score = scoreByCertCount(certificates.length);
+      const score = scoreByCertCount(certificates.length)
       const confidence = certificates.length
         ? Math.min(0.85, 0.4 + certificates.length * 0.15)
-        : 0.3;
+        : 0.3
 
       return {
         key: meta.key,
@@ -500,14 +500,14 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
         evidence: certEvidence,
         certificates,
         parse_detail: buildCertDetail(certificates, score, confidence),
-      };
+      }
     }
 
     // ---- 其余 8 个软性维度：信号词命中 ----
-    const keywords = DIMENSION_SIGNALS[meta.key] ?? [];
-    const hitCount = countDimensionHits(corpus, keywords);
-    const score = scoreByHits(hitCount);
-    const confidence = confidenceByHits(hitCount);
+    const keywords = DIMENSION_SIGNALS[meta.key] ?? []
+    const hitCount = countDimensionHits(corpus, keywords)
+    const score = scoreByHits(hitCount)
+    const confidence = confidenceByHits(hitCount)
 
     return {
       key: meta.key,
@@ -518,18 +518,18 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
       source: 'rule' as ParseSource,
       evidence: extractDimensionEvidence(corpus, keywords),
       parse_detail: buildKeywordDetail(corpus, keywords, hitCount, score, confidence),
-    };
-  });
+    }
+  })
 
-  const { completeness, detail, missing } = calcCompleteness(input);
-  const competitiveness = calcCompetitiveness(dimensions, completeness);
+  const { completeness, detail, missing } = calcCompleteness(input)
+  const competitiveness = calcCompetitiveness(dimensions, completeness)
 
   // 优势：分值 >= 70 的前 3 项
   const strengths = [...dimensions]
     .sort((a, b) => b.score - a.score)
     .filter((d) => d.score >= 70)
     .slice(0, 3)
-    .map((d) => d.key);
+    .map((d) => d.key)
 
   // 短板：分值 <= 60 且**置信度足够**的最低 3 项
   // （置信度低说明只是没写，不代表能力弱，不应判为短板）
@@ -537,9 +537,9 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
     .sort((a, b) => a.score - b.score)
     .filter((d) => d.score <= 60 && d.confidence >= 0.35)
     .slice(0, 3)
-    .map((d) => d.key);
+    .map((d) => d.key)
 
-  const badges = buildBadges(dimensions);
+  const badges = buildBadges(dimensions)
 
   const profile = normalizeStudentProfile({
     student_id: input.student_id ?? '',
@@ -559,7 +559,7 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
     summary: '',
     parse_method: 'rule',
     parsed_at: new Date().toISOString(),
-  });
+  })
 
   profile.summary = buildSummary(
     input,
@@ -567,11 +567,11 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
     profile.strengths,
     profile.weaknesses,
     completeness,
-    competitiveness
-  );
+    competitiveness,
+  )
 
-  return profile;
-};
+  return profile
+}
 
 // ====================== 示例数据 ======================
 
@@ -596,4 +596,4 @@ export const STUDENT_PROFILE_SAMPLE: StudentProfileInput = {
   gpa: '3.6/4.0，专业排名前 20%',
   self_evaluation:
     '学习能力强，能快速上手新技术，喜欢钻研底层原理；善于沟通表达，在团队中负责需求对接与进度汇报，多次主讲小组技术分享；性格踏实，能承受项目交付压力；持续关注数字经济领域的行业动态与产业趋势。',
-};
+}

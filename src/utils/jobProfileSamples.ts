@@ -12,8 +12,8 @@
  *   - 明确标注为示例数据，界面上与真实岗位区分展示。
  */
 
-import type { JobProfile } from '@/types/jobProfile';
-import { parseJobProfileByRules, type RuleParseInput } from '@/utils/jobProfileParser';
+import type { JobProfile } from '@/types/jobProfile'
+import { parseJobProfileByRules, type RuleParseInput } from '@/utils/jobProfileParser'
 
 /**
  * 示例招聘原始数据（模拟聊城大学校招合作企业的真实招聘文本）。
@@ -121,19 +121,18 @@ export const SAMPLE_RECRUITMENTS: RuleParseInput[] = [
       '有较强的语言表达能力与责任心，善于沟通，能耐心指导学生；' +
       '有支教、家教或教学实习经历者优先。',
   },
-];
+]
 
 /** 缓存的示例岗位画像（规则解析有一定开销，只算一次） */
-let cachedSamples: JobProfile[] | null = null;
+let cachedSamples: JobProfile[] | null = null
 
 /** 取示例岗位画像集 */
 export const getSampleJobProfiles = (): JobProfile[] => {
   if (!cachedSamples) {
-    cachedSamples = SAMPLE_RECRUITMENTS.map((r) => parseJobProfileByRules(r));
+    cachedSamples = SAMPLE_RECRUITMENTS.map((r) => parseJobProfileByRules(r))
   }
-  return cachedSamples;
-};
+  return cachedSamples
+}
 
 /** 判断某个岗位标识是否为示例数据 */
-export const isSampleJobId = (jobId: string): boolean =>
-  jobId.startsWith('SAMPLE-');
+export const isSampleJobId = (jobId: string): boolean => jobId.startsWith('SAMPLE-')

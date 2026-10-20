@@ -27,22 +27,22 @@ import {
   type JobSkillItem,
   type RequirementStrength,
   normalizeJobProfile,
-} from '@/types/jobProfile';
+} from '@/types/jobProfile'
 
 // ====================== 输入 ======================
 
 /** 本地规则解析的输入（字段均可选，缺失则跳过对应文本） */
 export interface RuleParseInput {
-  recruitment_id: string;
-  job_name?: string;
-  enterprise_name?: string;
-  industry?: string;
-  recruit_major?: string;
-  monthly_salary?: string;
-  recruit_number?: string;
-  enterprise_intro?: string;
+  recruitment_id: string
+  job_name?: string
+  enterprise_name?: string
+  industry?: string
+  recruit_major?: string
+  monthly_salary?: string
+  recruit_number?: string
+  enterprise_intro?: string
   /** 预留：后端补充「岗位职责/任职要求」字段后自动纳入解析，无需改动本文件 */
-  job_description?: string;
+  job_description?: string
 }
 
 // ====================== 技能词典 ======================
@@ -274,7 +274,7 @@ const SKILL_DICTIONARY: Record<string, string[]> = {
     '安全生产',
     '环境监测',
   ],
-};
+}
 
 // ====================== 证书词典 ======================
 
@@ -295,18 +295,18 @@ const SKILL_DICTIONARY: Record<string, string[]> = {
  */
 const COMPOUND_SUFFIX_BLOCK: Record<string, string[]> = {
   教学: ['工具'],
-};
+}
 
 /** 过滤掉「只是更长词语一部分」的命中位置 */
 const filterCompoundFalsePositives = (
   text: string,
   word: string,
-  positions: number[]
+  positions: number[],
 ): number[] => {
-  const suffixes = COMPOUND_SUFFIX_BLOCK[word];
-  if (!suffixes || !positions.length) return positions;
-  return positions.filter((p) => !suffixes.some((sfx) => text.startsWith(sfx, p + word.length)));
-};
+  const suffixes = COMPOUND_SUFFIX_BLOCK[word]
+  if (!suffixes || !positions.length) return positions
+  return positions.filter((p) => !suffixes.some((sfx) => text.startsWith(sfx, p + word.length)))
+}
 
 const CERT_KEYWORDS: string[] = [
   '计算机二级',
@@ -355,7 +355,7 @@ const CERT_KEYWORDS: string[] = [
   '化学检验员',
   '食品安全管理师',
   'ISO内审员',
-];
+]
 
 // ====================== 软性维度信号词 ======================
 
@@ -454,7 +454,7 @@ const DIMENSION_SIGNALS: Partial<Record<JobDimensionKey, string[]>> = {
     '区域',
     '行情',
   ],
-};
+}
 
 /** 「必须」类强度标记（注意：判定时先查「优先」，避免「熟悉…者优先」被误判为必须） */
 const MUST_MARKERS = [
@@ -468,9 +468,9 @@ const MUST_MARKERS = [
   '需有',
   '应具备',
   '硬性',
-];
+]
 /** 「优先」类强度标记 */
-const PREFERRED_MARKERS = ['优先', '加分', '更佳', '有则更好', '可选'];
+const PREFERRED_MARKERS = ['优先', '加分', '更佳', '有则更好', '可选']
 
 /**
  * 厂商认证的通用模式。
@@ -478,7 +478,7 @@ const PREFERRED_MARKERS = ['优先', '加分', '更佳', '有则更好', '可选
  * 因此这里用模式匹配兜住「厂商名 + (相关) + 认证」这一族表述。
  */
 const VENDOR_CERT_PATTERN =
-  /(阿里云|华为|思科|腾讯云|红帽|Oracle|微软|Adobe|Autodesk|达索|用友|金蝶|SAP)\s*(?:相关)?\s*认证/g;
+  /(阿里云|华为|思科|腾讯云|红帽|Oracle|微软|Adobe|Autodesk|达索|用友|金蝶|SAP)\s*(?:相关)?\s*认证/g
 
 // ====================== 晋升路径模板 ======================
 
@@ -540,58 +540,57 @@ const PROMOTION_TEMPLATES: Array<{ match: string[]; path: string[] }> = [
     match: ['化验', '质检', '检测', '化工'],
     path: ['化验员', '质检工程师', '质量主管', '质量总监'],
   },
-];
+]
 
 // ====================== 文本工具 ======================
 
 /** 判断字符是否属于 ASCII 单词字符（用于手写词边界判断，避免使用 lookbehind） */
-const isAsciiWordChar = (ch: string | undefined): boolean => !!ch && /[A-Za-z0-9+#._-]/.test(ch);
+const isAsciiWordChar = (ch: string | undefined): boolean => !!ch && /[A-Za-z0-9+#._-]/.test(ch)
 
 /** 判断关键词是否为纯 ASCII（纯 ASCII 需做词边界判断，避免 Go 命中 Google） */
-const isAsciiKeyword = (kw: string): boolean => /^[\x20-\x7E]+$/.test(kw);
+const isAsciiKeyword = (kw: string): boolean => /^[\x20-\x7E]+$/.test(kw)
 
 /**
  * 在文本中查找关键词的全部出现位置。
  * 纯 ASCII 关键词做词边界校验；中文关键词直接匹配。
  */
 const findOccurrences = (text: string, keyword: string): number[] => {
-  if (!text || !keyword) return [];
-  const positions: number[] = [];
-  const lowerText = text.toLowerCase();
-  const lowerKw = keyword.toLowerCase();
-  const needBoundary = isAsciiKeyword(keyword);
+  if (!text || !keyword) return []
+  const positions: number[] = []
+  const lowerText = text.toLowerCase()
+  const lowerKw = keyword.toLowerCase()
+  const needBoundary = isAsciiKeyword(keyword)
 
-  let from = 0;
+  let from = 0
   for (;;) {
-    const idx = lowerText.indexOf(lowerKw, from);
-    if (idx === -1) break;
+    const idx = lowerText.indexOf(lowerKw, from)
+    if (idx === -1) break
     if (!needBoundary) {
-      positions.push(idx);
+      positions.push(idx)
     } else {
-      const before = idx > 0 ? text[idx - 1] : undefined;
-      const after = text[idx + keyword.length];
-      if (!isAsciiWordChar(before) && !isAsciiWordChar(after)) positions.push(idx);
+      const before = idx > 0 ? text[idx - 1] : undefined
+      const after = text[idx + keyword.length]
+      if (!isAsciiWordChar(before) && !isAsciiWordChar(after)) positions.push(idx)
     }
-    from = idx + lowerKw.length;
+    from = idx + lowerKw.length
   }
-  return positions;
-};
+  return positions
+}
 
 /** 判断关键词是否出现在文本中 */
-const hasHit = (text: string, keyword: string): boolean =>
-  findOccurrences(text, keyword).length > 0;
+const hasHit = (text: string, keyword: string): boolean => findOccurrences(text, keyword).length > 0
 
 /** 截取关键词周围片段作为证据（保证结论可追溯） */
 const evidenceAround = (text: string, idx: number, keywordLength: number, window = 16): string => {
-  const start = Math.max(0, idx - window);
-  const end = Math.min(text.length, idx + keywordLength + window);
-  const snippet = text.slice(start, end).replace(/\s+/g, ' ').trim();
-  return `${start > 0 ? '…' : ''}${snippet}${end < text.length ? '…' : ''}`;
-};
+  const start = Math.max(0, idx - window)
+  const end = Math.min(text.length, idx + keywordLength + window)
+  const snippet = text.slice(start, end).replace(/\s+/g, ' ').trim()
+  return `${start > 0 ? '…' : ''}${snippet}${end < text.length ? '…' : ''}`
+}
 
 /** 截断长文本，避免循环开销过大 */
 const clampText = (text: string, max = 6000): string =>
-  text.length > max ? text.slice(0, max) : text;
+  text.length > max ? text.slice(0, max) : text
 
 // ====================== 强度判定 ======================
 
@@ -604,13 +603,13 @@ const clampText = (text: string, max = 6000): string =>
  * 按句子取范围，可让同一句中的并列技能共享强度标记，符合语义。
  */
 const sentenceAround = (text: string, idx: number): string => {
-  const BOUNDARY = /[。！？；;\n\r]/;
-  let start = idx;
-  while (start > 0 && !BOUNDARY.test(text[start - 1])) start -= 1;
-  let end = idx;
-  while (end < text.length && !BOUNDARY.test(text[end])) end += 1;
-  return text.slice(start, end);
-};
+  const BOUNDARY = /[。！？；;\n\r]/
+  let start = idx
+  while (start > 0 && !BOUNDARY.test(text[start - 1])) start -= 1
+  let end = idx
+  while (end < text.length && !BOUNDARY.test(text[end])) end += 1
+  return text.slice(start, end)
+}
 
 /**
  * 判断某个关键词在文本中的要求强度。
@@ -618,12 +617,12 @@ const sentenceAround = (text: string, idx: number): string => {
  * 都没有则默认 preferred —— 不擅自拔高岗位要求。
  */
 const judgeStrength = (text: string, idx: number, _keywordLength: number): RequirementStrength => {
-  const sentence = sentenceAround(text, idx);
+  const sentence = sentenceAround(text, idx)
 
-  if (PREFERRED_MARKERS.some((m) => sentence.includes(m))) return 'preferred';
-  if (MUST_MARKERS.some((m) => sentence.includes(m))) return 'must';
-  return 'preferred';
-};
+  if (PREFERRED_MARKERS.some((m) => sentence.includes(m))) return 'preferred'
+  if (MUST_MARKERS.some((m) => sentence.includes(m))) return 'must'
+  return 'preferred'
+}
 
 /**
  * 综合某个关键词的所有出现位置，取最强的要求强度。
@@ -633,9 +632,9 @@ const judgeStrength = (text: string, idx: number, _keywordLength: number): Requi
 const strongestStrength = (
   text: string,
   positions: number[],
-  keywordLength: number
+  keywordLength: number,
 ): RequirementStrength =>
-  positions.some((p) => judgeStrength(text, p, keywordLength) === 'must') ? 'must' : 'preferred';
+  positions.some((p) => judgeStrength(text, p, keywordLength) === 'must') ? 'must' : 'preferred'
 
 // ====================== 语料切分 ======================
 
@@ -655,7 +654,7 @@ const REQUIREMENT_MARKERS = [
   '能力要求',
   '我们希望',
   '你需要',
-];
+]
 
 /** 「岗位职责」段的起始标志词 */
 const DUTY_MARKERS = [
@@ -666,7 +665,7 @@ const DUTY_MARKERS = [
   '职位描述',
   '工作内容',
   '你将负责',
-];
+]
 
 /**
  * 把岗位正文切成「要求段」与「职责段」。
@@ -680,108 +679,108 @@ const DUTY_MARKERS = [
  * 也不能因为切不出来就丢掉全部要求）。
  */
 export const splitJobBody = (body: string): { requirement: string; duty: string } => {
-  if (!body) return { requirement: '', duty: '' };
+  if (!body) return { requirement: '', duty: '' }
 
   const firstIndexOf = (markers: string[]): number => {
-    let hit = -1;
+    let hit = -1
     for (const m of markers) {
-      const i = body.indexOf(m);
-      if (i >= 0 && (hit < 0 || i < hit)) hit = i;
+      const i = body.indexOf(m)
+      if (i >= 0 && (hit < 0 || i < hit)) hit = i
     }
-    return hit;
-  };
+    return hit
+  }
 
-  const reqIdx = firstIndexOf(REQUIREMENT_MARKERS);
-  const dutyIdx = firstIndexOf(DUTY_MARKERS);
+  const reqIdx = firstIndexOf(REQUIREMENT_MARKERS)
+  const dutyIdx = firstIndexOf(DUTY_MARKERS)
 
   // 两种标志词都没有：无法切分，整段当作要求段
-  if (reqIdx < 0 && dutyIdx < 0) return { requirement: body, duty: '' };
+  if (reqIdx < 0 && dutyIdx < 0) return { requirement: body, duty: '' }
   // 只有要求段
-  if (dutyIdx < 0) return { requirement: body.slice(reqIdx), duty: '' };
+  if (dutyIdx < 0) return { requirement: body.slice(reqIdx), duty: '' }
   // 只有职责段
-  if (reqIdx < 0) return { requirement: '', duty: body.slice(dutyIdx) };
+  if (reqIdx < 0) return { requirement: '', duty: body.slice(dutyIdx) }
   // 两段都有：按实际出现顺序切
   if (reqIdx < dutyIdx) {
-    return { requirement: body.slice(reqIdx, dutyIdx), duty: body.slice(dutyIdx) };
+    return { requirement: body.slice(reqIdx, dutyIdx), duty: body.slice(dutyIdx) }
   }
-  return { requirement: body.slice(reqIdx), duty: body.slice(dutyIdx, reqIdx) };
-};
+  return { requirement: body.slice(reqIdx), duty: body.slice(dutyIdx, reqIdx) }
+}
 
 // ====================== 打分曲线 ======================
 
 /** 通用「命中数 → 分值」映射（软性维度） */
 const scoreByHits = (hitCount: number): number => {
-  if (hitCount <= 0) return 50;
-  if (hitCount === 1) return 62;
-  if (hitCount === 2) return 72;
-  if (hitCount === 3) return 80;
-  if (hitCount === 4) return 86;
-  return 90;
-};
+  if (hitCount <= 0) return 50
+  if (hitCount === 1) return 62
+  if (hitCount === 2) return 72
+  if (hitCount === 3) return 80
+  if (hitCount === 4) return 86
+  return 90
+}
 
 /** 技能数量 → 分值 */
 const scoreBySkillCount = (count: number, mustCount: number): number => {
-  let base: number;
-  if (count <= 0) base = 40;
-  else if (count === 1) base = 55;
-  else if (count === 2) base = 65;
-  else if (count === 3) base = 72;
-  else if (count === 4) base = 78;
-  else if (count === 5) base = 82;
-  else if (count === 6) base = 86;
-  else if (count === 7) base = 89;
-  else base = 92;
+  let base: number
+  if (count <= 0) base = 40
+  else if (count === 1) base = 55
+  else if (count === 2) base = 65
+  else if (count === 3) base = 72
+  else if (count === 4) base = 78
+  else if (count === 5) base = 82
+  else if (count === 6) base = 86
+  else if (count === 7) base = 89
+  else base = 92
 
   // 「必须」类技能越多，说明岗位门槛越硬，分值略上调
-  const bonus = Math.min(5, mustCount * 2);
-  return Math.min(100, base + bonus);
-};
+  const bonus = Math.min(5, mustCount * 2)
+  return Math.min(100, base + bonus)
+}
 
 /** 证书数量 → 分值 */
 const scoreByCertCount = (count: number): number => {
-  if (count <= 0) return 45;
-  if (count === 1) return 58;
-  if (count === 2) return 68;
-  if (count === 3) return 76;
-  if (count === 4) return 82;
-  return 88;
-};
+  if (count <= 0) return 45
+  if (count === 1) return 58
+  if (count === 2) return 68
+  if (count === 3) return 76
+  if (count === 4) return 82
+  return 88
+}
 
 /** 命中数 → 置信度（本地规则本身置信度不高，命中越少越低） */
 const confidenceByHits = (hitCount: number): number => {
-  if (hitCount <= 0) return 0.25;
-  return Math.min(0.8, 0.35 + hitCount * 0.12);
-};
+  if (hitCount <= 0) return 0.25
+  return Math.min(0.8, 0.35 + hitCount * 0.12)
+}
 
 // ====================== 抽取 ======================
 
 /** 抽取技能清单 */
 const extractSkills = (text: string): { skills: JobSkillItem[]; evidence: string[] } => {
-  const skills: JobSkillItem[] = [];
-  const evidence: string[] = [];
+  const skills: JobSkillItem[] = []
+  const evidence: string[] = []
 
   Object.entries(SKILL_DICTIONARY).forEach(([category, words]) => {
     words.forEach((word) => {
-      const rawPositions = findOccurrences(text, word);
-      const positions = filterCompoundFalsePositives(text, word, rawPositions);
-      if (!positions.length) return;
+      const rawPositions = findOccurrences(text, word)
+      const positions = filterCompoundFalsePositives(text, word, rawPositions)
+      if (!positions.length) return
       // 避免同名技能重复（如 SQL 与 SQL Server 同时命中）
-      if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return;
+      if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return
 
       skills.push({
         name: word,
         requirement: strongestStrength(text, positions, word.length),
         category,
-      });
+      })
 
       if (evidence.length < 6) {
-        evidence.push(evidenceAround(text, positions[0], word.length));
+        evidence.push(evidenceAround(text, positions[0], word.length))
       }
-    });
-  });
+    })
+  })
 
-  return { skills, evidence };
-};
+  return { skills, evidence }
+}
 
 /**
  * 分段抽取技能。
@@ -797,45 +796,45 @@ const extractSkills = (text: string): { skills: JobSkillItem[]; evidence: string
  */
 const extractSkillsBySection = (
   requirementText: string,
-  dutyText: string
+  dutyText: string,
 ): { skills: JobSkillItem[]; evidence: string[] } => {
-  const primary = extractSkills(requirementText);
-  const secondary = dutyText ? extractSkills(dutyText) : { skills: [], evidence: [] };
+  const primary = extractSkills(requirementText)
+  const secondary = dutyText ? extractSkills(dutyText) : { skills: [], evidence: [] }
 
-  const merged: JobSkillItem[] = [...primary.skills];
+  const merged: JobSkillItem[] = [...primary.skills]
   secondary.skills.forEach((s) => {
-    if (merged.some((m) => m.name.toLowerCase() === s.name.toLowerCase())) return;
-    merged.push({ ...s, requirement: 'preferred' });
-  });
+    if (merged.some((m) => m.name.toLowerCase() === s.name.toLowerCase())) return
+    merged.push({ ...s, requirement: 'preferred' })
+  })
 
   return {
     skills: merged,
     evidence: [...primary.evidence, ...secondary.evidence].slice(0, 6),
-  };
-};
+  }
+}
 
 /** 抽取证书清单 */
 const extractCerts = (text: string): { certificates: JobCertItem[]; evidence: string[] } => {
-  const certificates: JobCertItem[] = [];
-  const evidence: string[] = [];
+  const certificates: JobCertItem[] = []
+  const evidence: string[] = []
 
   const pushCert = (name: string, positions: number[]) => {
-    if (certificates.some((c) => c.name.toLowerCase() === name.toLowerCase())) return;
+    if (certificates.some((c) => c.name.toLowerCase() === name.toLowerCase())) return
     certificates.push({
       name,
       requirement: strongestStrength(text, positions, name.length),
-    });
+    })
     if (evidence.length < 4) {
-      evidence.push(evidenceAround(text, positions[0], name.length));
+      evidence.push(evidenceAround(text, positions[0], name.length))
     }
-  };
+  }
 
   // 1) 固定词典匹配
   CERT_KEYWORDS.forEach((word) => {
-    const positions = findOccurrences(text, word);
-    if (!positions.length) return;
-    pushCert(word, positions);
-  });
+    const positions = findOccurrences(text, word)
+    if (!positions.length) return
+    pushCert(word, positions)
+  })
 
   // 2) 厂商认证模式匹配（阿里云相关认证 / 华为认证 等）
   //
@@ -845,34 +844,34 @@ const extractCerts = (text: string): { certificates: JobCertItem[]; evidence: st
   // 会导致小程序**启动即崩**：
   //   module 'common/@swc/helpers/_/_wrap_reg_exp.js' is not defined
   // exec 循环与 matchAll 语义等价，且不依赖任何需要 polyfill 的 API。
-  const certPattern = new RegExp(VENDOR_CERT_PATTERN.source, 'g');
-  let certMatch: RegExpExecArray | null = certPattern.exec(text);
+  const certPattern = new RegExp(VENDOR_CERT_PATTERN.source, 'g')
+  let certMatch: RegExpExecArray | null = certPattern.exec(text)
   while (certMatch !== null) {
-    const vendor = certMatch[1];
-    if (vendor) pushCert(`${vendor}认证`, [certMatch.index]);
+    const vendor = certMatch[1]
+    if (vendor) pushCert(`${vendor}认证`, [certMatch.index])
     // 零宽匹配保护，避免 lastIndex 不前进导致死循环
-    if (certMatch.index === certPattern.lastIndex) certPattern.lastIndex += 1;
-    certMatch = certPattern.exec(text);
+    if (certMatch.index === certPattern.lastIndex) certPattern.lastIndex += 1
+    certMatch = certPattern.exec(text)
   }
 
-  return { certificates, evidence };
-};
+  return { certificates, evidence }
+}
 
 /** 抽取某个软性维度的命中证据 */
 const extractDimensionEvidence = (text: string, keywords: string[]): string[] => {
-  const evidence: string[] = [];
+  const evidence: string[] = []
   for (const kw of keywords) {
-    const positions = findOccurrences(text, kw);
-    if (!positions.length) continue;
-    evidence.push(evidenceAround(text, positions[0], kw.length));
-    if (evidence.length >= 3) break;
+    const positions = findOccurrences(text, kw)
+    if (!positions.length) continue
+    evidence.push(evidenceAround(text, positions[0], kw.length))
+    if (evidence.length >= 3) break
   }
-  return evidence;
-};
+  return evidence
+}
 
 /** 统计某个软性维度的命中次数（按「命中了几类信号词」计，避免同一词反复出现刷分） */
 const countDimensionHits = (text: string, keywords: string[]): number =>
-  keywords.reduce((count, kw) => (hasHit(text, kw) ? count + 1 : count), 0);
+  keywords.reduce((count, kw) => (hasHit(text, kw) ? count + 1 : count), 0)
 
 // ====================== 总述与路径 ======================
 
@@ -880,54 +879,60 @@ const countDimensionHits = (text: string, keywords: string[]): number =>
 const buildSummary = (
   input: RuleParseInput,
   dimensions: JobDimension[],
-  focusKeys: JobDimensionKey[]
+  focusKeys: JobDimensionKey[],
 ): string => {
-  const byKey = new Map(dimensions.map((d) => [d.key, d]));
-  const labelOf = (k: JobDimensionKey) => byKey.get(k)?.label ?? k;
+  const byKey = new Map(dimensions.map((d) => [d.key, d]))
+  const labelOf = (k: JobDimensionKey) => byKey.get(k)?.label ?? k
 
-  const enterprise = input.enterprise_name ? `${input.enterprise_name}的` : '';
-  const jobName = input.job_name || '该岗位';
+  const enterprise = input.enterprise_name ? `${input.enterprise_name}的` : ''
+  const jobName = input.job_name || '该岗位'
 
   const focusText = focusKeys.length
     ? `能力侧重集中在${focusKeys.map(labelOf).join('、')}`
-    : '各项能力要求相对均衡';
+    : '各项能力要求相对均衡'
 
-  const highDims = dimensions.filter((d) => d.level === 'high');
-  const lowDims = dimensions.filter((d) => d.level === 'low');
+  const highDims = dimensions.filter((d) => d.level === 'high')
+  const lowDims = dimensions.filter((d) => d.level === 'low')
 
   const highText = highDims.length
-    ? `其中${highDims.slice(0, 3).map((d) => d.label).join('、')}要求较高`
-    : '未出现明显的高要求维度';
+    ? `其中${highDims
+        .slice(0, 3)
+        .map((d) => d.label)
+        .join('、')}要求较高`
+    : '未出现明显的高要求维度'
   const lowText = lowDims.length
-    ? `${lowDims.slice(0, 3).map((d) => d.label).join('、')}门槛相对宽松`
-    : '各维度均有一定门槛';
+    ? `${lowDims
+        .slice(0, 3)
+        .map((d) => d.label)
+        .join('、')}门槛相对宽松`
+    : '各维度均有一定门槛'
 
-  const skillDim = byKey.get('professional_skill');
+  const skillDim = byKey.get('professional_skill')
   const skillText = skillDim?.skills?.length
     ? `硬技能方面共识别出 ${skillDim.skills.length} 项要求（${skillDim.skills
         .slice(0, 6)
         .map((s) => s.name)
         .join('、')}${skillDim.skills.length > 6 ? ' 等' : ''}）`
-    : '暂未从现有文本中识别出明确的硬技能要求，建议补充岗位职责说明后重新解析';
+    : '暂未从现有文本中识别出明确的硬技能要求，建议补充岗位职责说明后重新解析'
 
-  const industryText = input.industry ? `所属行业为${input.industry}。` : '';
+  const industryText = input.industry ? `所属行业为${input.industry}。` : ''
 
   return (
     `${enterprise}${jobName}岗位画像：${focusText}。${highText}，${lowText}。` +
     `${skillText}。${industryText}` +
     `本画像由本地关键词规则解析生成，可作为能力对标参考；接入 DeepSeek 大模型解析后精度将显著提升。`
-  );
-};
+  )
+}
 
 /** 取晋升路径模板 */
 const buildPromotionPath = (jobName: string): string[] => {
-  const name = jobName || '';
-  const matched = PROMOTION_TEMPLATES.find((t) => t.match.some((m) => name.includes(m)));
-  if (matched) return [...matched.path];
-  if (!name) return [];
+  const name = jobName || ''
+  const matched = PROMOTION_TEMPLATES.find((t) => t.match.some((m) => name.includes(m)))
+  if (matched) return [...matched.path]
+  if (!name) return []
   // 无匹配模板时给出通用路径，避免空值
-  return [name, `高级${name}`, `${name}主管`, `${name}负责人`];
-};
+  return [name, `高级${name}`, `${name}主管`, `${name}负责人`]
+}
 
 // ====================== 主入口 ======================
 
@@ -950,8 +955,8 @@ export const parseJobProfileByRules = (input: RuleParseInput): JobProfile => {
       input.job_description,
     ]
       .filter(Boolean)
-      .join('\n')
-  );
+      .join('\n'),
+  )
 
   // 技能 / 证书的语料与软性维度**分开**：
   //   - 只取岗位正文（enterprise_intro / job_description），
@@ -961,20 +966,20 @@ export const parseJobProfileByRules = (input: RuleParseInput): JobProfile => {
   //     混进来会虚增岗位技能清单，进而虚高覆盖率、压低学生的达成度。
   //   - 再把正文切成要求段与职责段，职责段技能降级为「优先」。
   const bodyText = clampText(
-    [input.enterprise_intro, input.job_description].filter(Boolean).join('\n')
-  );
-  const { requirement: requirementText, duty: dutyText } = splitJobBody(bodyText);
+    [input.enterprise_intro, input.job_description].filter(Boolean).join('\n'),
+  )
+  const { requirement: requirementText, duty: dutyText } = splitJobBody(bodyText)
 
-  const { skills, evidence: skillEvidence } = extractSkillsBySection(requirementText, dutyText);
+  const { skills, evidence: skillEvidence } = extractSkillsBySection(requirementText, dutyText)
   // 证书是显式关键词，在整段正文里找即可（不限要求段，避免漏掉写在职责里的证书）
-  const { certificates, evidence: certEvidence } = extractCerts(bodyText);
+  const { certificates, evidence: certEvidence } = extractCerts(bodyText)
 
-  const mustSkillCount = skills.filter((s) => s.requirement === 'must').length;
+  const mustSkillCount = skills.filter((s) => s.requirement === 'must').length
 
   const dimensions: JobDimension[] = JOB_DIMENSIONS.map((meta) => {
     // ---- 专业技能 ----
     if (meta.key === 'professional_skill') {
-      const score = scoreBySkillCount(skills.length, mustSkillCount);
+      const score = scoreBySkillCount(skills.length, mustSkillCount)
       return {
         key: meta.key,
         label: meta.label,
@@ -985,31 +990,29 @@ export const parseJobProfileByRules = (input: RuleParseInput): JobProfile => {
         source: 'rule' as const,
         evidence: skillEvidence,
         skills,
-      };
+      }
     }
 
     // ---- 证书要求 ----
     if (meta.key === 'certificate') {
-      const score = scoreByCertCount(certificates.length);
+      const score = scoreByCertCount(certificates.length)
       return {
         key: meta.key,
         label: meta.label,
         score,
         level: scoreToLevel(score),
         weight: meta.defaultWeight,
-        confidence: certificates.length
-          ? Math.min(0.85, 0.4 + certificates.length * 0.15)
-          : 0.3,
+        confidence: certificates.length ? Math.min(0.85, 0.4 + certificates.length * 0.15) : 0.3,
         source: 'rule' as const,
         evidence: certEvidence,
         certificates,
-      };
+      }
     }
 
     // ---- 其余 8 个软性维度 ----
-    const keywords = DIMENSION_SIGNALS[meta.key] ?? [];
-    const hitCount = countDimensionHits(corpus, keywords);
-    const score = scoreByHits(hitCount);
+    const keywords = DIMENSION_SIGNALS[meta.key] ?? []
+    const hitCount = countDimensionHits(corpus, keywords)
+    const score = scoreByHits(hitCount)
 
     return {
       key: meta.key,
@@ -1020,15 +1023,15 @@ export const parseJobProfileByRules = (input: RuleParseInput): JobProfile => {
       confidence: confidenceByHits(hitCount),
       source: 'rule' as const,
       evidence: extractDimensionEvidence(corpus, keywords),
-    };
-  });
+    }
+  })
 
   // 能力侧重：分值最高的前 3 个维度（且需达到「较高」水平）
   const focusKeys: JobDimensionKey[] = [...dimensions]
     .sort((a, b) => b.score - a.score)
     .filter((d) => d.score >= 75)
     .slice(0, 3)
-    .map((d) => d.key);
+    .map((d) => d.key)
 
   const finalProfile = normalizeJobProfile({
     job_name: input.job_name ?? '未知岗位',
@@ -1049,21 +1052,17 @@ export const parseJobProfileByRules = (input: RuleParseInput): JobProfile => {
     promotion_path: buildPromotionPath(input.job_name ?? ''),
     parse_method: 'rule',
     parsed_at: new Date().toISOString(),
-  });
+  })
 
   // summary 依赖最终维度结果，放在归一化之后生成
-  finalProfile.summary = buildSummary(
-    input,
-    finalProfile.dimensions,
-    finalProfile.focus_dimensions
-  );
+  finalProfile.summary = buildSummary(input, finalProfile.dimensions, finalProfile.focus_dimensions)
 
-  return finalProfile;
-};
+  return finalProfile
+}
 
 /** 供调试/自检使用：确认十个维度 key 完整 */
 export const assertDimensionsComplete = (profile: JobProfile): boolean =>
-  JOB_DIMENSION_KEYS.every((key) => profile.dimensions.some((d) => d.key === key));
+  JOB_DIMENSION_KEYS.every((key) => profile.dimensions.some((d) => d.key === key))
 
 // ====================== 共享给「学生能力画像」的词典与文本工具 ======================
 //
@@ -1089,4 +1088,4 @@ export {
   confidenceByHits,
   isAsciiKeyword,
   isAsciiWordChar,
-};
+}

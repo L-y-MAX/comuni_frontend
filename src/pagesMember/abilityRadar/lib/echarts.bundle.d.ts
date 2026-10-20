@@ -6,15 +6,15 @@
  */
 declare const echarts: {
   /** 注册图表与组件 */
-  use: (components: unknown[]) => void;
+  use: (components: unknown[]) => void
   /** 初始化图表实例 */
-  init: (...args: any[]) => any;
+  init: (...args: any[]) => any
   /** 注册平台 API（uni-echarts 内部会调用） */
-  setPlatformAPI: (api: Record<string, unknown>) => void;
+  setPlatformAPI: (api: Record<string, unknown>) => void
   /** 注册 option 预处理钩子（uni-echarts 内部会调用） */
-  registerPreprocessor: (fn: (option: unknown) => unknown) => void;
+  registerPreprocessor: (fn: (option: unknown) => unknown) => void
   /** 其余 API 按需透传 */
-  [key: string]: any;
-};
+  [key: string]: any
+}
 
-export default echarts;
+export default echarts

@@ -9,10 +9,10 @@
  *   TooltipComponent  点击星球后的浮层
  *   CanvasRenderer    小程序端渲染器
  */
-import * as echarts from 'echarts/core';
-import { RadarChart, ScatterChart } from 'echarts/charts';
-import { PolarComponent, RadarComponent, TooltipComponent } from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
+import * as echarts from 'echarts/core'
+import { RadarChart, ScatterChart } from 'echarts/charts'
+import { PolarComponent, RadarComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 
 echarts.use([
   RadarChart,
@@ -21,6 +21,6 @@ echarts.use([
   PolarComponent,
   TooltipComponent,
   CanvasRenderer,
-]);
+])
 
-export default echarts;
+export default echarts

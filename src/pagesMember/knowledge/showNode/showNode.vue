@@ -14,7 +14,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/notes/static/icons/aichat.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/aichat.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -35,7 +35,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/notes/static/icons/comment.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/comment.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -56,7 +56,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/notes/static/icons/copy.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/copy.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -77,7 +77,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/notes/static/icons/compile.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/compile.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -1052,12 +1052,25 @@ const renderMarkdown = async (content: string): Promise<string> => {
 
   // 其余块级/行内元素：统一补内联样式（允许带属性，如 <a href>、<th align>）
   const styledTags = [
-    'p', 'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'strong', 'em', 'table', 'th', 'td', 'img',
+    'p',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'hr',
+    'a',
+    'strong',
+    'em',
+    'table',
+    'th',
+    'td',
+    'img',
   ]
   for (const tag of styledTags) {
     const re = new RegExp('<' + tag + '(\\s[^>]*)?>', 'g')
-    html = html.replace(re, (whole, attrs?: string) =>
-      `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
+    html = html.replace(
+      re,
+      (whole, attrs?: string) => `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
     )
   }
 
@@ -1117,7 +1130,6 @@ onPullDownRefresh(async () => {
     uni.stopPullDownRefresh()
   }
 })
-
 </script>
 
 <style scoped lang="scss">
