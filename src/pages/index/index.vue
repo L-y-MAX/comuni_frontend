@@ -9,7 +9,7 @@
     </view>
     <view class="brand-text">
       <image
-        src="https://youupro.xyz/notes/static/logo.png"
+        src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/logo.png"
         class="brand-logo-img"
         mode="widthFix"
       ></image>
@@ -31,11 +31,11 @@
         @tap="searchNow"
         :class="{ loading: isLoading }"
       >
-        <!-- 优先用 src/static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
         <image
           v-if="!isLoading && !searchIconError"
           class="search-icon"
-          src="/static/home/search.png"
+          src="https://youupro.xyz/ly/static/home/search.png"
           mode="aspectFit"
           @error="searchIconError = true"
         />
@@ -70,11 +70,11 @@
       @tap="goRecruitmentList"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/jobs.png；文件不存在时自动退回 emoji，不会出现破图 -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/jobs.png；文件不存在时自动退回 emoji，不会出现破图 -->
         <image
           v-if="!jobsIconError"
           class="resource-entry-icon-img"
-          src="/static/home/jobs.png"
+          src="https://youupro.xyz/ly/static/home/jobs.png"
           mode="aspectFit"
           @error="jobsIconError = true"
         />
@@ -93,11 +93,11 @@
       @tap="goCareerResources"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/policy.png；文件不存在时自动退回 emoji -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/policy.png；文件不存在时自动退回 emoji -->
         <image
           v-if="!policyIconError"
           class="resource-entry-icon-img"
-          src="/static/home/policy.png"
+          src="https://youupro.xyz/ly/static/home/policy.png"
           mode="aspectFit"
           @error="policyIconError = true"
         />
@@ -116,11 +116,11 @@
       @tap="goJobProfile"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/jobprofile.png；缺图自动退回 emoji -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/jobprofile.png；缺图自动退回 emoji -->
         <image
           v-if="!jobProfileIconError"
           class="resource-entry-icon-img"
-          src="/static/home/jobprofile.png"
+          src="https://youupro.xyz/ly/static/home/jobprofile.png"
           mode="aspectFit"
           @error="jobProfileIconError = true"
         />
@@ -139,11 +139,11 @@
       @tap="goKnowledge"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/knowledge.png；缺图自动退回 emoji -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/knowledge.png；缺图自动退回 emoji -->
         <image
           v-if="!knowledgeIconError"
           class="resource-entry-icon-img"
-          src="/static/home/knowledge.png"
+          src="https://youupro.xyz/ly/static/home/knowledge.png"
           mode="aspectFit"
           @error="knowledgeIconError = true"
         />
@@ -524,7 +524,7 @@ import { RESOURCE_KIND_LABEL, type ResourceKind } from '@/types/careerResource'
 /**
  * 首页两张卡片的图标是否加载失败。
  *
- * 图标走「有图用图、缺图退回 emoji」：把图片放进 src/static/home/ 后重新构建就会生效，
+ * 图标走「有图用图、缺图退回 emoji」：把图片放进 srchttps://youupro.xyz/ly/static/home/ 后重新构建就会生效，
  * 没放也不会出现破图，更不需要为了换图标改代码。
  */
 const jobsIconError = ref(false)

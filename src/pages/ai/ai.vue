@@ -70,7 +70,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/regen.png"
+              src="https://youupro.xyz/ly/static/icons/regen.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -89,7 +89,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/copy.png"
+              src="https://youupro.xyz/ly/static/icons/copy.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -108,7 +108,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/regen.png"
+              src="https://youupro.xyz/ly/static/icons/regen.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -126,7 +126,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/save.png"
+              src="https://youupro.xyz/ly/static/icons/save.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -254,7 +254,7 @@
         <image
           v-if="isLoading && !iconImgBroken"
           class="send-icon"
-          src="/static/icons/stop.png"
+          src="https://youupro.xyz/ly/static/icons/stop.png"
           mode="aspectFit"
         />
         <text
@@ -264,7 +264,7 @@
         <image
           v-else
           class="send-icon"
-          src="/static/icons/send.png"
+          src="https://youupro.xyz/ly/static/icons/send.png"
           mode="aspectFit"
         />
       </button>
@@ -989,7 +989,7 @@ onShareAppMessage(() => {
   return {
     title: 'AI智能助手 - 智能问答文章内容', // 分享标题
     path: '/pages/ai/ai', // 分享后打开的页面路径（根据实际页面路径调整）
-    imageUrl: 'https://youupro.xyz/notes/static/icons/ai-share.png', // 可选：分享卡片图片
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/ai-share.png', // 可选：分享卡片图片
     desc: '快来体验AI智能问答，轻松理解文章内容！', // 可选：分享描述
   }
 })
@@ -999,7 +999,7 @@ onShareTimeline(() => {
   return {
     title: 'AI智能助手 - 智能问答文章内容', // 朋友圈分享标题
     path: '/pages/ai/ai', // 分享后打开的页面路径（根据实际页面路径调整）
-    imageUrl: 'https://youupro.xyz/notes/static/icons/ai-share.png', // 可选：朋友圈分享图片
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/ai-share.png', // 可选：朋友圈分享图片
   }
 })
 </script>

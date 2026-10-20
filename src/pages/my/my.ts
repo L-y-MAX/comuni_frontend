@@ -43,7 +43,7 @@ export const getUserInfo = () => {
   } else {
     // 未登录时重置基础信息
     userName.value = '我的账号'
-    userAvatar.value = 'https://youupro.xyz/notes/static/my-avatar/my-avatar.png'
+    userAvatar.value = 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/my-avatar/my-avatar.png'
     userDesc.value = '点击查看个人信息'
   }
 }
@@ -205,7 +205,7 @@ const clearLoginState = () => {
 
   // 2. 重置响应式数据
   userName.value = '我的账号'
-  userAvatar.value = 'https://youupro.xyz/notes/static/my-avatar/my-avatar.png'
+  userAvatar.value = 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/my-avatar/my-avatar.png'
   userDesc.value = '点击查看个人信息'
   isVip.value = false
   isLogged.value = false

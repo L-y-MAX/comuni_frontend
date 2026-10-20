@@ -812,7 +812,7 @@ export const getShareAppMessageParams = (shareTarget?: {
   // 默认分享标题和路径
   let title = '知识搜索平台'
   let path = '/pagesMember/search/search'
-  const imageUrl = `${baseURL}/notes/static/icons/share-icon.png` // 替换为实际分享图片地址
+  const imageUrl = `${baseURL}/noteshttps://youupro.xyz/ly/static/icons/share-icon.png` // 替换为实际分享图片地址
 
   // 根据分享目标定制参数
   if (shareTarget) {
@@ -863,7 +863,7 @@ export const getShareTimelineParams = (shareTarget?: {
   // 默认分享标题和查询参数
   let title = '知识搜索平台'
   let query = ''
-  const imageUrl = `${baseURL}/notes/static/icons/share-icon.png` // 替换为实际分享图片地址
+  const imageUrl = `${baseURL}/noteshttps://youupro.xyz/ly/static/icons/share-icon.png` // 替换为实际分享图片地址
 
   // 根据分享目标定制参数
   if (shareTarget) {

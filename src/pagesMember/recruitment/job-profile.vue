@@ -60,7 +60,7 @@
           <image
             v-if="!searchIconError"
             class="pick-search-icon pick-search-icon-img"
-            src="/static/home/search.png"
+            src="https://youupro.xyz/ly/static/home/search.png"
             mode="aspectFit"
             @error="searchIconError = true"
           />
@@ -703,7 +703,7 @@ onShareAppMessage(() => ({
     ? `${profile.value.job_name}岗位能力画像`
     : '岗位能力画像',
   path: `/pagesMember/recruitment/job-profile?id=${currentCreditCode.value}`,
-  imageUrl: 'https://youupro.xyz/notes/static/icons/recruit-detail-share.png',
+  imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png',
 }));
 
 onShareTimeline(() => ({

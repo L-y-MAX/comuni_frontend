@@ -55,7 +55,7 @@
       "urlCheck": true,
       "minified": true,
       "postcss": true,
-      "es6": false,
+      "es6": true,
       "enhance": false,
       "swc": false,
       "disableSWC": true

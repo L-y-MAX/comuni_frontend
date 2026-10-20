@@ -20,7 +20,7 @@
     >
       <image
         class="error-icon"
-        src="https://youupro.xyz/notes/static/icons/error.png"
+        src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/error.png"
         mode="widthFix"
       ></image>
       <text class="error-text">{{ error }}</text>
@@ -50,7 +50,7 @@
       >
         <image
           class="empty-icon"
-          src="https://youupro.xyz/notes/static/icons/folder.png"
+          src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/folder.png"
           mode="widthFix"
         ></image>
         <text class="empty-text">该知识库暂无文档内容</text>
@@ -74,8 +74,8 @@
               <image
                 :src="
                   node.node_type === 'markdown'
-                    ? 'https://youupro.xyz/notes/static/icons/markdown.png'
-                    : 'https://youupro.xyz/notes/static/icons/folder.png'
+                    ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/markdown.png'
+                    : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/folder.png'
                 "
                 mode="widthFix"
                 class="type-icon-img"
@@ -93,7 +93,7 @@
             <!-- 箭头 -->
             <view class="arrow-icon">
               <image
-                src="https://youupro.xyz/notes/static/icons/forward.png"
+                src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/forward.png"
                 mode="widthFix"
                 class="forward-icon-img"
               ></image>
