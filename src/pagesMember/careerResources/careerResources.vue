@@ -49,7 +49,9 @@
       <text
         class="hero-help"
         @tap.stop="showHelp"
-      >使用说明</text>
+      >
+        使用说明
+      </text>
     </view>
 
     <!-- ============================================================
@@ -84,7 +86,7 @@
       <image
         v-if="!searchIconError"
         class="search-icon search-icon-img"
-        src="/static/home/search.png"
+        src="https://youupro.xyz/ly/static/home/search.png"
         mode="aspectFit"
         @error="searchIconError = true"
       />
@@ -104,7 +106,6 @@
         <text class="search-clear-icon">✕</text>
       </view>
     </view>
-
 
     <!-- ============================================================
          6. 资源列表（政策文件 / 校招渠道 / 求职指导）
@@ -146,9 +147,7 @@
 
         <view class="section-head">
           <text class="section-title">{{ listTitle }}</text>
-          <text class="section-hint">
-            {{ visibleList.length }} / {{ themeTotal }} 条
-          </text>
+          <text class="section-hint">{{ visibleList.length }} / {{ themeTotal }} 条</text>
         </view>
       </view>
 
@@ -183,7 +182,9 @@
         </view>
 
         <text class="res-meta">
-          <text v-if="item.scope">{{ item.scope }} · </text>{{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
+          <text v-if="item.scope">{{ item.scope }} ·</text>
+          {{ item.source }}
+          <text v-if="item.docNo">· {{ item.docNo }}</text>
         </text>
 
         <text class="res-summary">{{ item.summary }}</text>
@@ -230,7 +231,9 @@
             <text
               class="fav-icon"
               :class="{ on: isFav(item) }"
-            >{{ isFav(item) ? '★' : '☆' }}</text>
+            >
+              {{ isFav(item) ? '★' : '☆' }}
+            </text>
           </view>
           <view
             class="ai-btn"
@@ -282,15 +285,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { onLoad, onShareAppMessage } from '@dcloudio/uni-app';
-import { baseURL } from '@/utils/request';
+import { computed, ref } from 'vue'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
+import { baseURL } from '@/utils/request'
 import {
   CAREER_RESOURCES,
   RESOURCE_LINKAGE_NOTE,
   filterResources,
   resourcesByTheme,
-} from '@/utils/careerResources';
+} from '@/utils/careerResources'
 import {
   RESOURCE_KIND_LABEL,
   RESOURCE_THEMES,
@@ -298,7 +301,7 @@ import {
   type ResourceKind,
   type ResourceTag,
   type ResourceTheme,
-} from '@/types/careerResource';
+} from '@/types/careerResource'
 
 // ====================== 静态文案 ======================
 
@@ -311,16 +314,16 @@ const DISCLAIMERS = [
   '角标含义：「官方文件」为政府部门发文；「官方平台」为政府或学校官方站点；「媒体报道」为公开新闻；「平台整理」为本平台原创的求职方法总结。',
   '补贴标准、申领条件与申报时限可能调整，请以官方原文及受理部门答复为准。',
   '校招企业与岗位以学校就业服务平台实时发布为准，本页不缓存企业名单。',
-];
+]
 
 // ====================== 顶部导航栏尺寸 ======================
 
-const statusBarHeight = ref(20); // 状态栏高度（px）
-const navBarHeight = ref(44); // 标题栏高度（px）
-const sideWidth = ref(88); // 左右占位宽度（px），右侧用于避开微信原生胶囊
+const statusBarHeight = ref(20) // 状态栏高度（px）
+const navBarHeight = ref(44) // 标题栏高度（px）
+const sideWidth = ref(88) // 左右占位宽度（px），右侧用于避开微信原生胶囊
 
 /** 导航栏占用的总高度，页面内容据此下移，避免被固定导航栏遮住 */
-const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value);
+const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value)
 
 /**
  * 读取状态栏与胶囊位置。
@@ -332,138 +335,143 @@ const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value
 const initNavMetrics = () => {
   try {
     const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
-      statusBarHeight?: number;
-      windowWidth?: number;
-    };
+      statusBarHeight?: number
+      windowWidth?: number
+    }
     if (typeof win.statusBarHeight === 'number' && win.statusBarHeight > 0) {
-      statusBarHeight.value = win.statusBarHeight;
+      statusBarHeight.value = win.statusBarHeight
     }
 
     // 开发者工具里 getMenuButtonBoundingClientRect 会失败并上报框架错误，
     // 即使 try/catch 也拦不住那条上报，所以在 devtools 环境直接用默认值
-    const _device = ((uni as any).getDeviceInfo?.() ?? {}) as { platform?: string };
-    if (_device.platform === 'devtools') return;
+    const _device = ((uni as any).getDeviceInfo?.() ?? {}) as { platform?: string }
+    if (_device.platform === 'devtools') return
 
     const rect = (
       uni as unknown as {
         getMenuButtonBoundingClientRect?: () => {
-          top: number;
-          height: number;
-          left: number;
-          width: number;
-        };
+          top: number
+          height: number
+          left: number
+          width: number
+        }
       }
-    ).getMenuButtonBoundingClientRect?.();
+    ).getMenuButtonBoundingClientRect?.()
 
     if (rect && rect.height > 0 && rect.top > 0) {
       // 标题栏高度 = 胶囊上下留白 × 2 + 胶囊高度（微信官方推荐的算法）
-      navBarHeight.value = (rect.top - statusBarHeight.value) * 2 + rect.height;
-      const windowWidth = win.windowWidth ?? 375;
+      navBarHeight.value = (rect.top - statusBarHeight.value) * 2 + rect.height
+      const windowWidth = win.windowWidth ?? 375
       // 从胶囊左边缘到屏幕右边缘 = 胶囊宽度 + 右侧留白
-      sideWidth.value = Math.max(60, windowWidth - rect.left);
+      sideWidth.value = Math.max(60, windowWidth - rect.left)
     }
   } catch {
     // 取不到就用默认值，不影响页面可用性
   }
-};
+}
 
 /** 返回上一页；没有上一页时（例如从分享卡片直接进入）回到首页 */
 const goBack = () => {
-  const pages = getCurrentPages();
+  const pages = getCurrentPages()
   if (pages.length > 1) {
-    uni.navigateBack();
+    uni.navigateBack()
   } else {
-    uni.switchTab({ url: '/pages/index/index' });
+    uni.switchTab({ url: '/pages/index/index' })
   }
-};
+}
 
 // ====================== 主题（分类标签） ======================
 
-const themeList = RESOURCE_THEMES;
-const activeTheme = ref<ResourceTheme>('policy');
+const themeList = RESOURCE_THEMES
+const activeTheme = ref<ResourceTheme>('policy')
 
 const currentThemeMeta = computed(
-  () => themeList.find((t) => t.key === activeTheme.value) ?? themeList[0]
-);
+  () => themeList.find((t) => t.key === activeTheme.value) ?? themeList[0],
+)
 
 /** 该主题下的全部条目数（未筛选） */
 /** 各卡片「使用指引」折叠状态（key 用标题，不依赖下标） */
-const adviceOpen = ref<Record<string, boolean>>({});
-const adviceKey = (item: CareerResource): string => item.title;
+const adviceOpen = ref<Record<string, boolean>>({})
+const adviceKey = (item: CareerResource): string => item.title
 const toggleAdvice = (item: CareerResource) => {
-  const k = adviceKey(item);
-  adviceOpen.value = { ...adviceOpen.value, [k]: !adviceOpen.value[k] };
-};
-const isAdviceOpen = (item: CareerResource): boolean => !!adviceOpen.value[adviceKey(item)];
+  const k = adviceKey(item)
+  adviceOpen.value = { ...adviceOpen.value, [k]: !adviceOpen.value[k] }
+}
+const isAdviceOpen = (item: CareerResource): boolean => !!adviceOpen.value[adviceKey(item)]
 
 /** 标签计数：当前主题下该标签的资源数 */
 const tagCount = (tag: ResourceTag): number =>
-  resourcesByTheme(activeTheme.value).filter((it) => it.tags && it.tags.includes(tag)).length;
+  resourcesByTheme(activeTheme.value).filter((it) => it.tags && it.tags.includes(tag)).length
 
 /** 带着这条资源的上下文跳 AI 助手（tabBar 页不能用 query 传参，走 storage） */
 const askAi = (item: CareerResource) => {
-  const title = item.title || "该资源";
-  uni.setStorageSync("aiPendingPrompt", `基于《${title}》，帮我解答：`);
+  const title = item.title || '该资源'
+  uni.setStorageSync('aiPendingPrompt', `基于《${title}》，帮我解答：`)
   uni.switchTab({
     url: '/pages/ai/ai',
     fail: () => {
-      uni.removeStorageSync("aiPendingPrompt");
-      uni.showToast({ title: '打开 AI 助手失败', icon: 'none' });
+      uni.removeStorageSync('aiPendingPrompt')
+      uni.showToast({ title: '打开 AI 助手失败', icon: 'none' })
     },
-  });
-};
+  })
+}
 
 /** 收藏（本地持久化，存标题） */
-const FAV_KEY = "careerResourcesFav";
-const favorites = ref<string[]>((uni.getStorageSync(FAV_KEY) || []) as string[]);
-const favKeyOf = (item: CareerResource): string => item.title;
-const isFav = (item: CareerResource): boolean => favorites.value.includes(favKeyOf(item));
+const FAV_KEY = 'careerResourcesFav'
+const favorites = ref<string[]>((uni.getStorageSync(FAV_KEY) || []) as string[])
+const favKeyOf = (item: CareerResource): string => item.title
+const isFav = (item: CareerResource): boolean => favorites.value.includes(favKeyOf(item))
 /** 收藏接口鉴权头 */
 const favAuthHeader = () => ({
   Authorization: `JWT ${uni.getStorageSync('accessToken') || ''}`,
   'Content-Type': 'application/json',
-});
+})
 
 /** 收藏/取消：先更新本地，再同步后端；后端失败也不影响界面（下次进页会以服务端为准） */
 const toggleFav = (item: CareerResource) => {
-  const k = favKeyOf(item);
-  const wasFav = favorites.value.includes(k);
-  favorites.value = wasFav
-    ? favorites.value.filter((t) => t !== k)
-    : [...favorites.value, k];
-  uni.setStorageSync(FAV_KEY, favorites.value);
-  uni.showToast({ title: wasFav ? '已取消收藏' : '已收藏', icon: 'none', duration: 1200 });
+  const k = favKeyOf(item)
+  const wasFav = favorites.value.includes(k)
+  favorites.value = wasFav ? favorites.value.filter((t) => t !== k) : [...favorites.value, k]
+  uni.setStorageSync(FAV_KEY, favorites.value)
+  uni.showToast({ title: wasFav ? '已取消收藏' : '已收藏', icon: 'none', duration: 1200 })
   const req = wasFav
-    ? { url: `${baseURL}/api/v1/employment/career-resource-favorites/?title=${encodeURIComponent(k)}`, method: 'DELETE' as const }
-    : { url: `${baseURL}/api/v1/employment/career-resource-favorites/`, method: 'POST' as const, data: { title: k } };
+    ? {
+        url: `${baseURL}/api/v1/employment/career-resource-favorites/?title=${encodeURIComponent(k)}`,
+        method: 'DELETE' as const,
+      }
+    : {
+        url: `${baseURL}/api/v1/employment/career-resource-favorites/`,
+        method: 'POST' as const,
+        data: { title: k },
+      }
   uni.request({
     ...req,
     header: favAuthHeader(),
     timeout: 8000,
     fail: () => console.warn('[收藏] 同步失败，仅保留本地状态'),
-  });
-};
+  })
+}
 
 /** 进页拉取服务端收藏，失败时沿用本地缓存 */
 const loadFavorites = async () => {
-  if (!uni.getStorageSync('accessToken')) return;
+  if (!uni.getStorageSync('accessToken')) return
   try {
     const res: any = await uni.request({
       url: `${baseURL}/api/v1/employment/career-resource-favorites/`,
       method: 'GET',
       header: favAuthHeader(),
       timeout: 8000,
-    });
-    const body = Array.isArray(res) ? res[1] : res;
-    const titles = body?.data?.titles;
+    })
+    const body = Array.isArray(res) ? res[1] : res
+    const titles = body?.data?.titles
     if (body?.statusCode === 200 && Array.isArray(titles)) {
-      favorites.value = titles.map(String);
-      uni.setStorageSync(FAV_KEY, favorites.value);
+      favorites.value = titles.map(String)
+      uni.setStorageSync(FAV_KEY, favorites.value)
     }
   } catch (e) {
-    console.warn('[收藏] 拉取失败，使用本地缓存', e);
+    console.warn('[收藏] 拉取失败，使用本地缓存', e)
   }
-};
+}
 
 /** 使用说明：来源与免责 */
 const showHelp = () => {
@@ -472,26 +480,26 @@ const showHelp = () => {
     content: DISCLAIMERS.join('\n'),
     showCancel: false,
     confirmText: '知道了',
-  });
-};
+  })
+}
 
-const themeTotal = computed(() => resourcesByTheme(activeTheme.value).length);
+const themeTotal = computed(() => resourcesByTheme(activeTheme.value).length)
 
 /** 列表标题随分类变化 */
 const LIST_TITLES: Record<ResourceTheme, string> = {
   policy: '政策文件与官方来源',
   campus: '校招渠道与企业线索',
   guide: '求职实务指导',
-};
-const listTitle = computed(() => LIST_TITLES[activeTheme.value] ?? '资源列表');
+}
+const listTitle = computed(() => LIST_TITLES[activeTheme.value] ?? '资源列表')
 
 // ====================== 三栏统计 ======================
 
 /** 官方来源 = 非「平台整理」的条目（官方文件 / 官方平台 / 媒体报道之外的都算） */
 const officialCount = computed(
-  () => CAREER_RESOURCES.filter((r) => r.kind === 'gov-doc' || r.kind === 'official-platform').length
-);
-
+  () =>
+    CAREER_RESOURCES.filter((r) => r.kind === 'gov-doc' || r.kind === 'official-platform').length,
+)
 
 // ====================== 搜索与筛选 ======================
 
@@ -500,13 +508,13 @@ const officialCount = computed(
  * 初值留空——之前预填「就业」，用户一进页面就先被一个预设条件过滤，
  * 既看不到完整列表，也判断不出筛选有没有生效。
  */
-const keyword = ref('');
+const keyword = ref('')
 
 /** 搜索图标加载失败时退回 emoji，避免出现破图 */
-const searchIconError = ref(false);
+const searchIconError = ref(false)
 
 /** 当前标签筛选（跨分类共用） */
-const activeTag = ref<ResourceTag | ''>('');
+const activeTag = ref<ResourceTag | ''>('')
 
 /**
  * 当前展示的资源列表。
@@ -514,21 +522,21 @@ const activeTag = ref<ResourceTag | ''>('');
  * 标签与关键词是「与」的关系，避免出现「筛了标签却混进无关条目」。
  */
 const visibleList = computed<CareerResource[]>(() => {
-  let list = resourcesByTheme(activeTheme.value);
-  if (activeTag.value) list = list.filter((r) => r.tags.includes(activeTag.value as ResourceTag));
-  return filterResources(list, keyword.value);
-});
+  let list = resourcesByTheme(activeTheme.value)
+  if (activeTag.value) list = list.filter((r) => r.tags.includes(activeTag.value as ResourceTag))
+  return filterResources(list, keyword.value)
+})
 
 /** 筛选状态文案，无筛选时为空串（界面据此隐藏筛选条） */
 const filterText = computed(() => {
-  const parts: string[] = [];
-  if (activeTag.value) parts.push(`标签「${activeTag.value}」`);
-  if (keyword.value.trim()) parts.push(`关键词「${keyword.value.trim()}」`);
-  return parts.join(' + ');
-});
+  const parts: string[] = []
+  if (activeTag.value) parts.push(`标签「${activeTag.value}」`)
+  if (keyword.value.trim()) parts.push(`关键词「${keyword.value.trim()}」`)
+  return parts.join(' + ')
+})
 
 /** 是否有关键词筛选：标签已在上方 chip 上高亮，状态条只负责关键词 */
-const hasKeywordFilter = computed(() => !!keyword.value.trim());
+const hasKeywordFilter = computed(() => !!keyword.value.trim())
 
 /**
  * 卡片上展示的标签（最多 2 个）。
@@ -538,11 +546,11 @@ const hasKeywordFilter = computed(() => !!keyword.value.trim());
  * 「补贴 / 见习」，看起来就像筛错了。
  */
 const cardTags = (tags: ResourceTag[]): ResourceTag[] => {
-  if (!activeTag.value) return tags.slice(0, 2);
-  const hit = tags.filter((g) => g === activeTag.value);
-  const rest = tags.filter((g) => g !== activeTag.value);
-  return [...hit, ...rest].slice(0, 2);
-};
+  if (!activeTag.value) return tags.slice(0, 2)
+  const hit = tags.filter((g) => g === activeTag.value)
+  const rest = tags.filter((g) => g !== activeTag.value)
+  return [...hit, ...rest].slice(0, 2)
+}
 
 /**
  * 顶部一句话统计。
@@ -554,8 +562,8 @@ const cardTags = (tags: ResourceTag[]): ResourceTag[] => {
 const heroSummary = computed(() =>
   filterText.value
     ? `已筛选：当前 ${visibleList.length} / 共 ${CAREER_RESOURCES.length} 条`
-    : `共 ${CAREER_RESOURCES.length} 条资源 · ${officialCount.value} 条官方来源 · ${themeList.length} 个主题`
-);
+    : `共 ${CAREER_RESOURCES.length} 条资源 · ${officialCount.value} 条官方来源 · ${themeList.length} 个主题`,
+)
 
 /**
  * 某个标签在当前关键词下是否还有结果。
@@ -563,8 +571,8 @@ const heroSummary = computed(() =>
  */
 const tagHasResult = (tag: ResourceTag): boolean =>
   filterResources(resourcesByTheme(activeTheme.value), keyword.value).some((r) =>
-    r.tags.includes(tag)
-  );
+    r.tags.includes(tag),
+  )
 
 /**
  * 列表上方的统一筛选条：当前分类下出现过的标签（去重、按首次出现顺序），
@@ -572,59 +580,57 @@ const tagHasResult = (tag: ResourceTag): boolean =>
  * 已选中的标签始终保留，否则用户没法再点一次取消。
  */
 const themeTags = computed<ResourceTag[]>(() => {
-  const seen: ResourceTag[] = [];
+  const seen: ResourceTag[] = []
   resourcesByTheme(activeTheme.value).forEach((r) => {
     r.tags.forEach((g) => {
-      if (!seen.includes(g)) seen.push(g);
-    });
-  });
-  return seen.filter((g) => tagHasResult(g) || activeTag.value === g);
-});
-
+      if (!seen.includes(g)) seen.push(g)
+    })
+  })
+  return seen.filter((g) => tagHasResult(g) || activeTag.value === g)
+})
 
 // ====================== 交互 ======================
 
 /** 切换分类：同时清掉标签筛选（标签跨分类共用，带着筛选跳过去会得到空列表） */
 const switchTheme = (key: ResourceTheme) => {
-  activeTheme.value = key;
-  activeTag.value = '';
-};
+  activeTheme.value = key
+  activeTag.value = ''
+}
 
 /** 点标签：再点一次取消 */
 const toggleTag = (tag: ResourceTag) => {
-  activeTag.value = activeTag.value === tag ? '' : tag;
-};
+  activeTag.value = activeTag.value === tag ? '' : tag
+}
 
 /** 清空搜索关键词（搜索框右侧叉号） */
 const clearKeyword = () => {
-  keyword.value = '';
-};
+  keyword.value = ''
+}
 
 /** 清除全部筛选条件 */
 const resetFilter = () => {
-  activeTag.value = '';
-  keyword.value = '';
-};
-
+  activeTag.value = ''
+  keyword.value = ''
+}
 
 /** 资源卡片点击：有链接就复制，没有链接给出说明（同样不跳详情页） */
 const onResourceTap = (item: CareerResource) => {
   if (item.url) {
-    copyLink(item);
-    return;
+    copyLink(item)
+    return
   }
-  uni.showToast({ title: '这是平台整理的指导内容', icon: 'none', duration: 1500 });
-};
+  uni.showToast({ title: '这是平台整理的指导内容', icon: 'none', duration: 1500 })
+}
 
-const kindLabel = (kind: ResourceKind): string => RESOURCE_KIND_LABEL[kind] ?? '';
+const kindLabel = (kind: ResourceKind): string => RESOURCE_KIND_LABEL[kind] ?? ''
 
 /** 复制官方链接（小程序不能直接打开外部网页） */
 const copyLink = (item: CareerResource) => {
-  if (!item.url) return;
+  if (!item.url) return
   uni.setClipboardData({
     data: item.url,
     success: () => {
-      uni.showToast({ title: '官方链接已复制', icon: 'none', duration: 2000 });
+      uni.showToast({ title: '官方链接已复制', icon: 'none', duration: 2000 })
     },
     fail: () => {
       // 复制失败时把链接直接显示出来，保证用户仍能拿到
@@ -632,10 +638,10 @@ const copyLink = (item: CareerResource) => {
         title: '复制失败',
         content: item.url as string,
         showCancel: false,
-      });
+      })
     },
-  });
-};
+  })
+}
 
 // ====================== 页面加载 ======================
 
@@ -643,21 +649,21 @@ const copyLink = (item: CareerResource) => {
 onShareAppMessage(() => ({
   title: '就业政策与校招资源｜仅官方来源，不转载原文',
   path: '/pagesMember/careerResources/careerResources',
-}));
+}))
 
 onLoad((options) => {
-  loadFavorites();
-  initNavMetrics();
+  loadFavorites()
+  initNavMetrics()
 
   // 支持从首页搜索结果带 ?focus=<id> 直接定位到某一条
-  const focus = options?.focus ? decodeURIComponent(options.focus) : '';
-  if (!focus) return;
-  const hit = CAREER_RESOURCES.find((r) => r.id === focus);
-  if (!hit) return;
-  activeTheme.value = hit.theme;
-  activeTag.value = '';
-  keyword.value = hit.title;
-});
+  const focus = options?.focus ? decodeURIComponent(options.focus) : ''
+  if (!focus) return
+  const hit = CAREER_RESOURCES.find((r) => r.id === focus)
+  if (!hit) return
+  activeTheme.value = hit.theme
+  activeTag.value = ''
+  keyword.value = hit.title
+})
 </script>
 
 <style scoped lang="scss">
@@ -725,14 +731,14 @@ $bg: #f7f8fa;
 }
 
 /* ====================== 2. 橙色顶部大卡片 ====================== */
-  /* hero 降饱和：柔化渐变、收窄内边距与阴影 */
-  .hero {
-    margin-top: 20rpx;
-    padding: 20rpx 24rpx;
-    border-radius: 20rpx;
-    background: linear-gradient(135deg, #f7a97c 0%, #ef8250 100%);
-    box-shadow: 0 6rpx 18rpx rgba(239, 125, 74, 0.16);
-  }
+/* hero 降饱和：柔化渐变、收窄内边距与阴影 */
+.hero {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #f7a97c 0%, #ef8250 100%);
+  box-shadow: 0 6rpx 18rpx rgba(239, 125, 74, 0.16);
+}
 
 .hero-title {
   display: block;
@@ -784,10 +790,10 @@ $bg: #f7f8fa;
   /* 选中态：白底 + 橙色边框 + 橙色文字，不再整卡填橙 */
   &.active {
     background: #ffffff;
-    border-color: #FF7239;
-  
+    border-color: #ff7239;
+
     .theme-label {
-      color: #FF7239;
+      color: #ff7239;
       font-weight: 700;
     }
   }
@@ -896,8 +902,6 @@ $bg: #f7f8fa;
   padding: 4rpx 0 10rpx;
 }
 
-
-
 .tag-row {
   display: inline-flex;
   align-items: center;
@@ -916,23 +920,9 @@ $bg: #f7f8fa;
   /* 选中态：浅橙底 + 橙色文字，弱化视觉重量 */
   &.active {
     background: #fff1e8;
-    color: #FF7239;
+    color: #ff7239;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 .section {
   margin-top: 36rpx;
@@ -957,10 +947,7 @@ $bg: #f7f8fa;
   color: $text-3;
 }
 
-
-
 /* ====================== 5. 政策类型速查卡片 ====================== */
-
 
 .cat-name {
   display: block;
@@ -969,10 +956,6 @@ $bg: #f7f8fa;
   color: $text-1;
   margin-bottom: 10rpx;
 }
-
-
-
-
 
 /* ====================== 筛选状态条 ====================== */
 .filter-bar {
@@ -1004,7 +987,7 @@ $bg: #f7f8fa;
   background: #ffffff;
   border-radius: 20rpx;
   box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
-    margin-bottom: 20rpx;
+  margin-bottom: 20rpx;
 }
 
 .res-head {
@@ -1090,8 +1073,6 @@ $bg: #f7f8fa;
   line-height: 1.7;
 }
 
-
-
 .res-tags-mini {
   display: flex;
   flex-wrap: nowrap;
@@ -1109,7 +1090,7 @@ $bg: #f7f8fa;
   margin: 0 12rpx 0 0;
 
   &.active {
-    background: #FF7239;
+    background: #ff7239;
     color: #ffffff;
   }
 }
@@ -1124,7 +1105,7 @@ $bg: #f7f8fa;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #FF7239;
+  background: #ff7239;
   border-radius: 40rpx;
   padding: 16rpx 32rpx;
 
@@ -1219,58 +1200,58 @@ $bg: #f7f8fa;
   margin-bottom: 8rpx;
 }
 
-  /* 「使用指引」折叠：展开链接 + 折叠正文块 */
-  .res-advice-toggle {
-    margin-left: 12rpx;
-    font-size: 22rpx;
-    color: #FF7239;
-  }
-  .res-advice-body {
-    margin-top: 10rpx;
-    padding: 16rpx 18rpx;
-    background: #fff8f4;
-    border-radius: 12rpx;
-  }
+/* 「使用指引」折叠：展开链接 + 折叠正文块 */
+.res-advice-toggle {
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: #ff7239;
+}
+.res-advice-body {
+  margin-top: 10rpx;
+  padding: 16rpx 18rpx;
+  background: #fff8f4;
+  border-radius: 12rpx;
+}
 
-  /* 资源卡「AI 提问」按钮：蓝底，与橙色复制按钮区分 */
-  .ai-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 8rpx 20rpx;
-    border-radius: 999rpx;
-    background: #eff6ff;
-    border: 1rpx solid #bfdbfe;
-      margin-right: 14rpx;
-  }
-  .ai-btn-text {
-    font-size: 22rpx;
-    color: #2563eb;
-  }
+/* 资源卡「AI 提问」按钮：蓝底，与橙色复制按钮区分 */
+.ai-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  background: #eff6ff;
+  border: 1rpx solid #bfdbfe;
+  margin-right: 14rpx;
+}
+.ai-btn-text {
+  font-size: 22rpx;
+  color: #2563eb;
+}
 
-  /* 收藏星标 */
-  .fav-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 8rpx 16rpx;
-    border-radius: 999rpx;
-    background: #fff8f4;
-    border: 1rpx solid #fde3d3;
-    margin-right: 14rpx;
-  }
-  .fav-icon {
-    font-size: 26rpx;
-    color: #c0c4cc;
-  }
-  .fav-icon.on {
-    color: #FF7239;
-  }
+/* 收藏星标 */
+.fav-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #fff8f4;
+  border: 1rpx solid #fde3d3;
+  margin-right: 14rpx;
+}
+.fav-icon {
+  font-size: 26rpx;
+  color: #c0c4cc;
+}
+.fav-icon.on {
+  color: #ff7239;
+}
 
-  /* hero 里的使用说明入口 */
-  .hero-help {
-    display: inline-block;
-    margin-top: 10rpx;
-    font-size: 22rpx;
-    color: #fff2ea;
-    text-decoration: underline;
-  }
+/* hero 里的使用说明入口 */
+.hero-help {
+  display: inline-block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #fff2ea;
+  text-decoration: underline;
+}
 </style>

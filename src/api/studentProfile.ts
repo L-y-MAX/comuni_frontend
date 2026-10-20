@@ -31,15 +31,15 @@
  * 这让「看界面 / 答辩演示」不依赖登录状态。
  */
 
-import { baseURL } from '@/utils/request';
-import { JOB_DIMENSION_KEYS } from '@/types/jobProfile';
+import { baseURL } from '@/utils/request'
+import { JOB_DIMENSION_KEYS } from '@/types/jobProfile'
 import {
   isValidStudentProfile,
   normalizeStudentProfile,
   type StudentProfile,
   type StudentProfileInput,
-} from '@/types/studentProfile';
-import { parseStudentProfileByRules } from '@/utils/studentProfileParser';
+} from '@/types/studentProfile'
+import { parseStudentProfileByRules } from '@/utils/studentProfileParser'
 
 // ====================== 端点常量 ======================
 
@@ -47,30 +47,30 @@ export const STUDENT_PROFILE_ENDPOINTS = {
   parseTask: '/api/v1/auth/user/student-profile/parse/task/',
   parseResult: '/api/v1/auth/user/student-profile/parse/result/',
   detail: '/api/v1/auth/user/student-profile/',
-} as const;
+} as const
 
 /** 请求载荷（把学生填写内容整体交给后端做DeepSeek抽取） */
 export interface StudentProfileParsePayload extends StudentProfileInput {
-  dimensions: string[];
+  dimensions: string[]
 }
 
 // ====================== 基础请求封装 ======================
 
 interface RawResponse<T> {
-  statusCode: number;
-  data: T;
+  statusCode: number
+  data: T
 }
 
 const authHeader = (): Record<string, string> => ({
   Authorization: `JWT ${uni.getStorageSync('accessToken') || ''}`,
   'Content-Type': 'application/json',
-});
+})
 
 const rawRequest = <T = unknown>(
   url: string,
   method: 'GET' | 'POST',
   data?: unknown,
-  timeout = 8000
+  timeout = 8000,
 ): Promise<RawResponse<T>> =>
   new Promise((resolve, reject) => {
     uni.request({
@@ -81,66 +81,66 @@ const rawRequest = <T = unknown>(
       timeout,
       success: (res) => resolve({ statusCode: res.statusCode, data: res.data as T }),
       fail: (err) => reject(new Error(err?.errMsg || '网络请求失败')),
-    });
-  });
+    })
+  })
 
 // ====================== 取消 ======================
 
 const createAbortError = (): Error => {
-  const err = new Error('学生画像解析已取消');
-  err.name = 'AbortError';
-  return err;
-};
+  const err = new Error('学生画像解析已取消')
+  err.name = 'AbortError'
+  return err
+}
 
 // ====================== 1. 创建解析任务 ======================
 
 export const createStudentProfileParseTask = async (
-  payload: StudentProfileParsePayload
+  payload: StudentProfileParsePayload,
 ): Promise<string> => {
   const res = await rawRequest<{ task_id?: string; detail?: string; error?: string }>(
     STUDENT_PROFILE_ENDPOINTS.parseTask,
     'POST',
     payload,
-    8000
-  );
+    8000,
+  )
 
   if (res.statusCode < 200 || res.statusCode >= 300) {
     throw new Error(
-      res.data?.detail || res.data?.error || `解析任务接口不可用（HTTP ${res.statusCode}）`
-    );
+      res.data?.detail || res.data?.error || `解析任务接口不可用（HTTP ${res.statusCode}）`,
+    )
   }
-  const taskId = res.data?.task_id;
-  if (!taskId) throw new Error('解析任务接口未返回 task_id');
-  return taskId;
-};
+  const taskId = res.data?.task_id
+  if (!taskId) throw new Error('解析任务接口未返回 task_id')
+  return taskId
+}
 
 // ====================== 2. 查询任务结果 ======================
 
 export interface StudentProfileTaskResult {
-  status: 'PENDING' | 'SUCCESS' | 'FAILURE';
-  data?: { profile?: StudentProfile };
-  error?: string;
+  status: 'PENDING' | 'SUCCESS' | 'FAILURE'
+  data?: { profile?: StudentProfile }
+  error?: string
 }
 
 export const fetchStudentProfileParseResult = async (
-  taskId: string
+  taskId: string,
 ): Promise<StudentProfileTaskResult> => {
   const res = await rawRequest<StudentProfileTaskResult>(
     `${STUDENT_PROFILE_ENDPOINTS.parseResult}?task_id=${encodeURIComponent(taskId)}`,
     'GET',
     undefined,
-    8000
-  );
+    8000,
+  )
 
   if (res.statusCode < 200 || res.statusCode >= 300) {
-    throw new Error(`查询解析结果失败（HTTP ${res.statusCode}）`);
+    throw new Error(`查询解析结果失败（HTTP ${res.statusCode}）`)
   }
-  const body = res.data;
+  const body = res.data
   if (!body || typeof body.status !== 'string') {
-    throw new Error('解析结果接口返回结构不合法');
+    throw new Error('解析结果接口返回结构不合法')
   }
-  return body;
-};
+  return body
+}
 
 // ====================== 3. 读取已保存画像 ======================
 
@@ -149,106 +149,106 @@ export const fetchSavedStudentProfile = async (): Promise<StudentProfile | null>
     STUDENT_PROFILE_ENDPOINTS.detail,
     'GET',
     undefined,
-    6000
-  );
+    6000,
+  )
 
-  if (res.statusCode === 404) return null;
-  if (res.statusCode < 200 || res.statusCode >= 300) return null;
+  if (res.statusCode === 404) return null
+  if (res.statusCode < 200 || res.statusCode >= 300) return null
 
   const raw =
-    (res.data as { profile?: StudentProfile })?.profile ?? (res.data as StudentProfile | undefined);
-  if (!raw || !isValidStudentProfile(raw)) return null;
-  return normalizeStudentProfile(raw);
-};
+    (res.data as { profile?: StudentProfile })?.profile ?? (res.data as StudentProfile | undefined)
+  if (!raw || !isValidStudentProfile(raw)) return null
+  return normalizeStudentProfile(raw)
+}
 
 // ====================== 4. 轮询 ======================
 
 interface PollOptions {
-  intervalMs?: number;
-  timeoutMs?: number;
-  onProgress?: (message: string) => void;
-  shouldStop?: () => boolean;
+  intervalMs?: number
+  timeoutMs?: number
+  onProgress?: (message: string) => void
+  shouldStop?: () => boolean
 }
 
 export const pollStudentProfileTask = (
   taskId: string,
-  options: PollOptions = {}
+  options: PollOptions = {},
 ): Promise<StudentProfile> => {
-  const { intervalMs = 1000, timeoutMs = 30000, onProgress, shouldStop } = options;
+  const { intervalMs = 1000, timeoutMs = 30000, onProgress, shouldStop } = options
 
   return new Promise<StudentProfile>((resolve, reject) => {
-    const startedAt = Date.now();
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    const startedAt = Date.now()
+    let timer: ReturnType<typeof setTimeout> | null = null
 
     const cleanup = () => {
       if (timer !== null) {
-        clearTimeout(timer);
-        timer = null;
+        clearTimeout(timer)
+        timer = null
       }
-    };
+    }
 
     const tick = async () => {
       if (shouldStop?.()) {
-        cleanup();
-        reject(createAbortError());
-        return;
+        cleanup()
+        reject(createAbortError())
+        return
       }
       if (Date.now() - startedAt > timeoutMs) {
-        cleanup();
-        reject(new Error('DeepSeek解析超时，已切换本地规则解析'));
-        return;
+        cleanup()
+        reject(new Error('DeepSeek解析超时，已切换本地规则解析'))
+        return
       }
 
       try {
-        const result = await fetchStudentProfileParseResult(taskId);
+        const result = await fetchStudentProfileParseResult(taskId)
 
         if (result.status === 'SUCCESS') {
-          const profile = result.data?.profile;
+          const profile = result.data?.profile
           if (!profile || !isValidStudentProfile(profile)) {
-            cleanup();
-            reject(new Error('DeepSeek返回的画像结构不完整'));
-            return;
+            cleanup()
+            reject(new Error('DeepSeek返回的画像结构不完整'))
+            return
           }
-          cleanup();
-          resolve(normalizeStudentProfile(profile));
-          return;
+          cleanup()
+          resolve(normalizeStudentProfile(profile))
+          return
         }
 
         if (result.status === 'FAILURE') {
-          cleanup();
-          reject(new Error(result.error || 'DeepSeek解析失败'));
-          return;
+          cleanup()
+          reject(new Error(result.error || 'DeepSeek解析失败'))
+          return
         }
 
-        const seconds = Math.round((Date.now() - startedAt) / 1000);
-        onProgress?.(`DeepSeek正在解析你的经历…（已等待 ${seconds}s）`);
-        timer = setTimeout(tick, intervalMs);
+        const seconds = Math.round((Date.now() - startedAt) / 1000)
+        onProgress?.(`DeepSeek正在解析你的经历…（已等待 ${seconds}s）`)
+        timer = setTimeout(tick, intervalMs)
       } catch (err) {
-        cleanup();
-        reject(err instanceof Error ? err : new Error('轮询解析结果失败'));
+        cleanup()
+        reject(err instanceof Error ? err : new Error('轮询解析结果失败'))
       }
-    };
+    }
 
-    timer = setTimeout(tick, intervalMs);
-  });
-};
+    timer = setTimeout(tick, intervalMs)
+  })
+}
 
 // ====================== 5. 对外主入口 ======================
 
 export interface GenerateStudentProfileOptions {
-  useCache?: boolean;
-  forceLocal?: boolean;
-  intervalMs?: number;
-  timeoutMs?: number;
-  onProgress?: (message: string) => void;
-  shouldStop?: () => boolean;
+  useCache?: boolean
+  forceLocal?: boolean
+  intervalMs?: number
+  timeoutMs?: number
+  onProgress?: (message: string) => void
+  shouldStop?: () => boolean
 }
 
 export interface StudentProfileGenerateResult {
-  profile: StudentProfile;
-  method: 'qwen' | 'rule';
-  degraded: boolean;
-  degradedReason?: string;
+  profile: StudentProfile
+  method: 'qwen' | 'rule'
+  degraded: boolean
+  degradedReason?: string
 }
 
 /**
@@ -259,18 +259,24 @@ export interface StudentProfileGenerateResult {
  */
 export const generateStudentProfile = async (
   input: StudentProfileInput,
-  options: GenerateStudentProfileOptions = {}
+  options: GenerateStudentProfileOptions = {},
 ): Promise<StudentProfileGenerateResult> => {
-  const { useCache = true, forceLocal = false, intervalMs, timeoutMs, onProgress, shouldStop } =
-    options;
+  const {
+    useCache = true,
+    forceLocal = false,
+    intervalMs,
+    timeoutMs,
+    onProgress,
+    shouldStop,
+  } = options
 
   // ---- 1. 已保存画像 ----
   if (useCache && !forceLocal) {
     try {
-      onProgress?.('正在读取已保存的能力画像…');
-      const saved = await fetchSavedStudentProfile();
+      onProgress?.('正在读取已保存的能力画像…')
+      const saved = await fetchSavedStudentProfile()
       if (saved) {
-        return { profile: saved, method: saved.parse_method, degraded: false };
+        return { profile: saved, method: saved.parse_method, degraded: false }
       }
     } catch {
       // 读取失败不影响主流程
@@ -280,33 +286,33 @@ export const generateStudentProfile = async (
   // ---- 2. DeepSeek解析 ----
   if (!forceLocal) {
     try {
-      onProgress?.('正在提交DeepSeek解析任务…');
+      onProgress?.('正在提交DeepSeek解析任务…')
       const payload: StudentProfileParsePayload = {
         ...input,
         dimensions: [...JOB_DIMENSION_KEYS],
-      };
-      const taskId = await createStudentProfileParseTask(payload);
+      }
+      const taskId = await createStudentProfileParseTask(payload)
       const profile = await pollStudentProfileTask(taskId, {
         intervalMs,
         timeoutMs,
         onProgress,
         shouldStop,
-      });
-      return { profile, method: 'qwen', degraded: false };
+      })
+      return { profile, method: 'qwen', degraded: false }
     } catch (err) {
       // 取消不是失败：页面已卸载，不应再降级解析
       if (err instanceof Error && err.name === 'AbortError') {
-        throw err;
+        throw err
       }
-      const reason = err instanceof Error ? err.message : 'DeepSeek解析不可用';
-      console.warn('[学生画像] DeepSeek解析不可用，降级为本地规则解析：', reason);
-      onProgress?.('DeepSeek接口暂不可用，正在使用本地规则解析…');
-      const profile = parseStudentProfileByRules(input);
-      return { profile, method: 'rule', degraded: true, degradedReason: reason };
+      const reason = err instanceof Error ? err.message : 'DeepSeek解析不可用'
+      console.warn('[学生画像] DeepSeek解析不可用，降级为本地规则解析：', reason)
+      onProgress?.('DeepSeek接口暂不可用，正在使用本地规则解析…')
+      const profile = parseStudentProfileByRules(input)
+      return { profile, method: 'rule', degraded: true, degradedReason: reason }
     }
   }
 
   // ---- 3. 强制本地 ----
-  onProgress?.('正在使用本地规则解析…');
-  return { profile: parseStudentProfileByRules(input), method: 'rule', degraded: false };
-};
+  onProgress?.('正在使用本地规则解析…')
+  return { profile: parseStudentProfileByRules(input), method: 'rule', degraded: false }
+}

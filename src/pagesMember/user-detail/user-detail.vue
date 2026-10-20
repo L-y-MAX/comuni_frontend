@@ -397,7 +397,7 @@ onShareAppMessage(() => {
   return {
     title: shareTitle,
     path: sharePath,
-    imageUrl: 'https://youupro.xyz/notes/static/icons/user-share.png', // 可选：分享卡片图片
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/user-share.png', // 可选：分享卡片图片
     desc: '查看该用户的公开知识库和个人信息', // 可选：分享描述
   }
 })
@@ -414,7 +414,7 @@ onShareTimeline(() => {
   return {
     title: timelineTitle,
     path: sharePath,
-    imageUrl: 'https://youupro.xyz/notes/static/icons/user-share.png', // 可选：朋友圈分享图片
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/user-share.png', // 可选：朋友圈分享图片
   }
 })
 </script>

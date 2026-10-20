@@ -171,8 +171,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import {
   REPORT_HISTORY_MAX,
   calcTrend,
@@ -180,62 +180,60 @@ import {
   loadReportHistory,
   removeHistoryEntry,
   type ReportHistoryEntry,
-} from './lib/reportHistory';
+} from './lib/reportHistory'
 
 // ====================== 状态 ======================
 
-const list = ref<ReportHistoryEntry[]>([]);
-const historyMax = REPORT_HISTORY_MAX;
+const list = ref<ReportHistoryEntry[]>([])
+const historyMax = REPORT_HISTORY_MAX
 
 /**
  * 用 onShow 而不是 onLoad 重新读取：
  * 从详情页返回（可能改了任务勾选或删了条目）时要刷新列表。
  */
 onShow(() => {
-  list.value = loadReportHistory();
-});
+  list.value = loadReportHistory()
+})
 
 // ====================== 派生 ======================
 
 /** 时间正序（用于趋势图，左旧右新） */
-const chronological = computed(() => [...list.value].reverse());
+const chronological = computed(() => [...list.value].reverse())
 
-const latestProgress = computed(() => (list.value[0] ? progressOf(list.value[0]) : 0));
+const latestProgress = computed(() => (list.value[0] ? progressOf(list.value[0]) : 0))
 
 /** 最新一份相比上一份的竞争力变化 */
 const latestDelta = computed(() => {
-  const t = calcTrend(list.value, 0);
-  return t ? t.competitivenessDelta : 0;
-});
+  const t = calcTrend(list.value, 0)
+  return t ? t.competitivenessDelta : 0
+})
 
 const progressOf = (e: ReportHistoryEntry): number =>
-  e.snapshot.taskTotal
-    ? Math.round((e.snapshot.taskDone / e.snapshot.taskTotal) * 100)
-    : 0;
+  e.snapshot.taskTotal ? Math.round((e.snapshot.taskDone / e.snapshot.taskTotal) * 100) : 0
 
-const trendOf = (i: number) => calcTrend(list.value, i);
+const trendOf = (i: number) => calcTrend(list.value, i)
 
 // ====================== 展示辅助 ======================
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const pad = (n: number) => String(n).padStart(2, '0')
 
 const formatTime = (iso: string): string => {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 const shortDate = (iso: string): string => {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-};
+  const d = new Date(iso)
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
 
-const formatDelta = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
+const formatDelta = (n: number): string => (n > 0 ? `+${n}` : `${n}`)
 
 const trendColor = (n: number): string => {
-  if (n > 0) return '#16a34a';
-  if (n < 0) return '#dc2626';
-  return '#94a3b8';
-};
+  if (n > 0) return '#16a34a'
+  if (n < 0) return '#dc2626'
+  return '#94a3b8'
+}
 
 // ====================== 操作 ======================
 
@@ -244,19 +242,19 @@ const openEntry = (e: ReportHistoryEntry) => {
   uni.navigateTo({
     url: `/pagesMember/careerReport/careerReport?historyId=${encodeURIComponent(e.id)}`,
     fail: (err) => {
-      console.error('打开历史报告失败：', err);
-      uni.showToast({ title: '打开失败，请重试', icon: 'none', duration: 2000 });
+      console.error('打开历史报告失败：', err)
+      uni.showToast({ title: '打开失败，请重试', icon: 'none', duration: 2000 })
     },
-  });
-};
+  })
+}
 
 const copyEntry = (e: ReportHistoryEntry) => {
   uni.setClipboardData({
     data: e.report.markdown,
     success: () => uni.showToast({ title: '报告全文已复制', icon: 'success', duration: 1800 }),
     fail: () => uni.showToast({ title: '复制失败', icon: 'none', duration: 2000 }),
-  });
-};
+  })
+}
 
 const confirmRemove = (e: ReportHistoryEntry) => {
   uni.showModal({
@@ -265,12 +263,12 @@ const confirmRemove = (e: ReportHistoryEntry) => {
     confirmText: '删除',
     confirmColor: '#dc2626',
     success: (res) => {
-      if (!res.confirm) return;
-      list.value = removeHistoryEntry(e.id);
-      uni.showToast({ title: '已删除', icon: 'none', duration: 1500 });
+      if (!res.confirm) return
+      list.value = removeHistoryEntry(e.id)
+      uni.showToast({ title: '已删除', icon: 'none', duration: 1500 })
     },
-  });
-};
+  })
+}
 
 const confirmClear = () => {
   uni.showModal({
@@ -279,17 +277,17 @@ const confirmClear = () => {
     confirmText: '清空',
     confirmColor: '#dc2626',
     success: (res) => {
-      if (!res.confirm) return;
-      clearReportHistory();
-      list.value = [];
-      uni.showToast({ title: '已清空', icon: 'none', duration: 1500 });
+      if (!res.confirm) return
+      clearReportHistory()
+      list.value = []
+      uni.showToast({ title: '已清空', icon: 'none', duration: 1500 })
     },
-  });
-};
+  })
+}
 
 const goAbilityProfile = () => {
-  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' });
-};
+  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
+}
 </script>
 
 <style scoped lang="scss">
@@ -578,7 +576,7 @@ const goAbilityProfile = () => {
 }
 
 .primary-btn {
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
 }
 

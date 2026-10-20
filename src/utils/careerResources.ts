@@ -13,7 +13,7 @@
  * 参赛作品直接转载有版权与准确性问题，因此本模块只做「来源 + 定位 + 官方链接」。
  */
 
-import type { CareerResource, PolicyCategory } from '@/types/careerResource';
+import type { CareerResource, PolicyCategory } from '@/types/careerResource'
 
 // ====================== 政策类型速查 ======================
 
@@ -72,7 +72,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
     desc: '面向高校毕业生的专项招聘，报考条件与时间以各级人社部门公告为准。',
     tag: '招聘渠道',
   },
-];
+]
 
 // ====================== 联动说明 ======================
 
@@ -81,7 +81,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
  * 这是把资源库接进求职闭环的说明——也是答辩时可以讲的一句话。
  */
 export const RESOURCE_LINKAGE_NOTE =
-  '在「人岗匹配」里算出的技能与证书缺口，可以直接变成简历里的待补关键词：先看匹配页列出「岗位要求但你尚未体现」的条目，再回到这一页对照政策找补贴与见习机会，最后按指导把经历写进简历。';
+  '在「人岗匹配」里算出的技能与证书缺口，可以直接变成简历里的待补关键词：先看匹配页列出「岗位要求但你尚未体现」的条目，再回到这一页对照政策找补贴与见习机会，最后按指导把经历写进简历。'
 
 // ====================== 就业政策 ======================
 
@@ -151,7 +151,8 @@ const POLICY_RESOURCES: CareerResource[] = [
     tags: ['创业'],
     summary:
       '多部门联合发文，方向是改革推进青年就业创业工作。涉及部门多，条款的受理主体也分散在各部门。',
-    advice: '遇到「由某部门负责」的条款，直接按文件里写的部门去找对应办事窗口，不要只问学校就业中心。',
+    advice:
+      '遇到「由某部门负责」的条款，直接按文件里写的部门去找对应办事窗口，不要只问学校就业中心。',
     url: 'https://fpkfb.shandong.gov.cn/articles/ch00354/202504/87ba10e8-0cf9-4098-8594-ef5d9cb5023c.shtml',
     kind: 'gov-doc',
   },
@@ -194,7 +195,7 @@ const POLICY_RESOURCES: CareerResource[] = [
     url: 'https://sdupsl.sdbys.com/news/view/aid/135849/tag/affair/binfo',
     kind: 'official-platform',
   },
-];
+]
 
 // ====================== 校招企业名单 ======================
 
@@ -217,8 +218,7 @@ const CAMPUS_RESOURCES: CareerResource[] = [
     title: '聊城大学就业管理系统 · 大型招聘会',
     source: '山东省高校毕业生就业管理系统',
     tags: ['双选会'],
-    summary:
-      '学校大型招聘会（双选会）的线上管理入口，可查看场次安排与参会单位情况。',
+    summary: '学校大型招聘会（双选会）的线上管理入口，可查看场次安排与参会单位情况。',
     advice: '双选会前先按「专业要求」筛出 5–8 家目标企业，现场直奔目标展位，效率远高于漫逛。',
     url: 'https://lcu.sdbys.com/largefairs/view/id/4218/type/1/tab/',
     kind: 'official-platform',
@@ -229,8 +229,7 @@ const CAMPUS_RESOURCES: CareerResource[] = [
     title: '聊城大学就业双选会用人单位展位公布',
     source: '聊城大学就业服务平台公告',
     tags: ['双选会', '在招企业'],
-    summary:
-      '双选会的用人单位展位名单公告。展位表是判断「哪些企业真的来校招」最直接的依据。',
+    summary: '双选会的用人单位展位名单公告。展位表是判断「哪些企业真的来校招」最直接的依据。',
     advice: '拿到展位表后，把企业按行业分组，同行业的企业面谈话术可以复用，准备成本大幅下降。',
     url: 'https://school.gxjy.sdei.edu.cn/lcu/school/Notice/detail/200',
     kind: 'official-platform',
@@ -243,7 +242,8 @@ const CAMPUS_RESOURCES: CareerResource[] = [
     tags: ['在招企业'],
     summary:
       '在聊城大学就业服务平台上发布招聘信息的企业之一，可作为「本地企业在校招什么岗位」的观察样本。',
-    advice: '先在平台上看它当前在招的具体岗位，再回到本小程序用人岗匹配算一次适配度，判断值不值得投。',
+    advice:
+      '先在平台上看它当前在招的具体岗位，再回到本小程序用人岗匹配算一次适配度，判断值不值得投。',
     url: 'https://school.gxjy.sdei.edu.cn/lcu/front/JiuYeInfo?type=zwxx&companyName=%E8%81%8A%E5%9F%8E%E4%BC%98%E7%84%B6%E7%89%A7%E4%B8%9A%E6%9C%89%E9%99%90%E8%B4%A3%E4%BB%BB%E5%85%AC%E5%8F%B8',
     kind: 'official-platform',
   },
@@ -255,11 +255,12 @@ const CAMPUS_RESOURCES: CareerResource[] = [
     tags: ['宣讲会'],
     summary:
       '金融机构进校宣讲的公开报道，可用于了解「哪些类型的企业会来聊城大学做宣讲」以及宣讲的常见组织形式。',
-    advice: '宣讲会除了听岗位，更要留意「现场是否收简历」和「后续投递渠道」——很多企业宣讲会当场筛选。',
+    advice:
+      '宣讲会除了听岗位，更要留意「现场是否收简历」和「后续投递渠道」——很多企业宣讲会当场筛选。',
     url: 'https://www.lcxw.cn/zhuanti/jinrong/20260928/188442.html',
     kind: 'media',
   },
-];
+]
 
 // ====================== 简历与面试指导（平台原创整理） ======================
 
@@ -328,7 +329,8 @@ const GUIDE_RESOURCES: CareerResource[] = [
     tags: ['面试'],
     summary:
       '面试官问超出你知识范围的问题很常见，考察的往往不是答案本身，而是你面对未知时的处理方式。直接硬编比承认不会更扣分。',
-    advice: '用「这部分我目前只了解到 X，我的思路是会先查 Y 再验证 Z」作答，把问题转成可执行的推理。',
+    advice:
+      '用「这部分我目前只了解到 X，我的思路是会先查 Y 再验证 Z」作答，把问题转成可执行的推理。',
     kind: 'own',
   },
   {
@@ -339,7 +341,8 @@ const GUIDE_RESOURCES: CareerResource[] = [
     tags: ['面试', '投递'],
     summary:
       '专业不对口时，招聘方关心的是「你能不能补上」。用岗位图谱里的横移路径说明你已经研究过这条转型路线的成本与补课计划。',
-    advice: '在「生涯发展报告」里看跨岗路径的平滑度标注：选平滑路径投，准备好「需要补什么、打算怎么补」。',
+    advice:
+      '在「生涯发展报告」里看跨岗路径的平滑度标注：选平滑路径投，准备好「需要补什么、打算怎么补」。',
     kind: 'own',
   },
   {
@@ -350,10 +353,11 @@ const GUIDE_RESOURCES: CareerResource[] = [
     tags: ['投递'],
     summary:
       '匹配度高不等于会录用，匹配度低也不等于不能投。合理做法是按匹配度分三档：主投、冲刺、保底，避免把全部精力压在一家公司。',
-    advice: '匹配度高的岗位重点打磨简历与面试；匹配度偏低的岗位只投那些你确实想去、且愿意补短板的。',
+    advice:
+      '匹配度高的岗位重点打磨简历与面试；匹配度偏低的岗位只投那些你确实想去、且愿意补短板的。',
     kind: 'own',
   },
-];
+]
 
 // ====================== 汇总 ======================
 
@@ -362,20 +366,20 @@ export const CAREER_RESOURCES: CareerResource[] = [
   ...POLICY_RESOURCES,
   ...CAMPUS_RESOURCES,
   ...GUIDE_RESOURCES,
-];
+]
 
 /** 按主题取资源 */
 export const resourcesByTheme = (theme: string): CareerResource[] =>
-  CAREER_RESOURCES.filter((r) => r.theme === theme);
+  CAREER_RESOURCES.filter((r) => r.theme === theme)
 
 /** 关键词过滤：匹配标题、来源、文号、标签与正文 */
 export const filterResources = (list: CareerResource[], keyword: string): CareerResource[] => {
-  const kw = keyword.trim().toLowerCase();
-  if (!kw) return list;
+  const kw = keyword.trim().toLowerCase()
+  if (!kw) return list
   return list.filter((r) => {
     const haystack = [r.title, r.source, r.docNo ?? '', r.summary, r.advice ?? '', r.tags.join(' ')]
       .join(' ')
-      .toLowerCase();
-    return haystack.includes(kw);
-  });
-};
+      .toLowerCase()
+    return haystack.includes(kw)
+  })
+}

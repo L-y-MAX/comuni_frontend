@@ -29,22 +29,22 @@ src/types/
 
 ```typescript
 // 导入所有类型
-import type { UserInfo, VipInfo, ThemeMode } from '@/types';
+import type { UserInfo, VipInfo, ThemeMode } from '@/types'
 
 // 导入特定模块类型
-import type { KnowledgeBase, KnowledgeNode } from '@/types/knowledge';
-import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { KnowledgeBase, KnowledgeNode } from '@/types/knowledge'
+import type { ApiResponse, PaginatedResponse } from '@/types/api'
 ```
 
 ### 在组件中使用
 
 ```vue
 <script setup lang="ts">
-import type { UserInfo, ThemeMode } from '@/types';
+import type { UserInfo, ThemeMode } from '@/types'
 
 interface Props {
-  user: UserInfo;
-  theme: ThemeMode;
+  user: UserInfo
+  theme: ThemeMode
 }
 </script>
 ```
@@ -52,15 +52,15 @@ interface Props {
 ### 在Store中使用
 
 ```typescript
-import { defineStore } from 'pinia';
-import type { UserInfo, VipInfo } from '@/types/user';
+import { defineStore } from 'pinia'
+import type { UserInfo, VipInfo } from '@/types/user'
 
 export const useUserStore = defineStore('user', () => {
-  const userInfo = ref<UserInfo | null>(null);
-  const vipInfo = ref<VipInfo | null>(null);
+  const userInfo = ref<UserInfo | null>(null)
+  const vipInfo = ref<VipInfo | null>(null)
 
   // ...
-});
+})
 ```
 
 ## 类型规范
@@ -92,13 +92,13 @@ export const useUserStore = defineStore('user', () => {
 ```typescript
 // 扩展用户信息
 export interface UserProfile extends UserInfo {
-  phone?: string;
-  gender?: 'male' | 'female' | 'other';
+  phone?: string
+  gender?: 'male' | 'female' | 'other'
 }
 
 // 使用工具类型
-export type PartialUserInfo = Partial<UserInfo>;
-export type RequiredUserId = RequiredFields<UserInfo, 'id'>;
+export type PartialUserInfo = Partial<UserInfo>
+export type RequiredUserId = RequiredFields<UserInfo, 'id'>
 ```
 
 ## 注意事项

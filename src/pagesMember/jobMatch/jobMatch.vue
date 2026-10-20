@@ -28,7 +28,7 @@
             <text class="me-major">{{ student?.major || '未填写专业' }}</text>
             <text class="me-sub">
               {{ student?.grade_label || '未填写年级' }}
-              <text v-if="student?.target_job"> · 意向 {{ student?.target_job }}</text>
+              <text v-if="student?.target_job">· 意向 {{ student?.target_job }}</text>
             </text>
           </view>
           <view class="me-right">
@@ -109,7 +109,8 @@
                   class="result-score"
                   :style="{ color: levelColor(r.matchLevel) }"
                 >
-                  {{ r.matchScore }}<text class="result-score-unit">%</text>
+                  {{ r.matchScore }}
+                  <text class="result-score-unit">%</text>
                 </text>
                 <text
                   class="result-level"
@@ -150,7 +151,8 @@
               class="result-insufficient"
             >
               <text class="result-insufficient-text">
-                岗位要求信息不足：原文仅能解析出 {{ r.evaluatedDimCount }}/10 项可评估要求，匹配度仅供参考
+                岗位要求信息不足：原文仅能解析出 {{ r.evaluatedDimCount }}/10
+                项可评估要求，匹配度仅供参考
               </text>
             </view>
 
@@ -343,106 +345,103 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue'
+import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
 import {
   MATCH_LEVEL_COLOR,
   type DimensionGap,
   type MatchLevel,
   type MatchResult,
-} from './lib/jobMatchTypes';
-import {
-  STUDENT_PROFILE_STORAGE_KEY,
-  type StudentProfile,
-} from '@/types/studentProfile';
-import { matchStudentToJob, rankJobsByMatch } from './lib/jobMatch';
-import { getSampleJobProfiles } from './lib/jobProfileSamples';
-import { fetchRecruitmentByCreditCode, generateJobProfile } from './lib/jobProfileApi';
+} from './lib/jobMatchTypes'
+import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile'
+import { matchStudentToJob, rankJobsByMatch } from './lib/jobMatch'
+import { getSampleJobProfiles } from './lib/jobProfileSamples'
+import { fetchRecruitmentByCreditCode, generateJobProfile } from './lib/jobProfileApi'
 
 // ====================== 状态 ======================
 
-const student = ref<StudentProfile | null>(null);
-const results = ref<MatchResult[]>([]);
-const usingSampleJobs = ref(true);
-const expandedIndex = ref<number | null>(null);
+const student = ref<StudentProfile | null>(null)
+const results = ref<MatchResult[]>([])
+const usingSampleJobs = ref(true)
+const expandedIndex = ref<number | null>(null)
 
-const loading = ref(false);
-const errorMsg = ref('');
-const progressText = ref('');
+const loading = ref(false)
+const errorMsg = ref('')
+const progressText = ref('')
 
-let currentCreditCode = '';
-let unloaded = false;
+let currentCreditCode = ''
+let unloaded = false
 
 onUnload(() => {
-  unloaded = true;
-});
+  unloaded = true
+})
 
 // ====================== 计算属性 ======================
 
 /** 结果里是否存在基于本地规则解析的画像 */
-const isRuleBasedAll = computed(() => results.value.some((r) => r.isRuleBased));
+const isRuleBasedAll = computed(() => results.value.some((r) => r.isRuleBased))
 
 // ====================== 展示辅助 ======================
 
-const levelColor = (level: MatchLevel): string => MATCH_LEVEL_COLOR[level] ?? '#94a3b8';
+const levelColor = (level: MatchLevel): string => MATCH_LEVEL_COLOR[level] ?? '#94a3b8'
 
 /**
  * 维度状态文案。
  * 专业技能/证书按覆盖率算，其余按分值算，因此不能统一写成「差 X 分」。
  */
 const gapStatusText = (g: DimensionGap): string => {
-  if (g.noRequirement) return '岗位未提要求';
-  if (g.satisfied) return '已达标';
-  if (g.insufficientInfo) return '信息不足';
-  return g.basis === 'coverage' ? '覆盖不足' : '未达标';
-};
+  if (g.noRequirement) return '岗位未提要求'
+  if (g.satisfied) return '已达标'
+  if (g.insufficientInfo) return '信息不足'
+  return g.basis === 'coverage' ? '覆盖不足' : '未达标'
+}
 
 const toggleExpand = (idx: number) => {
-  expandedIndex.value = expandedIndex.value === idx ? null : idx;
-};
+  expandedIndex.value = expandedIndex.value === idx ? null : idx
+}
 
 const goAbilityProfile = () => {
   // 能力画像现在是 tabBar 页面，只能用 switchTab
-  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' });
-};
+  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
+}
 
 const goCareerReport = () => {
-  uni.navigateTo({ url: '/pagesMember/careerReport/careerReport' });
-};
+  uni.navigateTo({ url: '/pagesMember/careerReport/careerReport' })
+}
 
 // ====================== 数据加载 ======================
 
 /** 读取本地保存的学生能力画像 */
 const readStudentProfile = (): StudentProfile | null => {
   try {
-    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY);
-    return raw && typeof raw === 'object' ? (raw as StudentProfile) : null;
+    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY)
+    return raw && typeof raw === 'object' ? (raw as StudentProfile) : null
   } catch {
-    return null;
+    return null
   }
-};
+}
 
 /** 用示例岗位做批量匹配（离线可用） */
 const matchWithSampleJobs = () => {
-  if (!student.value) return;
-  usingSampleJobs.value = true;
-  results.value = rankJobsByMatch(student.value, getSampleJobProfiles());
-  expandedIndex.value = 0;
-};
+  if (!student.value) return
+  usingSampleJobs.value = true
+  results.value = rankJobsByMatch(student.value, getSampleJobProfiles())
+  expandedIndex.value = 0
+}
 
 /** 与单个真实岗位匹配 */
 const matchWithRealJob = async (creditCode: string) => {
-  if (!student.value) return;
+  if (!student.value) return
 
-  loading.value = true;
-  errorMsg.value = '';
-  usingSampleJobs.value = false;
+  loading.value = true
+  errorMsg.value = ''
+  usingSampleJobs.value = false
 
   try {
-    progressText.value = '正在读取岗位信息…';
-    const recruitment = await fetchRecruitmentByCreditCode(creditCode);
+    progressText.value = '正在读取岗位信息…'
+    const recruitment = await fetchRecruitmentByCreditCode(creditCode)
 
-    progressText.value = '正在生成岗位画像…';
+    progressText.value = '正在生成岗位画像…'
     const generated = await generateJobProfile(
       {
         recruitment_id: recruitment.credit_code,
@@ -454,48 +453,48 @@ const matchWithRealJob = async (creditCode: string) => {
         recruit_number: recruitment.recruit_number,
         enterprise_intro: recruitment.enterprise_intro,
       },
-      { shouldStop: () => unloaded }
-    );
+      { shouldStop: () => unloaded },
+    )
 
-    progressText.value = '正在计算匹配度…';
-    results.value = [matchStudentToJob(student.value, generated.profile)];
-    expandedIndex.value = 0;
+    progressText.value = '正在计算匹配度…'
+    results.value = [matchStudentToJob(student.value, generated.profile)]
+    expandedIndex.value = 0
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') return;
-    errorMsg.value = err instanceof Error ? err.message : '匹配失败，请稍后重试';
+    if (err instanceof Error && err.name === 'AbortError') return
+    errorMsg.value = err instanceof Error ? err.message : '匹配失败，请稍后重试'
   } finally {
-    loading.value = false;
-    progressText.value = '';
+    loading.value = false
+    progressText.value = ''
   }
-};
+}
 
 /** 重新加载（按当前模式） */
 const reload = () => {
   if (currentCreditCode) {
-    void matchWithRealJob(currentCreditCode);
+    void matchWithRealJob(currentCreditCode)
   } else {
-    matchWithSampleJobs();
+    matchWithSampleJobs()
   }
-};
+}
 
 // ====================== 生命周期 ======================
 
 onLoad((options) => {
-  student.value = readStudentProfile();
+  student.value = readStudentProfile()
 
   // 没有能力画像时直接停在这里，界面会提示去生成
-  if (!student.value) return;
+  if (!student.value) return
 
-  currentCreditCode = options?.id ? decodeURIComponent(options.id) : '';
+  currentCreditCode = options?.id ? decodeURIComponent(options.id) : ''
 
   if (currentCreditCode) {
     // 单岗位模式：需要联网 + 登录
-    void matchWithRealJob(currentCreditCode);
+    void matchWithRealJob(currentCreditCode)
   } else {
     // 批量模式：直接用示例岗位，离线可用
-    matchWithSampleJobs();
+    matchWithSampleJobs()
   }
-});
+})
 
 // ====================== 分享 ======================
 
@@ -504,7 +503,7 @@ onShareAppMessage(() => ({
     ? `我的岗位匹配度 ${results.value[0].matchScore}%：${results.value[0].jobName}`
     : '测一测你和目标岗位的匹配度',
   path: '/pagesMember/jobMatch/jobMatch',
-}));
+}))
 </script>
 
 <style scoped lang="scss">
@@ -556,7 +555,7 @@ onShareAppMessage(() => ({
   width: 54rpx;
   height: 54rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #FF7239;
+  border-top-color: #ff7239;
   border-radius: 50%;
   margin-bottom: 26rpx;
   animation: spin 0.9s linear infinite;
@@ -1014,7 +1013,7 @@ onShareAppMessage(() => ({
   font-weight: 600;
   margin: 0;
   padding: 0;
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
 
   &::after {

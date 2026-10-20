@@ -53,13 +53,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import UniEcharts from 'uni-echarts';
-import { provideEcharts, provideEchartsOption } from 'uni-echarts/shared';
-import echarts from './lib/echartsSetup';
-import { buildAbilityRadarOption, type RadarDimensionInput } from './lib/radarOption';
-import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile';
+import { computed, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import UniEcharts from 'uni-echarts'
+import { provideEcharts, provideEchartsOption } from 'uni-echarts/shared'
+import echarts from './lib/echartsSetup'
+import { buildAbilityRadarOption, type RadarDimensionInput } from './lib/radarOption'
+import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile'
 
 /**
  * 能力星球图（全屏版）
@@ -70,20 +70,20 @@ import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studen
  *      嵌进去会把主包从 0.49MB 顶到 0.97MB；放进分包后主包不受影响，
  *      只有真正点进来时才下载这一份代码。
  */
-const profile = ref<StudentProfile | null>(null);
+const profile = ref<StudentProfile | null>(null)
 
 onLoad(() => {
   // 画像由能力画像页生成后存在本地缓存里，这里直接读，无需再请求接口
   try {
-    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY);
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY)
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
     if (parsed && Array.isArray(parsed.dimensions)) {
-      profile.value = parsed as StudentProfile;
+      profile.value = parsed as StudentProfile
     }
   } catch (e) {
-    console.warn('读取能力画像失败：', e);
+    console.warn('读取能力画像失败：', e)
   }
-});
+})
 
 /** 传给 option 构造器的十维数据（顺序无所谓，构造器内部按 key 重排） */
 const dimensions = computed<RadarDimensionInput[]>(() =>
@@ -91,24 +91,24 @@ const dimensions = computed<RadarDimensionInput[]>(() =>
     key: d.key,
     label: d.label,
     score: d.score,
-  }))
-);
+  })),
+)
 
-const hasProfile = computed(() => dimensions.value.length > 0);
+const hasProfile = computed(() => dimensions.value.length > 0)
 
 /** ECharts option；画像后到（onLoad 之后才读到）时会自动重算并刷新图表 */
-const radarOption = computed(() => buildAbilityRadarOption(dimensions.value));
+const radarOption = computed(() => buildAbilityRadarOption(dimensions.value))
 
 // uni-echarts 通过 provide/inject 拿 echarts 与 option：
 // ⚠️ option 必须走注入，不能写成 <UniEcharts :option="..."> ——
 //    小程序端组件 props 会被 setData 序列化，option 里的函数
 //    （symbolSize 缩放、tooltip.formatter 文案）会全部丢失。
-provideEcharts(echarts);
-provideEchartsOption(radarOption);
+provideEcharts(echarts)
+provideEchartsOption(radarOption)
 
 const goProfile = () => {
-  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' });
-};
+  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
+}
 </script>
 
 <style scoped lang="scss">
@@ -209,7 +209,7 @@ const goProfile = () => {
   line-height: 76rpx;
   font-size: 28rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   border-radius: 38rpx;
   border: none;
 }

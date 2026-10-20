@@ -19,7 +19,7 @@ export const useKnowledgeStore = defineStore('knowledge', {
       content: '',
       description: '',
       knowledge_base_id: '',
-    })
+    }),
   }),
   actions: {
     // 更新当前文章数据
@@ -35,6 +35,6 @@ export const useKnowledgeStore = defineStore('knowledge', {
         description: '',
         knowledge_base_id: '',
       })
-    }
-  }
+    },
+  },
 })

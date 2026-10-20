@@ -53,7 +53,7 @@
                 <image
                   v-if="isVip"
                   class="vip-icon"
-                  src="https://youupro.xyz/notes/static/icons/vip.png"
+                  src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/vip.png"
                   mode="aspectFit"
                 />
                 <text class="vip-label">尊贵会员</text>
@@ -92,7 +92,7 @@
           <view class="form-control">
             <image
               class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/forward.png"
               mode="aspectFit"
             />
           </view>
@@ -111,7 +111,7 @@
           <view class="form-control">
             <image
               class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/forward.png"
               mode="aspectFit"
             />
           </view>
@@ -131,7 +131,7 @@
           <view class="form-control">
             <image
               class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/forward.png"
               mode="aspectFit"
             />
           </view>
@@ -150,7 +150,7 @@
           <view class="form-control">
             <image
               class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/forward.png"
               mode="aspectFit"
             />
           </view>
@@ -203,7 +203,7 @@
           @click="wxQuickLogin"
         >
           <image
-            src="https://youupro.xyz/notes/static/icons/wx.png"
+            src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/wx.png"
             class="wechat-icon-small"
             mode="widthFix"
           />
@@ -335,7 +335,7 @@ onShareAppMessage(() => {
   return {
     title: `${userName.value}的个人中心 - 职引星途`, // 动态显示用户名
     path: '/pages/my/my', // 分享后打开的页面路径
-    imageUrl: 'https://youupro.xyz/notes/static/logo.png', // 分享卡片图片（可选）
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/logo.png', // 分享卡片图片（可选）
     desc: '快来查看我的个人中心，一起探索就业与生涯规划吧！', // 分享描述（可选）
   }
 })
@@ -345,7 +345,7 @@ onShareTimeline(() => {
   return {
     title: `${userName.value}的个人中心 - 职引星途`, // 朋友圈分享标题
     path: '/pages/my/my', // 分享后打开的页面路径
-    imageUrl: 'https://youupro.xyz/notes/static/logo.png', // 朋友圈分享图片（可选）
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/logo.png', // 朋友圈分享图片（可选）
   }
 })
 </script>

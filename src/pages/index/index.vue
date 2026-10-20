@@ -9,7 +9,7 @@
     </view>
     <view class="brand-text">
       <image
-        src="https://youupro.xyz/notes/static/logo.png"
+        src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/logo.png"
         class="brand-logo-img"
         mode="widthFix"
       ></image>
@@ -31,11 +31,11 @@
         @tap="searchNow"
         :class="{ loading: isLoading }"
       >
-        <!-- 优先用 src/static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
         <image
           v-if="!isLoading && !searchIconError"
           class="search-icon"
-          src="/static/home/search.png"
+          src="https://youupro.xyz/ly/static/home/search.png"
           mode="aspectFit"
           @error="searchIconError = true"
         />
@@ -70,11 +70,11 @@
       @tap="goRecruitmentList"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/jobs.png；文件不存在时自动退回 emoji，不会出现破图 -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/jobs.png；文件不存在时自动退回 emoji，不会出现破图 -->
         <image
           v-if="!jobsIconError"
           class="resource-entry-icon-img"
-          src="/static/home/jobs.png"
+          src="https://youupro.xyz/ly/static/home/jobs.png"
           mode="aspectFit"
           @error="jobsIconError = true"
         />
@@ -93,11 +93,11 @@
       @tap="goCareerResources"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/policy.png；文件不存在时自动退回 emoji -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/policy.png；文件不存在时自动退回 emoji -->
         <image
           v-if="!policyIconError"
           class="resource-entry-icon-img"
-          src="/static/home/policy.png"
+          src="https://youupro.xyz/ly/static/home/policy.png"
           mode="aspectFit"
           @error="policyIconError = true"
         />
@@ -116,11 +116,11 @@
       @tap="goJobProfile"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/jobprofile.png；缺图自动退回 emoji -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/jobprofile.png；缺图自动退回 emoji -->
         <image
           v-if="!jobProfileIconError"
           class="resource-entry-icon-img"
-          src="/static/home/jobprofile.png"
+          src="https://youupro.xyz/ly/static/home/jobprofile.png"
           mode="aspectFit"
           @error="jobProfileIconError = true"
         />
@@ -139,11 +139,11 @@
       @tap="goKnowledge"
     >
       <view class="resource-entry-left">
-        <!-- 优先用 src/static/home/knowledge.png；缺图自动退回 emoji -->
+        <!-- 优先用 srchttps://youupro.xyz/ly/static/home/knowledge.png；缺图自动退回 emoji -->
         <image
           v-if="!knowledgeIconError"
           class="resource-entry-icon-img"
-          src="/static/home/knowledge.png"
+          src="https://youupro.xyz/ly/static/home/knowledge.png"
           mode="aspectFit"
           @error="knowledgeIconError = true"
         />
@@ -181,7 +181,8 @@
           </text>
         </view>
         <text class="local-card-meta">
-          {{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
+          {{ item.source }}
+          <text v-if="item.docNo">· {{ item.docNo }}</text>
         </text>
         <text class="local-card-summary">{{ item.summary }}</text>
         <view class="local-tags">
@@ -524,7 +525,7 @@ import { RESOURCE_KIND_LABEL, type ResourceKind } from '@/types/careerResource'
 /**
  * 首页两张卡片的图标是否加载失败。
  *
- * 图标走「有图用图、缺图退回 emoji」：把图片放进 src/static/home/ 后重新构建就会生效，
+ * 图标走「有图用图、缺图退回 emoji」：把图片放进 srchttps://youupro.xyz/ly/static/home/ 后重新构建就会生效，
  * 没放也不会出现破图，更不需要为了换图标改代码。
  */
 const jobsIconError = ref(false)
@@ -588,7 +589,7 @@ const navigateToKnowledgeBase = (kb: any) => {
   // showKb 才是"查看某个知识库"的页面，onLoad 里读的正是 knowledge_base_id。
   uni.navigateTo({
     url: `/pagesMember/knowledge/showKb/showKb?knowledge_base_id=${encodeURIComponent(
-      String(kb.id)
+      String(kb.id),
     )}`,
   })
 }
@@ -788,7 +789,8 @@ onMounted(() => {
   // 按下反馈：能看出点击有没有落到这个元素上
   &:active {
     opacity: 0.6;
-  }}
+  }
+}
 
 /* 搜索图标：优先用本地图片，缺图时模板会退回 ◯ */
 .search-icon {
@@ -894,7 +896,7 @@ onMounted(() => {
   background-color: #f9f9f9;
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   color: #ff4500;
-  border: 1px solid #FF7239;
+  border: 1px solid #ff7239;
   border-radius: 8rpx;
   padding: 6rpx 12rpx;
   font-size: 22rpx;
@@ -914,15 +916,15 @@ onMounted(() => {
     }
     &:active {
       background-color: #ffe8df; // 点击按压效果
-      border-color: #FF7239;
+      border-color: #ff7239;
       transform: scale(0.96); // 轻微缩放反馈
     }
   }
   // 已关注状态样式优化
   &.followed {
-    background-color: #FF7239;
+    background-color: #ff7239;
     color: #fff;
-    border-color: #FF7239;
+    border-color: #ff7239;
     &:hover {
       background-color: #ff5a28; // 深一点的橙色hover
     }
@@ -959,7 +961,7 @@ onMounted(() => {
 }
 
 .view-btn {
-  background-color: #FF7239;
+  background-color: #ff7239;
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   color: #fff;
   border-radius: 8rpx;
@@ -1220,7 +1222,7 @@ onMounted(() => {
     .create-kb-btn {
       width: 100%;
       height: 70rpx;
-      background-color: #FF7239;
+      background-color: #ff7239;
       color: #fff;
       border: none;
       border-radius: 10rpx;
@@ -1300,7 +1302,6 @@ onMounted(() => {
   line-height: 1;
 }
 
-
 /* ========== 退出搜索快捷操作 ========== */
 .exit-search {
   margin-top: 24rpx;
@@ -1312,7 +1313,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
   border-radius: 40rpx;
   transition: background-color 0.2s ease;
 

@@ -39,7 +39,7 @@
  *      描边是实线，不是发光，shadowBlur 全为 0。
  */
 
-import type { AbilityDimensionKey } from '@/types/jobProfile';
+import type { AbilityDimensionKey } from '@/types/jobProfile'
 
 // ====================== 可调常量 ======================
 
@@ -54,23 +54,23 @@ import type { AbilityDimensionKey } from '@/types/jobProfile';
  * 改成 0.32 后 100 分才刚好 32px，各分数段都能拉开（42 分 ≈ 13.4px、
  * 70 分 ≈ 22.4px、97 分 ≈ 31px），同时仍然封顶 32px 不会拥挤。
  */
-export const SYMBOL_SIZE_MAX = 32;
-export const SYMBOL_SIZE_FACTOR = 0.32;
+export const SYMBOL_SIZE_MAX = 32
+export const SYMBOL_SIZE_FACTOR = 0.32
 
 /** 雷达与主色（对齐小程序全局色） */
-const LINE_COLOR = '#EEEEEE';
-const PRIMARY_COLOR = '#FF9771';
+const LINE_COLOR = '#EEEEEE'
+const PRIMARY_COLOR = '#FF9771'
 /** 多边形填充：极淡，只做底，不抢星球的视觉 */
-const AREA_COLOR = 'rgba(255, 151, 113, 0.04)';
+const AREA_COLOR = 'rgba(255, 151, 113, 0.04)'
 
 /** 网格线宽：比原来更细，弱化参考线 */
-const GRID_LINE_WIDTH = 0.5;
+const GRID_LINE_WIDTH = 0.5
 /** 雷达轮廓线宽 */
-const OUTLINE_LINE_WIDTH = 1.5;
+const OUTLINE_LINE_WIDTH = 1.5
 
 /** 雷达中心与半径：radar 与 polar 必须写成同一组值，否则星球会和骨架错位 */
-const CENTER: [string, string] = ['50%', '50%'];
-const RADIUS = '58%';
+const CENTER: [string, string] = ['50%', '50%']
+const RADIUS = '58%'
 
 /**
  * 维度标签与雷达外圈的间距（px）
@@ -78,7 +78,7 @@ const RADIUS = '58%';
  * ECharts 雷达的 `axisNameGap`，默认只有 15，标签几乎贴着外圈，
  * 高分的星球会顶到标签上。这里加大到 30，把十个维度名整体推到星球外侧。
  */
-const AXIS_NAME_GAP = 30;
+const AXIS_NAME_GAP = 30
 
 /**
  * 十个维度的展示顺序
@@ -97,7 +97,7 @@ export const DIMENSION_ORDER: AbilityDimensionKey[] = [
   'logical_thinking',
   'industry_cognition',
   'learning',
-];
+]
 
 // ====================== 星球外观（纯渐变，不用图片）======================
 
@@ -114,7 +114,7 @@ export const PLANET_GRADIENTS = {
   mid: ['#FFB347', '#FFD291'],
   /** 分值 < 70：浅灰 */
   low: ['#E2E2E2', '#F1F1F1'],
-} as const;
+} as const
 
 /**
  * 三档描边色：比同档中心色深一档，用来给圆形勾一个清晰的边
@@ -126,24 +126,24 @@ export const PLANET_BORDERS = {
   high: '#E8703F',
   mid: '#DFA030',
   low: '#B9BFC9',
-} as const;
+} as const
 
 // ====================== 取值辅助 ======================
 
 export interface RadarDimensionInput {
-  key: AbilityDimensionKey;
+  key: AbilityDimensionKey
   /** 维度中文名（用画像里的 label，保证和「十维明细」用词一致） */
-  label: string;
+  label: string
   /** 0~100 */
-  score: number;
+  score: number
 }
 
 /** 分值 → 档位（决定配色） */
 export const scoreToTier = (score: number): keyof typeof PLANET_GRADIENTS => {
-  if (score >= 80) return 'high';
-  if (score >= 70) return 'mid';
-  return 'low';
-};
+  if (score >= 80) return 'high'
+  if (score >= 70) return 'mid'
+  return 'low'
+}
 
 /**
  * 分值 → 星球直径（px）
@@ -152,25 +152,25 @@ export const scoreToTier = (score: number): keyof typeof PLANET_GRADIENTS => {
  * 中间分数都能看出大小差别（详见 SYMBOL_SIZE_FACTOR 上的说明）。
  */
 export const scoreToSymbolSize = (score: number): number => {
-  const safe = Math.max(0, Math.min(100, score));
-  return Math.min(safe * SYMBOL_SIZE_FACTOR, SYMBOL_SIZE_MAX);
-};
+  const safe = Math.max(0, Math.min(100, score))
+  return Math.min(safe * SYMBOL_SIZE_FACTOR, SYMBOL_SIZE_MAX)
+}
 
 /** 分值 → 等级标签 */
 export const scoreToGrade = (score: number): string => {
-  if (score >= 85) return '优秀';
-  if (score >= 75) return '良好';
-  if (score >= 60) return '中等';
-  return '待提升';
-};
+  if (score >= 85) return '优秀'
+  if (score >= 75) return '良好'
+  if (score >= 60) return '中等'
+  return '待提升'
+}
 
 /** 分值 → 一句人话描述 */
 export const scoreToDesc = (label: string, score: number): string => {
-  if (score >= 85) return `你的${label}表现突出，是求职核心竞争力`;
-  if (score >= 75) return `你的${label}表现良好，继续保持即可`;
-  if (score >= 60) return `你的${label}处于中等水平，还有提升空间`;
-  return `你的${label}目前偏弱，建议优先补齐`;
-};
+  if (score >= 85) return `你的${label}表现突出，是求职核心竞争力`
+  if (score >= 75) return `你的${label}表现良好，继续保持即可`
+  if (score >= 60) return `你的${label}处于中等水平，还有提升空间`
+  return `你的${label}目前偏弱，建议优先补齐`
+}
 
 /**
  * 分值 → 圆形星球的填充色（ECharts 径向渐变对象）
@@ -179,7 +179,7 @@ export const scoreToDesc = (label: string, score: number): string => {
  * 对应需求里的「不要白色高光点、不做立体球」。
  */
 export const scoreToPlanetFill = (score: number) => {
-  const [center, edge] = PLANET_GRADIENTS[scoreToTier(score)];
+  const [center, edge] = PLANET_GRADIENTS[scoreToTier(score)]
   return {
     type: 'radial' as const,
     x: 0.5,
@@ -189,8 +189,8 @@ export const scoreToPlanetFill = (score: number) => {
       { offset: 0, color: center },
       { offset: 1, color: edge },
     ],
-  };
-};
+  }
+}
 
 /**
  * 分值 → 一颗星球的完整 itemStyle（径向渐变 + 同色系细描边 + 无发光）
@@ -198,7 +198,7 @@ export const scoreToPlanetFill = (score: number) => {
  * 页面侧直接把这个对象挂到数据项上即可。
  */
 export const scoreToPlanetStyle = (score: number) => {
-  const tier = scoreToTier(score);
+  const tier = scoreToTier(score)
   return {
     color: scoreToPlanetFill(score),
     borderColor: PLANET_BORDERS[tier],
@@ -206,8 +206,8 @@ export const scoreToPlanetStyle = (score: number) => {
     // 显式关闭一切阴影：只保留渐变与描边，不做任何向外扩散的模糊光晕
     shadowBlur: 0,
     shadowColor: 'transparent',
-  };
-};
+  }
+}
 
 // ====================== option ======================
 
@@ -217,17 +217,17 @@ export const scoreToPlanetStyle = (score: number) => {
  * @param dimensions 画像里的十维数据；顺序无所谓，内部会按 DIMENSION_ORDER 重排并按 key 取分
  */
 export const buildAbilityRadarOption = (
-  dimensions: RadarDimensionInput[]
+  dimensions: RadarDimensionInput[],
 ): Record<string, unknown> => {
   // 按固定顺序重排 + 按 key 取分（缺维度补 0，避免整张图崩掉）
   const ordered = DIMENSION_ORDER.map((key) => {
-    const hit = dimensions.find((d) => d.key === key);
+    const hit = dimensions.find((d) => d.key === key)
     return {
       key,
       label: hit?.label ?? key,
       score: typeof hit?.score === 'number' ? hit.score : 0,
-    };
-  });
+    }
+  })
 
   return {
     // 入场动画短一点，小程序首屏不要拖
@@ -259,14 +259,14 @@ export const buildAbilityRadarOption = (
        * 四块信息合三行：维度名称｜分数 / 【等级】/ 简短描述
        */
       formatter: (params: { data?: { name?: string }; value?: unknown; name?: string }) => {
-        const label = params?.data?.name || params?.name || '';
-        const raw = Array.isArray(params?.value) ? params.value[0] : params?.value;
-        const score = typeof raw === 'number' ? raw : 0;
+        const label = params?.data?.name || params?.name || ''
+        const raw = Array.isArray(params?.value) ? params.value[0] : params?.value
+        const score = typeof raw === 'number' ? raw : 0
         return [
           `${label}｜${score}分`,
           `【${scoreToGrade(score)}】`,
           scoreToDesc(label, score),
-        ].join('\n');
+        ].join('\n')
       },
     },
 
@@ -374,8 +374,8 @@ export const buildAbilityRadarOption = (
         symbol: 'circle',
         // 分值决定直径：Math.min(分值 * 0.32, 32)；value 是 [分值, 角度]
         symbolSize: (value: unknown) => {
-          const raw = Array.isArray(value) ? value[0] : value;
-          return scoreToSymbolSize(typeof raw === 'number' ? raw : 0);
+          const raw = Array.isArray(value) ? value[0] : value
+          return scoreToSymbolSize(typeof raw === 'number' ? raw : 0)
         },
         itemStyle: {
           // 兜底：即使某一项没带 itemStyle，也不会有任何外发光
@@ -400,5 +400,5 @@ export const buildAbilityRadarOption = (
         })),
       },
     ],
-  };
-};
+  }
+}

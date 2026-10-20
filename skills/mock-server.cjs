@@ -15,7 +15,12 @@ const http = require('http')
 const fs = require('fs')
 const path = require('path')
 
-const { validateStudentAnalysis, loadDimensions, NEUTRAL_SCORE, NEUTRAL_CONFIDENCE } = require('./student-profile-analyze/contract.cjs')
+const {
+  validateStudentAnalysis,
+  loadDimensions,
+  NEUTRAL_SCORE,
+  NEUTRAL_CONFIDENCE,
+} = require('./student-profile-analyze/contract.cjs')
 
 const PORT = Number(process.argv[2] || process.env.PORT || 3100)
 const SKILL_VERSION = '1.0.0-mock'
@@ -135,7 +140,12 @@ const server = http.createServer(async (req, res) => {
         return send(res, 400, { error: `未知 skill：${body.skill}` })
       }
       const taskId = `mock-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-      tasks.set(taskId, { createdAt: Date.now(), input: body.input || {}, result: null, checked: null })
+      tasks.set(taskId, {
+        createdAt: Date.now(),
+        input: body.input || {},
+        result: null,
+        checked: null,
+      })
       return send(res, 202, {
         task_id: taskId,
         status: 'pending',

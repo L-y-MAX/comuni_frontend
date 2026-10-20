@@ -1,6 +1,7 @@
 # 图源（Mermaid）— 用于作品说明文档插图
 
 > 使用方法（二选一）：
+>
 > 1. 打开 <https://mermaid.live>，把下面对应代码块粘贴进去 → 右侧预览 → 右上角 `Export` → `PNG`，即可插入 Word；
 > 2. VS Code 安装 `Markdown Preview Mermaid Support` 插件，直接预览并截图。
 >

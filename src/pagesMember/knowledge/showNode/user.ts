@@ -15,17 +15,13 @@ export const useUserStore = defineStore('user', () => {
       const storedUser = uni.getStorageSync('userInfo')
       if (storedUser) {
         // 兼容字符串和对象两种存储格式
-        userInfo.value = typeof storedUser === 'string'
-          ? JSON.parse(storedUser)
-          : storedUser
+        userInfo.value = typeof storedUser === 'string' ? JSON.parse(storedUser) : storedUser
       }
 
       // 加载VIP信息
       const storedVip = uni.getStorageSync('vipInfo')
       if (storedVip) {
-        vipInfo.value = typeof storedVip === 'string'
-          ? JSON.parse(storedVip)
-          : storedVip
+        vipInfo.value = typeof storedVip === 'string' ? JSON.parse(storedVip) : storedVip
       }
     } catch (error) {
       console.error('加载本地存储数据失败:', error)
@@ -80,6 +76,6 @@ export const useUserStore = defineStore('user', () => {
     updateUserInfo,
     updateVipInfo,
     clearUserInfo,
-    loadFromStorage // 暴露加载方法，便于手动调用
+    loadFromStorage, // 暴露加载方法，便于手动调用
   }
 })

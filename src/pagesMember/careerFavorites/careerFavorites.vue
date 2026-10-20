@@ -37,9 +37,7 @@
       class="fav-empty"
     >
       <text class="fav-empty-title">还没有收藏的资源</text>
-      <text class="fav-empty-desc">
-        去「就业政策与校招资源」，点资源卡上的 ☆ 就能收藏到这里
-      </text>
+      <text class="fav-empty-desc">去「就业政策与校招资源」，点资源卡上的 ☆ 就能收藏到这里</text>
       <view
         class="fav-empty-btn"
         @click="goResources"
@@ -59,20 +57,26 @@
         <text
           class="fav-unfav"
           @click="removeFav(item)"
-        >取消收藏</text>
+        >
+          取消收藏
+        </text>
       </view>
 
       <text
         v-if="item.source"
         class="fav-card-meta"
       >
-        <text v-if="item.scope">{{ item.scope }} · </text>{{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
+        <text v-if="item.scope">{{ item.scope }} ·</text>
+        {{ item.source }}
+        <text v-if="item.docNo">· {{ item.docNo }}</text>
       </text>
 
       <text
         v-if="item.summary"
         class="fav-card-summary"
-      >{{ item.summary }}</text>
+      >
+        {{ item.summary }}
+      </text>
 
       <view class="fav-actions">
         <view
@@ -101,121 +105,123 @@
  * 这里按标题回查本地资源库补齐来源、摘要与链接；
  * 未登录或接口失败时退回本地缓存（careerResourcesFav）。
  */
-import { computed, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { baseURL } from '@/utils/request';
-import { CAREER_RESOURCES } from '@/utils/careerResources';
+import { computed, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { baseURL } from '@/utils/request'
+import { CAREER_RESOURCES } from '@/utils/careerResources'
 
-const FAV_KEY = 'careerResourcesFav';
+const FAV_KEY = 'careerResourcesFav'
 
 // ====================== 顶部导航栏尺寸 ======================
-const statusBarHeight = ref(20); // 状态栏高度（px）
-const navBarHeight = ref(44); // 标题栏高度（px）
-const sideWidth = ref(88); // 左右占位宽度（px），右侧避开微信原生胶囊
-const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value);
+const statusBarHeight = ref(20) // 状态栏高度（px）
+const navBarHeight = ref(44) // 标题栏高度（px）
+const sideWidth = ref(88) // 左右占位宽度（px），右侧避开微信原生胶囊
+const navTotalHeight = computed(() => statusBarHeight.value + navBarHeight.value)
 
 /** 读取状态栏与胶囊位置，任何一步失败都用默认值兜底 */
 const initNavMetrics = () => {
   try {
     const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
-      statusBarHeight?: number;
-      windowWidth?: number;
-    };
+      statusBarHeight?: number
+      windowWidth?: number
+    }
     if (typeof win.statusBarHeight === 'number' && win.statusBarHeight > 0) {
-      statusBarHeight.value = win.statusBarHeight;
+      statusBarHeight.value = win.statusBarHeight
     }
     // 开发者工具里 getMenuButtonBoundingClientRect 会失败并上报框架错误，直接跳过
-    const device = ((uni as any).getDeviceInfo?.() ?? {}) as { platform?: string };
-    if (device.platform === 'devtools') return;
-    const rect = (uni as any).getMenuButtonBoundingClientRect?.();
+    const device = ((uni as any).getDeviceInfo?.() ?? {}) as { platform?: string }
+    if (device.platform === 'devtools') return
+    const rect = (uni as any).getMenuButtonBoundingClientRect?.()
     if (rect && rect.height > 0 && rect.top > 0) {
-      navBarHeight.value = (rect.top - statusBarHeight.value) * 2 + rect.height;
-      sideWidth.value = Math.max(60, (win.windowWidth ?? 375) - rect.left);
+      navBarHeight.value = (rect.top - statusBarHeight.value) * 2 + rect.height
+      sideWidth.value = Math.max(60, (win.windowWidth ?? 375) - rect.left)
     }
   } catch {
     // 取不到就保持默认值
   }
-};
+}
 
 /** 返回上一页；无上一页（如从分享卡片直接进入）时回首页 */
 const goBack = () => {
-  const pages = getCurrentPages();
+  const pages = getCurrentPages()
   if (pages.length > 1) {
-    uni.navigateBack();
+    uni.navigateBack()
   } else {
-    uni.switchTab({ url: '/pages/index/index' });
+    uni.switchTab({ url: '/pages/index/index' })
   }
-};
+}
 
-const titles = ref<string[]>([]);
+const titles = ref<string[]>([])
 
 const authHeader = () => ({
   Authorization: `JWT ${uni.getStorageSync('accessToken') || ''}`,
   'Content-Type': 'application/json',
-});
+})
 
 /** 标题 → 资源详情（资源库里找不到的收藏忽略，避免显示空壳） */
-const items = computed<Record<string, any>[]>(() =>
-  titles.value
-    .map((t) => (CAREER_RESOURCES as Record<string, any>[]).find((r) => r.title === t))
-    .filter(Boolean) as Record<string, any>[]
-);
+const items = computed<Record<string, any>[]>(
+  () =>
+    titles.value
+      .map((t) => (CAREER_RESOURCES as Record<string, any>[]).find((r) => r.title === t))
+      .filter(Boolean) as Record<string, any>[],
+)
 
 const loadFavorites = async () => {
-  const cached = (uni.getStorageSync(FAV_KEY) || []) as string[];
-  titles.value = cached;
-  if (!uni.getStorageSync('accessToken')) return;
+  const cached = (uni.getStorageSync(FAV_KEY) || []) as string[]
+  titles.value = cached
+  if (!uni.getStorageSync('accessToken')) return
   try {
     const res: any = await uni.request({
       url: `${baseURL}/api/v1/employment/career-resource-favorites/`,
       method: 'GET',
       header: authHeader(),
       timeout: 8000,
-    });
-    const body: any = Array.isArray(res) ? res[1] : res;
-    const list = body?.data?.titles;
+    })
+    const body: any = Array.isArray(res) ? res[1] : res
+    const list = body?.data?.titles
     if (body?.statusCode === 200 && Array.isArray(list)) {
-      titles.value = list.map(String);
-      uni.setStorageSync(FAV_KEY, titles.value);
+      titles.value = list.map(String)
+      uni.setStorageSync(FAV_KEY, titles.value)
     }
   } catch (e) {
-    console.warn('[收藏] 拉取失败，使用本地缓存', e);
+    console.warn('[收藏] 拉取失败，使用本地缓存', e)
   }
-};
+}
 
 const removeFav = (item: Record<string, any>) => {
-  titles.value = titles.value.filter((t) => t !== item.title);
-  uni.setStorageSync(FAV_KEY, titles.value);
+  titles.value = titles.value.filter((t) => t !== item.title)
+  uni.setStorageSync(FAV_KEY, titles.value)
   uni.request({
     url: `${baseURL}/api/v1/employment/career-resource-favorites/?title=${encodeURIComponent(item.title)}`,
     method: 'DELETE',
     header: authHeader(),
     timeout: 8000,
     fail: () => console.warn('[收藏] 取消同步失败'),
-  });
-  uni.showToast({ title: '已取消收藏', icon: 'none', duration: 1200 });
-};
+  })
+  uni.showToast({ title: '已取消收藏', icon: 'none', duration: 1200 })
+}
 
 const copyLink = (item: Record<string, any>) => {
   uni.setClipboardData({
     data: String(item.url || ''),
-    success: () => uni.showToast({ title: '链接已复制，请到浏览器打开', icon: 'none', duration: 2000 }),
-  });
-};
+    success: () =>
+      uni.showToast({ title: '链接已复制，请到浏览器打开', icon: 'none', duration: 2000 }),
+  })
+}
 
 const askAi = (item: Record<string, any>) => {
-  uni.setStorageSync('aiPendingPrompt', `基于《${item.title}》，帮我解答：`);
-  uni.switchTab({ url: '/pages/ai/ai' });
-};
+  uni.setStorageSync('aiPendingPrompt', `基于《${item.title}》，帮我解答：`)
+  uni.switchTab({ url: '/pages/ai/ai' })
+}
 
 const goResources = () => {
-  uni.navigateTo({ url: '/pagesMember/careerResources/careerResources' });
-};
+  uni.navigateTo({ url: '/pagesMember/careerResources/careerResources' })
+}
 
 onLoad(() => {
-  initNavMetrics();
-  loadFavorites();
-});
+  initNavMetrics()
+  loadFavorites()
+})
 </script>
 
 <style scoped lang="scss">

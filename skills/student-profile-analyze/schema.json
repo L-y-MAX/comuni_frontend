@@ -3,9 +3,7 @@
   "title": "student-profile-analyze/output",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "dimensions"
-  ],
+  "required": ["dimensions"],
   "properties": {
     "dimensions": {
       "type": "array",
@@ -14,13 +12,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "key",
-          "score",
-          "level",
-          "confidence",
-          "evidence"
-        ],
+        "required": ["key", "score", "level", "confidence", "evidence"],
         "properties": {
           "key": {
             "type": "string",
@@ -44,11 +36,7 @@
           },
           "level": {
             "type": "string",
-            "enum": [
-              "high",
-              "medium",
-              "low"
-            ]
+            "enum": ["high", "medium", "low"]
           },
           "confidence": {
             "type": "number",

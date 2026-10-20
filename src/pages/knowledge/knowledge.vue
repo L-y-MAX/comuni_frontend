@@ -23,14 +23,16 @@
           :class="{ active: activeTab === 'left' }"
           @click="switchTab('left')"
         >
-          关注/分享的知识库<text class="tab-badge">{{ leftKbTotal }}</text>
+          关注/分享的知识库
+          <text class="tab-badge">{{ leftKbTotal }}</text>
         </button>
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'right' }"
           @click="switchTab('right')"
         >
-          我的知识库<text class="tab-badge">{{ kbList.length }}</text>
+          我的知识库
+          <text class="tab-badge">{{ kbList.length }}</text>
         </button>
       </view>
 
@@ -54,7 +56,7 @@
           <view class="guide-head-left">
             <image
               class="guide-icon"
-              src="/static/home/knowledge.png"
+              src="https://youupro.xyz/ly/static/home/knowledge.png"
               mode="aspectFit"
             />
             <text class="guide-title">使用指引</text>
@@ -64,7 +66,9 @@
             <text
               class="guide-dismiss"
               @click.stop="dismissGuide"
-            >不再提示</text>
+            >
+              不再提示
+            </text>
           </view>
         </view>
         <view
@@ -87,9 +91,9 @@
             <text class="guide-num">4</text>
             <text class="guide-text">可分享知识库，也能在别人主页关注他的知识库</text>
           </view>
-          <view class="guide-tip"
-            >提示：新增文章页支持一键「插入示例模板」，不知道写什么可以直接用它。</view
-          >
+          <view class="guide-tip">
+            提示：新增文章页支持一键「插入示例模板」，不知道写什么可以直接用它。
+          </view>
         </view>
       </view>
 
@@ -113,8 +117,8 @@
                     class="fold-icon"
                     :src="
                       isFollowKbExpanded
-                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
-                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+                        ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-selected.png'
                     "
                     mode="aspectFit"
                   />
@@ -164,12 +168,15 @@
                     >
                       @{{ item.creator_username }}
                     </text>
-                    <text v-if="item.creator_username && item.description"> · </text>{{ item.description || '' }}
+                    <text v-if="item.creator_username && item.description">·</text>
+                    {{ item.description || '' }}
                   </text>
                   <text
                     v-if="typeof item.node_count === 'number'"
                     class="kb-stat"
-                  >共 {{ item.node_count }} 篇文章</text>
+                  >
+                    共 {{ item.node_count }} 篇文章
+                  </text>
                 </view>
                 <view
                   class="kb-ai"
@@ -182,9 +189,9 @@
                   class="kb-more"
                   @click.stop="openKbActions(item, 'followed')"
                 >
-<image
+                  <image
                     class="kb-more-icon"
-                    src="/static/icons/three.png"
+                    src="https://youupro.xyz/ly/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -205,8 +212,8 @@
                     class="fold-icon"
                     :src="
                       isShareKbExpanded
-                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
-                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+                        ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-selected.png'
                     "
                     mode="aspectFit"
                   />
@@ -256,12 +263,15 @@
                     >
                       @{{ item.creator_username }}
                     </text>
-                    <text v-if="item.creator_username && item.description"> · </text>{{ item.description || '' }}
+                    <text v-if="item.creator_username && item.description">·</text>
+                    {{ item.description || '' }}
                   </text>
                   <text
                     v-if="typeof item.node_count === 'number'"
                     class="kb-stat"
-                  >共 {{ item.node_count }} 篇文章</text>
+                  >
+                    共 {{ item.node_count }} 篇文章
+                  </text>
                 </view>
                 <view
                   class="kb-ai"
@@ -274,9 +284,9 @@
                   class="kb-more"
                   @click.stop="openKbActions(item, 'shared')"
                 >
-<image
+                  <image
                     class="kb-more-icon"
-                    src="/static/icons/three.png"
+                    src="https://youupro.xyz/ly/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -311,8 +321,8 @@
                     class="fold-icon"
                     :src="
                       isKbListExpanded
-                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
-                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
+                        ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-selected.png'
                     "
                     mode="aspectFit"
                   />
@@ -378,7 +388,9 @@
                   <text
                     v-if="typeof item.node_count === 'number'"
                     class="kb-stat"
-                  >共 {{ item.node_count }} 篇文章</text>
+                  >
+                    共 {{ item.node_count }} 篇文章
+                  </text>
                 </view>
                 <view
                   class="kb-ai"
@@ -390,9 +402,9 @@
                   class="kb-more"
                   @click.stop="openKbActions(item, 'mine')"
                 >
-<image
+                  <image
                     class="kb-more-icon"
-                    src="/static/icons/three.png"
+                    src="https://youupro.xyz/ly/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -432,10 +444,12 @@
       <text class="node-topbar-count">
         共 {{ (tabState[activeTab].nodeList || []).length }} 篇
         <text v-if="tabState[activeTab].isNodeListExpanded">
-          · <text @click="toggleNodeListExpand">收起</text>
+          ·
+          <text @click="toggleNodeListExpand">收起</text>
         </text>
         <text v-else>
-          · <text @click="toggleNodeListExpand">展开</text>
+          ·
+          <text @click="toggleNodeListExpand">展开</text>
         </text>
       </text>
 
@@ -452,7 +466,6 @@
 
       <!-- 文章列表内容：根据折叠状态显示/隐藏 -->
       <view v-else-if="tabState[activeTab].isNodeListExpanded">
-
         <!--增加可选链保护 length 访问 -->
         <view
           v-if="tabState[activeTab].nodeList?.length === 0"
@@ -474,20 +487,21 @@
             <text class="node-name">{{ item.name }}</text>
             <!-- 体量与时间都来自真实数据：字数按正文粗算，时间取 updated_at -->
             <text class="node-meta">
-              {{ nodeWordCount(item.content) }} 字<text v-if="nodeTimeText(item.updated_at)">
-                · {{ nodeTimeText(item.updated_at) }}</text
-              >
+              {{ nodeWordCount(item.content) }} 字
+              <text v-if="nodeTimeText(item.updated_at)">
+                · {{ nodeTimeText(item.updated_at) }}
+              </text>
             </text>
           </view>
           <view
             class="kb-more"
             @click.stop="openNodeActions(item)"
           >
-<image
-                    class="kb-more-icon"
-                    src="/static/icons/three.png"
-                    mode="aspectFit"
-                  />
+            <image
+              class="kb-more-icon"
+              src="https://youupro.xyz/ly/static/icons/three.png"
+              mode="aspectFit"
+            />
           </view>
         </view>
       </view>
@@ -496,7 +510,13 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad, onPullDownRefresh, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import {
+  onLoad,
+  onPullDownRefresh,
+  onShow,
+  onShareAppMessage,
+  onShareTimeline,
+} from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import {
   getKnowledgeBaseList,
@@ -938,15 +958,15 @@ onLoad(async (options?: { tab?: string; kbId?: string }) => {
 })
 
 onShow(() => {
-  refreshKnowledgeBaseList();
+  refreshKnowledgeBaseList()
 
   // 从「新增文章 / 编辑文章」返回时，文章列表也必须刷新。
   // 否则会停在旧数据上：新加的文章不出现，篇数还是 0（新建的知识库本来就没有文章）。
   // force = true 是因为此时 id 与当前选中项相同，不放行会被 selectKb 直接 return。
-  const currentTab = activeTab.value;
-  const selectedId = tabState.value[currentTab].selectedKbId;
+  const currentTab = activeTab.value
+  const selectedId = tabState.value[currentTab].selectedKbId
   if (selectedId) {
-    selectKb(selectedId, false, true);
+    selectKb(selectedId, false, true)
   }
 })
 
@@ -962,7 +982,7 @@ onShareAppMessage(() => {
   return {
     title: shareTitle,
     path: sharePath,
-    imageUrl: 'https://youupro.xyz/notes/static/icons/share-icon.png', // 可替换为实际分享图片地址
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-icon.png', // 可替换为实际分享图片地址
   }
 })
 
@@ -975,7 +995,7 @@ onShareTimeline(() => {
   return {
     title: shareTitle,
     query: `tab=${currentTab}&kbId=${currentKbId || ''}`,
-    imageUrl: 'https://youupro.xyz/notes/static/icons/share-icon.png', // 可替换为实际分享图片地址
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-icon.png', // 可替换为实际分享图片地址
   }
 })
 
@@ -1089,8 +1109,8 @@ onPullDownRefresh(async () => {
 /** 顶部概览：数量取自实际列表，不编造 */
 const kbTotal = computed(() =>
   activeTab.value === 'right'
-    ? kbList.value?.length ?? 0
-    : (followKbList.value?.length ?? 0) + (shareKbList.value?.length ?? 0)
+    ? (kbList.value?.length ?? 0)
+    : (followKbList.value?.length ?? 0) + (shareKbList.value?.length ?? 0),
 )
 
 /** 左栏（关注 + 分享）总数：Tab 角标用 */
@@ -1255,7 +1275,9 @@ const askKbAi = async (item: any) => {
     for (const n of nodes) {
       if (used >= KB_AI_CONTEXT_LIMIT) break
       const title = String(n?.name || '未命名文章')
-      const body = String(n?.content || '').trim().slice(0, KB_AI_CONTEXT_LIMIT)
+      const body = String(n?.content || '')
+        .trim()
+        .slice(0, KB_AI_CONTEXT_LIMIT)
       const chunk = `【${title}】\n${body}`
       if (used + chunk.length > KB_AI_CONTEXT_LIMIT && parts.length) break
       parts.push(chunk)
@@ -1300,7 +1322,7 @@ const backToKbList = () => {
 // 设计令牌：与全站橙色主色体系保持一致
 // （这一页原来是独立的「浅蓝主题」：极浅蓝底 + 蓝色调阴影，和全站的橙色主色互相打架，
 //   是页面看起来不协调的主因。旧变量名保留，避免大范围改选择器。）
-$brand: #FF7239; // 主色
+$brand: #ff7239; // 主色
 $brand-soft: #fff7f2; // 主色浅底
 $brand-line: #ffd0bb; // 主色描边
 $page-bg: #f7f8fa; // 页面底色：白卡浮在浅灰上才有层次
@@ -1373,7 +1395,7 @@ $border-radius-small: 12rpx;
 
   &.active {
     color: $white;
-    background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+    background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   }
 }
 
@@ -1716,7 +1738,7 @@ $border-radius-small: 12rpx;
   justify-content: center;
 
   &:active {
-    background: #FF7239;
+    background: #ff7239;
     color: $white;
     transform: scale(0.95);
     border: none !important;
@@ -2097,7 +2119,7 @@ $border-radius-small: 12rpx;
 
   &.active {
     color: $white;
-    background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+    background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
     box-shadow: $shadow-light;
   }
 }
@@ -2134,8 +2156,6 @@ $border-radius-small: 12rpx;
   height: 34rpx;
   opacity: 0.65;
 }
-
-
 
 /* 文章二级头部 */
 .node-topbar {
@@ -2178,7 +2198,7 @@ $border-radius-small: 12rpx;
   font-size: 24rpx;
   font-weight: 600;
   color: $white;
-  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   border-radius: 30rpx;
   border: none !important;
   box-shadow: none !important;
@@ -2357,7 +2377,7 @@ $border-radius-small: 12rpx;
   padding: 0 20rpx;
   margin: 0;
   border-radius: 30rpx;
-  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   border: none !important;
   box-shadow: none !important;
 

@@ -7,7 +7,7 @@ import { request } from '@/utils/request'
  */
 export enum CommentType {
   ROOT = 'root',
-  ANSWER = 'answer'
+  ANSWER = 'answer',
 }
 
 /**
@@ -51,17 +51,17 @@ export const getNodeAnswerComments = (params: {
   offset: number
   limit: number
 }) => {
-  return request<{ results: CommentItem[], count: number }>({
+  return request<{ results: CommentItem[]; count: number }>({
     url: `/api/v1/knowledge/knowledgenode/${params.article_id}/comments/`,
     method: 'GET',
     params: {
       type: CommentType.ANSWER,
       root_id: params.root_id,
       offset: params.offset,
-      limit: params.limit
+      limit: params.limit,
     },
     showLoading: false,
-    loadingText: '加载回复中...'
+    loadingText: '加载回复中...',
   })
 }
 
@@ -72,19 +72,19 @@ export const getNodeAnswerComments = (params: {
  */
 export const getNodeRootComments = (params: {
   article_id: string
-  offset: number,
+  offset: number
   limit: number
 }) => {
-  return request<{ results: CommentItem[], count: number }>({
+  return request<{ results: CommentItem[]; count: number }>({
     url: `/api/v1/knowledge/knowledgenode/${params.article_id}/comments/`,
     method: 'GET',
     params: {
       type: CommentType.ROOT,
       offset: params.offset,
-      limit: params.limit
+      limit: params.limit,
     },
     showLoading: true,
-    loadingText: '加载评论中...'
+    loadingText: '加载评论中...',
   })
 }
 
@@ -105,7 +105,7 @@ export const addNodeComment = (data: {
     method: 'POST',
     data,
     showLoading: true,
-    loadingText: '提交评论中...'
+    loadingText: '提交评论中...',
   })
 }
 
@@ -128,7 +128,6 @@ export const deleteNodeComment = (articleId: string, commentId: string) => {
     url: `/api/v1/knowledge/knowledgenode/${articleId}/comments/${commentId}/`,
     method: 'DELETE',
     showLoading: true,
-    loadingText: '删除评论中...'
+    loadingText: '删除评论中...',
   })
 }
-

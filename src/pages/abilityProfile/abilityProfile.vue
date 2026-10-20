@@ -339,9 +339,15 @@
           class="chart-card card-style planet-card"
         >
           <view class="card-head">
-            <text class="planet-title">{{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}</text>
+            <text class="planet-title">
+              {{ abilityView === 'planet' ? '能力星球图' : '十大维度明细' }}
+            </text>
             <text class="planet-sub">
-              {{ abilityView === 'planet' ? '雷达为骨架，顶点气泡越大 = 该项能力越强' : '点击可查看解析依据' }}
+              {{
+                abilityView === 'planet'
+                  ? '雷达为骨架，顶点气泡越大 = 该项能力越强'
+                  : '点击可查看解析依据'
+              }}
             </text>
           </view>
 
@@ -368,93 +374,93 @@
           <!-- 雷达星球视图：这里是纯 CSS 的静态预览（零依赖、不占体积）；
                可交互的 ECharts 全屏版在分包页 pagesMember/abilityRadar，见下方按钮 -->
           <view v-if="abilityView === 'planet'">
-          <view
-            class="radar-chart radar-square planet-fade"
-            @tap="closeBubbleTip"
-          >
-            <!-- ① 最底层：分割圈（浅灰，只做参考） -->
             <view
-              v-for="(ring, ri) in radar.gridRings"
-              :key="`ring-${ri}`"
-              class="radar-ring"
-              :style="{ width: `${ring * 2}%`, height: `${ring * 2}%` }"
-            />
-            <!-- ① 最底层：十条坐标轴 -->
-            <view
-              v-for="axis in radar.axes"
-              :key="`axis-${axis.key}`"
-              class="radar-axis"
-              :style="axisLineStyle(axis)"
-            />
-            <!-- ② 第二层：极淡主色填充（多边形） -->
-            <view class="radar-fill-mask">
+              class="radar-chart radar-square planet-fade"
+              @tap="closeBubbleTip"
+            >
+              <!-- ① 最底层：分割圈（浅灰，只做参考） -->
               <view
-                class="radar-fill"
-                :style="{ clipPath: `polygon(${radar.polygonPoints})` }"
+                v-for="(ring, ri) in radar.gridRings"
+                :key="`ring-${ri}`"
+                class="radar-ring"
+                :style="{ width: `${ring * 2}%`, height: `${ring * 2}%` }"
               />
-            </view>
-            <!-- ③ 第三层：雷达轮廓折线（逐边旋转绘制，角度精确） -->
-            <view
-              v-for="(edge, ei) in radar.edges"
-              :key="`edge-${ei}`"
-              class="radar-edge"
-              :style="edgeLineStyle(edge)"
-            />
-            <!-- ④ 第四层：十个维度顶点上的能力气泡（视觉焦点） -->
-            <view
-              v-for="b in radar.bubbles"
-              :key="b.key"
-              class="bubble-anchor"
-              :style="{ left: `${b.xPercent}%`, top: `${b.yPercent}%` }"
-              @tap.stop="toggleBubble(b.key)"
-            >
+              <!-- ① 最底层：十条坐标轴 -->
               <view
-                class="bubble"
-                :class="[`tier-${b.tier}`, { active: activeBubbleKey === b.key }]"
-                :style="{ width: `${b.sizeRpx}rpx`, height: `${b.sizeRpx}rpx` }"
+                v-for="axis in radar.axes"
+                :key="`axis-${axis.key}`"
+                class="radar-axis"
+                :style="axisLineStyle(axis)"
               />
-            </view>
-            <!-- 维度文字标签：全部落在雷达外圈之外，不挤在图内部 -->
-            <text
-              v-for="axis in radar.axes"
-              :key="`label-${axis.key}`"
-              class="radar-label"
-              :style="{ left: `${axis.labelXPercent}%`, top: `${axis.labelYPercent}%` }"
-            >
-              {{ axis.label }}
-            </text>
-            <!-- ⑤ 最上层：点击气泡后的 Tooltip -->
-            <view
-              v-if="activeBubble"
-              class="bubble-tip"
-              :style="bubbleTipStyle"
-              @tap.stop
-            >
-              <text class="tip-title">{{ activeBubble.label }}｜{{ activeBubble.score }}分</text>
-              <text
-                class="tip-grade"
-                :class="`grade-${bubbleGrade(activeBubble).key}`"
+              <!-- ② 第二层：极淡主色填充（多边形） -->
+              <view class="radar-fill-mask">
+                <view
+                  class="radar-fill"
+                  :style="{ clipPath: `polygon(${radar.polygonPoints})` }"
+                />
+              </view>
+              <!-- ③ 第三层：雷达轮廓折线（逐边旋转绘制，角度精确） -->
+              <view
+                v-for="(edge, ei) in radar.edges"
+                :key="`edge-${ei}`"
+                class="radar-edge"
+                :style="edgeLineStyle(edge)"
+              />
+              <!-- ④ 第四层：十个维度顶点上的能力气泡（视觉焦点） -->
+              <view
+                v-for="b in radar.bubbles"
+                :key="b.key"
+                class="bubble-anchor"
+                :style="{ left: `${b.xPercent}%`, top: `${b.yPercent}%` }"
+                @tap.stop="toggleBubble(b.key)"
               >
-                【{{ bubbleGrade(activeBubble).text }}】
-              </text>
-              <text class="tip-desc">{{ bubbleTipDesc(activeBubble) }}</text>
+                <view
+                  class="bubble"
+                  :class="[`tier-${b.tier}`, { active: activeBubbleKey === b.key }]"
+                  :style="{ width: `${b.sizeRpx}rpx`, height: `${b.sizeRpx}rpx` }"
+                />
+              </view>
+              <!-- 维度文字标签：全部落在雷达外圈之外，不挤在图内部 -->
               <text
-                v-if="activeBubbleBadge"
-                class="tip-badge"
-                @tap="goBadgeWall(activeBubbleBadge.id)"
+                v-for="axis in radar.axes"
+                :key="`label-${axis.key}`"
+                class="radar-label"
+                :style="{ left: `${axis.labelXPercent}%`, top: `${axis.labelYPercent}%` }"
               >
-                已解锁【{{ activeBubbleBadge.name }}】徽章
+                {{ axis.label }}
               </text>
+              <!-- ⑤ 最上层：点击气泡后的 Tooltip -->
+              <view
+                v-if="activeBubble"
+                class="bubble-tip"
+                :style="bubbleTipStyle"
+                @tap.stop
+              >
+                <text class="tip-title">{{ activeBubble.label }}｜{{ activeBubble.score }}分</text>
+                <text
+                  class="tip-grade"
+                  :class="`grade-${bubbleGrade(activeBubble).key}`"
+                >
+                  【{{ bubbleGrade(activeBubble).text }}】
+                </text>
+                <text class="tip-desc">{{ bubbleTipDesc(activeBubble) }}</text>
+                <text
+                  v-if="activeBubbleBadge"
+                  class="tip-badge"
+                  @tap="goBadgeWall(activeBubbleBadge.id)"
+                >
+                  已解锁【{{ activeBubbleBadge.name }}】徽章
+                </text>
+              </view>
             </view>
-          </view>
 
-          <!-- 全屏查看：ECharts 版放在分包里，主包体积不受影响 -->
-          <button
-            class="full-radar-btn"
-            @tap="openFullRadar"
-          >
-            全屏查看雷达星球图
-          </button>
+            <!-- 全屏查看：ECharts 版放在分包里，主包体积不受影响 -->
+            <button
+              class="full-radar-btn"
+              @tap="openFullRadar"
+            >
+              全屏查看雷达星球图
+            </button>
           </view>
 
           <!-- 十维明细：与星球图展示同一份数据，切到这一档时渲染 -->
@@ -462,7 +468,6 @@
             v-else
             class="planet-fade"
           >
-
             <view
               v-for="dim in profile.dimensions"
               :key="dim.key"
@@ -517,7 +522,8 @@
                   class="chip"
                   :class="s.proficiency"
                 >
-                  {{ s.name }}<text v-if="s.proficiency === 'proficient'"> ·熟练</text>
+                  {{ s.name }}
+                  <text v-if="s.proficiency === 'proficient'">·熟练</text>
                 </text>
               </view>
 
@@ -667,7 +673,7 @@
                 />
               </view>
               <text class="badge-name">{{ badge.name }}</text>
-                <text class="badge-name-en">{{ badge.name_en }}</text>
+              <text class="badge-name-en">{{ badge.name_en }}</text>
               <text class="badge-cond">{{ badge.condition }}</text>
             </view>
           </view>
@@ -786,9 +792,7 @@
       </block>
 
       <view class="page-footer-source">
-        <text class="source-text">
-          能力画像仅用于生涯规划参考，不作为任何招聘录用的依据
-        </text>
+        <text class="source-text">能力画像仅用于生涯规划参考，不作为任何招聘录用的依据</text>
       </view>
     </scroll-view>
 
@@ -856,9 +860,7 @@
         </view>
 
         <view class="drawer-foot">
-          <text class="drawer-foot-text">
-            能力画像的数据保存在本机，不需要登录即可使用与演示。
-          </text>
+          <text class="drawer-foot-text">能力画像的数据保存在本机，不需要登录即可使用与演示。</text>
         </view>
       </scroll-view>
     </view>
@@ -866,8 +868,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { onLoad, onUnload, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
+import { ref, computed, watch } from 'vue'
+import { onLoad, onUnload, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import {
   GRADE_LABEL,
   GRADE_OPTIONS,
@@ -878,22 +880,22 @@ import {
   type StudentProfile,
   type StudentProfileInput,
   type StudentDimension,
-} from '@/types/studentProfile';
-import { LEVEL_LABEL, PARSE_SOURCE_LABEL, type AbilityDimensionKey } from '@/types/jobProfile';
+} from '@/types/studentProfile'
+import { LEVEL_LABEL, PARSE_SOURCE_LABEL, type AbilityDimensionKey } from '@/types/jobProfile'
 import {
   buildRadarLayout,
   type RadarAxis,
   type RadarBubble,
   type RadarEdge,
-} from '@/utils/abilityPlanet';
-import { generateStudentProfile, fetchSavedStudentProfile } from '@/api/studentProfile';
-import { STUDENT_PROFILE_SAMPLE } from '@/utils/studentProfileParser';
+} from '@/utils/abilityPlanet'
+import { generateStudentProfile, fetchSavedStudentProfile } from '@/api/studentProfile'
+import { STUDENT_PROFILE_SAMPLE } from '@/utils/studentProfileParser'
 import {
   CURRENT_FEATURE_KEY,
   FEATURE_NAV_GROUPS,
   openFeatureNav,
   type FeatureNavItem,
-} from '@/utils/featureNav';
+} from '@/utils/featureNav'
 
 // ====================== 表单 ======================
 
@@ -910,72 +912,72 @@ const createEmptyForm = (): StudentProfileInput => ({
   awards_text: '',
   gpa: '',
   self_evaluation: '',
-});
+})
 
-const form = ref<StudentProfileInput>(createEmptyForm());
-const formError = ref('');
+const form = ref<StudentProfileInput>(createEmptyForm())
+const formError = ref('')
 const groupOpen = ref<Record<string, boolean>>({
   basic: true,
   ability: true,
   extra: false,
-});
+})
 
-const gradeRange = GRADE_OPTIONS.map((g) => GRADE_LABEL[g]);
+const gradeRange = GRADE_OPTIONS.map((g) => GRADE_LABEL[g])
 const gradeIndex = computed(() =>
-  form.value.grade ? Math.max(0, GRADE_OPTIONS.indexOf(form.value.grade as GradeKey)) : 0
-);
+  form.value.grade ? Math.max(0, GRADE_OPTIONS.indexOf(form.value.grade as GradeKey)) : 0,
+)
 const gradeLabelText = computed(() =>
-  form.value.grade ? GRADE_LABEL[form.value.grade as GradeKey] : ''
-);
+  form.value.grade ? GRADE_LABEL[form.value.grade as GradeKey] : '',
+)
 
 const onGradeChange = (e: { detail: { value: number | string } }) => {
-  const idx = Number(e.detail.value);
-  form.value.grade = GRADE_OPTIONS[idx] ?? '';
-};
+  const idx = Number(e.detail.value)
+  form.value.grade = GRADE_OPTIONS[idx] ?? ''
+}
 
 const toggleGroup = (key: string) => {
-  groupOpen.value[key] = !groupOpen.value[key];
-};
+  groupOpen.value[key] = !groupOpen.value[key]
+}
 
 // ====================== 页面状态 ======================
 
-const loading = ref(false);
-const errorMsg = ref('');
-const progressText = ref('');
-const degradedReason = ref('');
-const profile = ref<StudentProfile | null>(null);
-const expandedKey = ref<AbilityDimensionKey | null>(null);
+const loading = ref(false)
+const errorMsg = ref('')
+const progressText = ref('')
+const degradedReason = ref('')
+const profile = ref<StudentProfile | null>(null)
+const expandedKey = ref<AbilityDimensionKey | null>(null)
 
 /**
  * 顶部说明弹窗。
  * 首次进入自动弹出，点「了解」关闭并记住选择，之后不再反复打扰。
  */
-const INTRO_MODAL_KEY = 'abilityIntroModalDismissed';
-const introModalVisible = ref(false);
+const INTRO_MODAL_KEY = 'abilityIntroModalDismissed'
+const introModalVisible = ref(false)
 
 /** 进入页面时：没关闭过就弹一次 */
 const maybeShowIntroModal = () => {
   try {
-    introModalVisible.value = uni.getStorageSync(INTRO_MODAL_KEY) !== '1';
+    introModalVisible.value = uni.getStorageSync(INTRO_MODAL_KEY) !== '1'
   } catch {
-    introModalVisible.value = true;
+    introModalVisible.value = true
   }
-};
+}
 
 const closeIntroModal = () => {
-  introModalVisible.value = false;
+  introModalVisible.value = false
   try {
-    uni.setStorageSync(INTRO_MODAL_KEY, '1');
+    uni.setStorageSync(INTRO_MODAL_KEY, '1')
   } catch {
     // 存不下也不影响关闭
   }
-};
+}
 
 /**
  * 「信息不足」阈值：低于它说明原文依据太少，结论只作参考。
  * 维度标签上的「信息不足」标记与解析明细里的说明共用这一个值，避免两处脱节。
  */
-const INFO_THRESHOLD = 0.35;
+const INFO_THRESHOLD = 0.35
 
 /**
  * 取某个维度的解析明细。
@@ -985,14 +987,14 @@ const INFO_THRESHOLD = 0.35;
  * 也不要凭空编一个推导过程出来。
  */
 const parseDetailOf = (dim: StudentDimension): DimensionParseDetail => {
-  if (dim.parse_detail) return dim.parse_detail;
+  if (dim.parse_detail) return dim.parse_detail
 
   const kind: DimensionParseDetail['kind'] =
     dim.key === 'professional_skill'
       ? 'skill'
       : dim.key === 'certificate'
         ? 'certificate'
-        : 'keyword';
+        : 'keyword'
 
   return {
     kind,
@@ -1005,8 +1007,8 @@ const parseDetailOf = (dim: StudentDimension): DimensionParseDetail => {
     score_curve: '本地规则解析会给出完整评分曲线；点「重新生成画像」即可看到。',
     confidence_formula: `置信度 ${Math.round(dim.confidence * 100)}% 由解析方直接给出，未提供计算过程。`,
     advice: '补充相关经历后重新生成画像，就能得到可追溯的解析明细。',
-  };
-};
+  }
+}
 
 // ====================== 能力卡片视图切换 ======================
 
@@ -1095,10 +1097,10 @@ const goAnchor = (id: string) => {
 const animRatio = ref(1)
 
 const displayCompleteness = computed(() =>
-  Math.round((profile.value?.completeness ?? 0) * animRatio.value)
+  Math.round((profile.value?.completeness ?? 0) * animRatio.value),
 )
 const displayCompetitiveness = computed(() =>
-  Math.round((profile.value?.competitiveness ?? 0) * animRatio.value)
+  Math.round((profile.value?.competitiveness ?? 0) * animRatio.value),
 )
 
 let animTimer: ReturnType<typeof setInterval> | null = null
@@ -1142,23 +1144,23 @@ watch(
       animRatio.value = 1
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
-let inFlight = false;
-let unloaded = false;
+let inFlight = false
+let unloaded = false
 
 onUnload(() => {
-  unloaded = true;
+  unloaded = true
   // 离开页面时清掉动画定时器，避免后台空转
-  stopScoreAnimation();
+  stopScoreAnimation()
   if (badgeHighlightTimer) {
-    clearTimeout(badgeHighlightTimer);
-    badgeHighlightTimer = null;
+    clearTimeout(badgeHighlightTimer)
+    badgeHighlightTimer = null
   }
-});
+})
 
-const STORAGE_KEY = 'studentAbilityProfile';
+const STORAGE_KEY = 'studentAbilityProfile'
 
 // ====================== 派生数据 ======================
 
@@ -1170,9 +1172,9 @@ const radar = computed(() =>
       label: d.label,
       score: d.score,
       level: d.level,
-    }))
-  )
-);
+    })),
+  ),
+)
 
 /**
  * 打开全屏雷达星球图
@@ -1183,38 +1185,36 @@ const radar = computed(() =>
  *      顶到 0.97MB；放进分包后主包不受影响，只有点进来时才下载。
  */
 const openFullRadar = () => {
-  uni.navigateTo({ url: '/pagesMember/abilityRadar/abilityRadar' });
-};
+  uni.navigateTo({ url: '/pagesMember/abilityRadar/abilityRadar' })
+}
 
-const isDegraded = computed(() => !!degradedReason.value);
+const isDegraded = computed(() => !!degradedReason.value)
 
 const sourceLabel = computed(() =>
-  profile.value ? PARSE_SOURCE_LABEL[profile.value.parse_method] : ''
-);
+  profile.value ? PARSE_SOURCE_LABEL[profile.value.parse_method] : '',
+)
 
 const confidencePercent = computed(() =>
-  profile.value ? Math.round(profile.value.confidence * 100) : 0
-);
+  profile.value ? Math.round(profile.value.confidence * 100) : 0,
+)
 
-const unlockedCount = computed(
-  () => (profile.value?.badges ?? []).filter((b) => b.unlocked).length
-);
+const unlockedCount = computed(() => (profile.value?.badges ?? []).filter((b) => b.unlocked).length)
 
 const dimensionLabelOf = (key: AbilityDimensionKey): string =>
-  profile.value?.dimensions.find((d) => d.key === key)?.label ?? key;
+  profile.value?.dimensions.find((d) => d.key === key)?.label ?? key
 
-const strengthLabels = computed(() => (profile.value?.strengths ?? []).map(dimensionLabelOf));
-const weaknessLabels = computed(() => (profile.value?.weaknesses ?? []).map(dimensionLabelOf));
+const strengthLabels = computed(() => (profile.value?.strengths ?? []).map(dimensionLabelOf))
+const weaknessLabels = computed(() => (profile.value?.weaknesses ?? []).map(dimensionLabelOf))
 
 // ====================== 展示辅助 ======================
 
-const levelLabel = (level: 'high' | 'medium' | 'low'): string => LEVEL_LABEL[level] ?? '中';
+const levelLabel = (level: 'high' | 'medium' | 'low'): string => LEVEL_LABEL[level] ?? '中'
 
 const levelColor = (level: 'high' | 'medium' | 'low'): string => {
-  if (level === 'high') return '#ff4500';
-  if (level === 'medium') return '#f59e0b';
-  return '#94a3b8';
-};
+  if (level === 'high') return '#ff4500'
+  if (level === 'medium') return '#f59e0b'
+  return '#94a3b8'
+}
 
 /** 轴线的定位与角度（圆心 → 外圈的一段细灰线） */
 const axisLineStyle = (axis: RadarAxis) => ({
@@ -1222,7 +1222,7 @@ const axisLineStyle = (axis: RadarAxis) => ({
   top: `${axis.lineMidYPercent}%`,
   width: `${axis.lineLengthPercent}%`,
   transform: `translate(-50%, -50%) rotate(${axis.lineAngleDeg}deg)`,
-});
+})
 
 /**
  * 轮廓折线一条边的定位与角度
@@ -1235,39 +1235,39 @@ const edgeLineStyle = (edge: RadarEdge) => ({
   top: `${edge.midYPercent}%`,
   width: `${edge.lengthPercent}%`,
   transform: `translate(-50%, -50%) rotate(${edge.angleDeg}deg)`,
-});
+})
 
 /** 当前点开的气泡（再点一次收起） */
-const activeBubbleKey = ref<AbilityDimensionKey | null>(null);
+const activeBubbleKey = ref<AbilityDimensionKey | null>(null)
 
 const activeBubble = computed(
-  () => radar.value.bubbles.find((b) => b.key === activeBubbleKey.value) ?? null
-);
+  () => radar.value.bubbles.find((b) => b.key === activeBubbleKey.value) ?? null,
+)
 
 const toggleBubble = (key: AbilityDimensionKey) => {
-  activeBubbleKey.value = activeBubbleKey.value === key ? null : key;
-};
+  activeBubbleKey.value = activeBubbleKey.value === key ? null : key
+}
 
 /** 点空白处关闭 Tooltip */
 const closeBubbleTip = () => {
-  activeBubbleKey.value = null;
-};
+  activeBubbleKey.value = null
+}
 
 /** 分数档位（Tooltip 里那一行【优秀】） */
 const bubbleGrade = (b: RadarBubble): { key: string; text: string } => {
-  if (b.score >= 85) return { key: 'excellent', text: '优秀' };
-  if (b.score >= 75) return { key: 'good', text: '良好' };
-  if (b.score >= 60) return { key: 'fair', text: '中等' };
-  return { key: 'weak', text: '待提升' };
-};
+  if (b.score >= 85) return { key: 'excellent', text: '优秀' }
+  if (b.score >= 75) return { key: 'good', text: '良好' }
+  if (b.score >= 60) return { key: 'fair', text: '中等' }
+  return { key: 'weak', text: '待提升' }
+}
 
 /** Tooltip 说明文案 */
 const bubbleTipDesc = (b: RadarBubble): string => {
-  if (b.score >= 85) return `你的${b.label}表现突出，是求职核心竞争力`;
-  if (b.score >= 75) return `你的${b.label}表现良好，继续保持即可`;
-  if (b.score >= 60) return `你的${b.label}处于中等水平，还有提升空间`;
-  return `你的${b.label}目前偏弱，建议优先补齐`;
-};
+  if (b.score >= 85) return `你的${b.label}表现突出，是求职核心竞争力`
+  if (b.score >= 75) return `你的${b.label}表现良好，继续保持即可`
+  if (b.score >= 60) return `你的${b.label}处于中等水平，还有提升空间`
+  return `你的${b.label}目前偏弱，建议优先补齐`
+}
 
 /**
  * 该维度对应的已解锁徽章
@@ -1276,26 +1276,26 @@ const bubbleTipDesc = (b: RadarBubble): string => {
  * 所以这里是一对一精确匹配，不需要额外维护映射表；未解锁则不给提示。
  */
 const activeBubbleBadge = computed(() => {
-  const key = activeBubble.value?.key;
-  if (!key) return null;
-  return (profile.value?.badges ?? []).find((b) => b.dimension === key && b.unlocked) ?? null;
-});
+  const key = activeBubble.value?.key
+  if (!key) return null
+  return (profile.value?.badges ?? []).find((b) => b.dimension === key && b.unlocked) ?? null
+})
 
 /** 高亮中的徽章 id（点 Tooltip 里的徽章提示后，徽章墙对应徽章闪一下） */
-const highlightBadgeId = ref<string | null>(null);
-let badgeHighlightTimer: ReturnType<typeof setTimeout> | null = null;
+const highlightBadgeId = ref<string | null>(null)
+let badgeHighlightTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 跳到徽章墙并高亮对应徽章：复用页面已有的锚点滚动 */
 const goBadgeWall = (badgeId: string) => {
-  activeBubbleKey.value = null;
-  highlightBadgeId.value = badgeId;
-  goAnchor('sec-badge');
-  if (badgeHighlightTimer) clearTimeout(badgeHighlightTimer);
+  activeBubbleKey.value = null
+  highlightBadgeId.value = badgeId
+  goAnchor('sec-badge')
+  if (badgeHighlightTimer) clearTimeout(badgeHighlightTimer)
   badgeHighlightTimer = setTimeout(() => {
-    highlightBadgeId.value = null;
-    badgeHighlightTimer = null;
-  }, 2400);
-};
+    highlightBadgeId.value = null
+    badgeHighlightTimer = null
+  }, 2400)
+}
 
 /**
  * Tooltip 位置
@@ -1304,17 +1304,17 @@ const goBadgeWall = (badgeId: string) => {
  * 纵向按气泡在上半区/下半区决定放它下方还是上方，避免顶出卡片。
  */
 const bubbleTipStyle = computed(() => {
-  const b = activeBubble.value;
-  if (!b) return {};
-  const left = Math.min(72, Math.max(28, b.xPercent));
+  const b = activeBubble.value
+  if (!b) return {}
+  const left = Math.min(72, Math.max(28, b.xPercent))
   return b.yPercent < 50
     ? { left: `${left}%`, top: `${b.yPercent + 11}%` }
-    : { left: `${left}%`, bottom: `${100 - b.yPercent + 11}%` };
-});
+    : { left: `${left}%`, bottom: `${100 - b.yPercent + 11}%` }
+})
 
 const toggleDim = (key: AbilityDimensionKey) => {
-  expandedKey.value = expandedKey.value === key ? null : key;
-};
+  expandedKey.value = expandedKey.value === key ? null : key
+}
 
 const scrollToForm = () => {
   // 「返回修改」= 回到页面顶部的填报表单。
@@ -1333,31 +1333,29 @@ const scrollToForm = () => {
     return
   }
   scrollTop.value = 0
-};
-
-
+}
 
 /** 跳转到人岗匹配页（复用本地已保存的画像，离线可用） */
 const goJobMatch = () => {
-  uni.navigateTo({ url: '/pagesMember/jobMatch/jobMatch' });
-};
+  uni.navigateTo({ url: '/pagesMember/jobMatch/jobMatch' })
+}
 
 /** 跳转到生涯发展报告页 */
 const goCareerReport = () => {
-  uni.navigateTo({ url: '/pagesMember/careerReport/careerReport' });
-};
+  uni.navigateTo({ url: '/pagesMember/careerReport/careerReport' })
+}
 
 // ====================== 功能侧边栏 ======================
 
-const drawerOpen = ref(false);
+const drawerOpen = ref(false)
 
 const openDrawer = () => {
-  drawerOpen.value = true;
-};
+  drawerOpen.value = true
+}
 
 const closeDrawer = () => {
-  drawerOpen.value = false;
-};
+  drawerOpen.value = false
+}
 
 /**
  * 打开侧边栏里的某个功能。
@@ -1366,52 +1364,52 @@ const closeDrawer = () => {
  * tabBar 页面 switchTab 到自己会闪一下，体验很差。
  */
 const openFeature = (item: FeatureNavItem) => {
-  closeDrawer();
-  if (item.key === CURRENT_FEATURE_KEY) return;
-  openFeatureNav(item);
-};
+  closeDrawer()
+  if (item.key === CURRENT_FEATURE_KEY) return
+  openFeatureNav(item)
+}
 
 // ====================== 表单操作 ======================
 
 const fillSample = () => {
-  form.value = { ...STUDENT_PROFILE_SAMPLE };
-  formError.value = '';
-  uni.showToast({ title: '已填入示例数据', icon: 'none', duration: 1500 });
-};
+  form.value = { ...STUDENT_PROFILE_SAMPLE }
+  formError.value = ''
+  uni.showToast({ title: '已填入示例数据', icon: 'none', duration: 1500 })
+}
 
 const clearForm = () => {
-  form.value = createEmptyForm();
-  formError.value = '';
-  profile.value = null;
-  errorMsg.value = '';
-  degradedReason.value = '';
-  uni.removeStorageSync(STORAGE_KEY);
-};
+  form.value = createEmptyForm()
+  formError.value = ''
+  profile.value = null
+  errorMsg.value = ''
+  degradedReason.value = ''
+  uni.removeStorageSync(STORAGE_KEY)
+}
 
 // ====================== 生成 ======================
 
 const generate = async (opts: { forceLocal?: boolean } = {}) => {
-  if (inFlight) return;
+  if (inFlight) return
 
   // 最小必填校验：没有专业和技能，画像毫无意义，直接拦下避免产出误导性结果
   if (!form.value.major.trim()) {
-    formError.value = '请先填写「专业」';
-    return;
+    formError.value = '请先填写「专业」'
+    return
   }
   if (!form.value.skills_text.trim()) {
-    formError.value = '请至少填写「专业技能」';
-    return;
+    formError.value = '请至少填写「专业技能」'
+    return
   }
-  formError.value = '';
+  formError.value = ''
 
-  inFlight = true;
-  loading.value = true;
-  errorMsg.value = '';
-  degradedReason.value = '';
-  expandedKey.value = null;
+  inFlight = true
+  loading.value = true
+  errorMsg.value = ''
+  degradedReason.value = ''
+  expandedKey.value = null
 
   try {
-    progressText.value = '正在读取信息…';
+    progressText.value = '正在读取信息…'
     const result = await generateStudentProfile(
       { ...form.value },
       {
@@ -1420,72 +1418,72 @@ const generate = async (opts: { forceLocal?: boolean } = {}) => {
         forceLocal: opts.forceLocal,
         shouldStop: () => unloaded,
         onProgress: (msg) => {
-          progressText.value = msg;
+          progressText.value = msg
         },
-      }
-    );
+      },
+    )
 
-    profile.value = result.profile;
-    degradedReason.value = result.degraded ? result.degradedReason || '接口未就绪' : '';
-    saveToStorage(result.profile);
+    profile.value = result.profile
+    degradedReason.value = result.degraded ? result.degradedReason || '接口未就绪' : ''
+    saveToStorage(result.profile)
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') return;
-    errorMsg.value = err instanceof Error ? err.message : '生成能力画像失败';
+    if (err instanceof Error && err.name === 'AbortError') return
+    errorMsg.value = err instanceof Error ? err.message : '生成能力画像失败'
   } finally {
-    inFlight = false;
-    loading.value = false;
-    progressText.value = '';
+    inFlight = false
+    loading.value = false
+    progressText.value = ''
   }
-};
+}
 
 // ====================== 本地缓存 ======================
 
 const saveToStorage = (p: StudentProfile) => {
   try {
-    uni.setStorageSync(STORAGE_KEY, p);
+    uni.setStorageSync(STORAGE_KEY, p)
   } catch {
     // 存储失败不影响展示
   }
-};
+}
 
 const readFromStorage = (): StudentProfile | null => {
   try {
-    const raw = uni.getStorageSync(STORAGE_KEY);
-    if (!raw || typeof raw !== 'object') return null;
+    const raw = uni.getStorageSync(STORAGE_KEY)
+    if (!raw || typeof raw !== 'object') return null
     // 必须走归一化再使用：
     //   旧缓存里徽章的 icon 还是 emoji（<image src="⚙️"> 会什么都不显示），
     //   也没有 parse_detail（解析明细会退化成兜底文案）。
     //   归一化会按徽章 id 回填本地图片路径与英文名，并补齐缺失字段。
-    return normalizeStudentProfile(raw as Partial<StudentProfile>);
+    return normalizeStudentProfile(raw as Partial<StudentProfile>)
   } catch {
-    return null;
+    return null
   }
-};
+}
 
 // ====================== 生命周期 ======================
 
 onLoad(async () => {
-  maybeShowIntroModal();
+  maybeShowIntroModal()
 
   // 1) 优先用本地缓存，刷新/重进页面不必重算
-  const cached = readFromStorage();
+  const cached = readFromStorage()
   if (cached) {
-    profile.value = cached;
-    return;
+    profile.value = cached
+    return
   }
 
   // 2) 没有本地缓存，尝试拉取后端已保存的画像
   //    （未登录或接口未就绪时会静默失败，不影响填写表单）
   try {
-    const saved = await fetchSavedStudentProfile();
+    const saved = await fetchSavedStudentProfile()
     if (saved) {
-      profile.value = saved;
-      saveToStorage(saved);
+      profile.value = saved
+      saveToStorage(saved)
     }
   } catch {
     // 忽略：无登录态或接口未实现都属正常情况
   }
-});
+})
 
 // ====================== 分享 ======================
 
@@ -1494,12 +1492,12 @@ onShareAppMessage(() => ({
     ? `我的就业竞争力评分 ${profile.value.competitiveness} 分`
     : '测一测你的就业能力画像',
   path: '/pages/abilityProfile/abilityProfile',
-}));
+}))
 
 onShareTimeline(() => ({
   title: '十大维度评估你的就业能力，生成能力星球图',
   path: '/pages/abilityProfile/abilityProfile',
-}));
+}))
 </script>
 
 <style scoped lang="scss">
@@ -1582,7 +1580,7 @@ onShareTimeline(() => ({
 
 .planet-tab-text {
   font-size: 26rpx;
-  color: #FF7239;
+  color: #ff7239;
   transition: color 0.2s ease;
 }
 
@@ -1593,14 +1591,16 @@ onShareTimeline(() => ({
   width: 0;
   height: 4rpx;
   border-radius: 2rpx;
-  background: #FF7239;
+  background: #ff7239;
   transform: translateX(-50%);
   opacity: 0;
-  transition: width 0.22s ease, opacity 0.22s ease;
+  transition:
+    width 0.22s ease,
+    opacity 0.22s ease;
 }
 
 .planet-tab.active .planet-tab-text {
-  color: #FF7239;
+  color: #ff7239;
   font-weight: 600;
 }
 
@@ -1634,7 +1634,7 @@ onShareTimeline(() => ({
 .sample-btn {
   font-size: 24rpx;
   color: #ff4500;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
   border-radius: 24rpx;
   padding: 4rpx 20rpx;
 }
@@ -1744,11 +1744,11 @@ onShareTimeline(() => ({
 }
 
 .primary-btn {
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
 
   &[disabled] {
-    background: #FFC9B4;
+    background: #ffc9b4;
     color: #fff;
   }
 }
@@ -1756,7 +1756,7 @@ onShareTimeline(() => ({
 .ghost-btn {
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
 }
 
 // ========== 状态卡 ==========
@@ -1785,7 +1785,7 @@ onShareTimeline(() => ({
   width: 54rpx;
   height: 54rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #FF7239;
+  border-top-color: #ff7239;
   border-radius: 50%;
   margin-bottom: 26rpx;
   animation: spin 0.9s linear infinite;
@@ -1910,7 +1910,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   border-radius: 40rpx;
   border: none;
 }
@@ -2350,7 +2350,7 @@ onShareTimeline(() => ({
 
   &.unlocked {
     background: linear-gradient(135deg, #fff1eb 0%, #ffd9c7 100%);
-    border-color: #FF7239;
+    border-color: #ff7239;
     box-shadow: 0 0 20rpx rgba(255, 114, 57, 0.34);
   }
 }
@@ -2493,7 +2493,7 @@ onShareTimeline(() => ({
   padding: 20rpx 14rpx;
   /* 空心样式：白底 + 橙色描边，文字与图标同色 */
   background: #ffffff;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
   border-right: none;
   border-radius: 20rpx 0 0 20rpx;
   box-shadow: -2rpx 2rpx 12rpx rgba(255, 114, 57, 0.28);
@@ -2510,13 +2510,13 @@ onShareTimeline(() => ({
 
 .side-trigger-icon {
   font-size: 30rpx;
-  color: #FF7239;
+  color: #ff7239;
   line-height: 1.1;
 }
 
 .side-trigger-label {
   font-size: 22rpx;
-  color: #FF7239;
+  color: #ff7239;
   margin-top: 6rpx;
 }
 
@@ -2558,7 +2558,7 @@ onShareTimeline(() => ({
   align-items: flex-start;
   justify-content: space-between;
   padding: 36rpx 28rpx 24rpx;
-  background: #FF7239;
+  background: #ff7239;
   border-radius: 0 28rpx 0 0;
 }
 
@@ -2638,7 +2638,7 @@ onShareTimeline(() => ({
   margin-bottom: 4rpx;
 
   .drawer-item.current & {
-    color: #FF7239;
+    color: #ff7239;
   }
 }
 
@@ -2655,7 +2655,7 @@ onShareTimeline(() => ({
   flex-shrink: 0;
 
   .drawer-item.current & {
-    color: #FF7239;
+    color: #ff7239;
     font-size: 20rpx;
   }
 }
@@ -2701,7 +2701,7 @@ onShareTimeline(() => ({
     background: #fff1ec;
 
     .anchor-text {
-      color: #FF7239;
+      color: #ff7239;
       font-weight: 600;
     }
   }
@@ -2709,7 +2709,7 @@ onShareTimeline(() => ({
 
 .anchor-text {
   font-size: 26rpx;
-  color: #FF7239;
+  color: #ff7239;
 }
 
 /* ========== 顶部说明弹窗 ========== */
@@ -2757,7 +2757,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   border-radius: 16rpx;
   border: none;
 

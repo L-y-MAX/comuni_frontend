@@ -7,7 +7,7 @@
         <view class="logo-section">
           <!-- 应用图标 -->
           <image
-            src="https://youupro.xyz/notes/static/logo.png"
+            src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/logo.png"
             class="app-logo"
             mode="widthFix"
           ></image>
@@ -24,7 +24,7 @@
             :class="{ error: usernameError, focused: usernameFocused }"
           >
             <image
-              src="https://youupro.xyz/notes/static/icons/portrait.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/portrait.png"
               class="username-icon"
               mode="widthFix"
             />
@@ -53,7 +53,7 @@
             :class="{ error: passwordError, focused: passwordFocused }"
           >
             <image
-              src="https://youupro.xyz/notes/static/icons/password.png"
+              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/password.png"
               class="password-icon"
               mode="widthFix"
             />
@@ -106,7 +106,7 @@
           :disabled="isLoading"
         >
           <image
-            src="https://youupro.xyz/notes/static/icons/wx.png"
+            src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/wx.png"
             class="wechat-icon"
             mode="widthFix"
           />
@@ -249,7 +249,9 @@ const handleLogin = async (): Promise<void> => {
       if (response.statusCode === 400) throw new Error(serverMsg || '账号或密码格式不正确')
       if (response.statusCode === 429) throw new Error('操作太频繁，请稍后再试')
       if (response.statusCode >= 500) {
-        throw new Error(`服务器异常（${response.statusCode}）：后端依赖可能没启动（Redis / 数据库）`)
+        throw new Error(
+          `服务器异常（${response.statusCode}）：后端依赖可能没启动（Redis / 数据库）`,
+        )
       }
       throw new Error(serverMsg || `登录失败（${response.statusCode}）`)
     }

@@ -16,132 +16,132 @@
  *     两者由同一份数据生成，保证内容一致。
  */
 
-import type { AbilityDimensionKey, ParseSource } from '@/types/jobProfile';
-import type { MatchResult } from './jobMatchTypes';
+import type { AbilityDimensionKey, ParseSource } from '@/types/jobProfile'
+import type { MatchResult } from './jobMatchTypes'
 
 // ====================== 成长计划任务 ======================
 
 /** 计划阶段 */
-export type PlanPhase = 'short' | 'medium' | 'long';
+export type PlanPhase = 'short' | 'medium' | 'long'
 
 export const PLAN_PHASE_LABEL: Record<PlanPhase, string> = {
   short: '短期（1–3个月）',
   medium: '中期（4–12个月）',
   long: '长期（1年以上）',
-};
+}
 
 export const PLAN_PHASE_RANGE: Record<PlanPhase, string> = {
   short: '第 1–3 个月',
   medium: '第 4–12 个月',
   long: '第 13 个月起',
-};
+}
 
-export type TaskPriority = 'high' | 'medium' | 'low';
+export type TaskPriority = 'high' | 'medium' | 'low'
 
 export const TASK_PRIORITY_LABEL: Record<TaskPriority, string> = {
   high: '高优先',
   medium: '中优先',
   low: '持续进行',
-};
+}
 
 export interface GrowthTask {
-  id: string;
-  phase: PlanPhase;
-  title: string;
-  detail: string;
+  id: string
+  phase: PlanPhase
+  title: string
+  detail: string
   /** 关联的能力维度 */
-  dimension?: AbilityDimensionKey;
+  dimension?: AbilityDimensionKey
   /** 关联的具体技能/证书名称 */
-  relatedItem?: string;
-  priority: TaskPriority;
+  relatedItem?: string
+  priority: TaskPriority
   /** 建议完成月份（第几个月） */
-  dueMonth: number;
+  dueMonth: number
   /** 是否已完成（用户可勾选） */
-  done: boolean;
+  done: boolean
 }
 
 // ====================== 评估节点 ======================
 
 export interface EvaluationMilestone {
   /** 第几个月 */
-  month: number;
-  label: string;
+  month: number
+  label: string
   /** 复盘重点 */
-  focus: string;
+  focus: string
   /** 核心指标（计划书要求：学习完成率、技能提升度、实践成果、竞争力评分） */
-  metrics: string[];
+  metrics: string[]
 }
 
 // ====================== 职业路径 ======================
 
 export interface LateralPathBrief {
-  jobId: string;
-  jobName: string;
-  industry: string;
-  similarity: number;
-  reason: string;
+  jobId: string
+  jobName: string
+  industry: string
+  similarity: number
+  reason: string
 }
 
 export interface CareerPath {
   /** 当前目标岗位 */
-  currentJob: string;
+  currentJob: string
   /** 垂直晋升路径 */
-  verticalPath: string[];
+  verticalPath: string[]
   /** 跨岗换路路径 */
-  lateralPaths: LateralPathBrief[];
+  lateralPaths: LateralPathBrief[]
 }
 
 // ====================== 报告主体 ======================
 
 export interface ReportStudentSnapshot {
-  name: string;
-  major: string;
-  gradeLabel: string;
-  targetJob: string;
+  name: string
+  major: string
+  gradeLabel: string
+  targetJob: string
   /** 综合就业竞争力评分 */
-  competitiveness: number;
+  competitiveness: number
   /** 信息完整度 */
-  completeness: number;
+  completeness: number
 }
 
 export interface CareerReport {
   /** 报告标识（用于本地存储与导出请求） */
-  id: string;
-  generatedAt: string;
-  student: ReportStudentSnapshot;
+  id: string
+  generatedAt: string
+  student: ReportStudentSnapshot
 
   // ---- 1. 职业探索与人岗匹配分析 ----
   /** 最佳匹配岗位（无匹配结果时为 null） */
-  bestMatch: MatchResult | null;
+  bestMatch: MatchResult | null
   /** 参与分析的岗位匹配结果（按匹配度降序） */
-  matches: MatchResult[];
+  matches: MatchResult[]
   /** 匹配分析结论 */
-  matchSummary: string;
+  matchSummary: string
 
   // ---- 2. 职业目标与职业路径规划 ----
   /** 短期目标（用户可编辑） */
-  shortTermGoal: string;
+  shortTermGoal: string
   /** 长期目标（用户可编辑） */
-  longTermGoal: string;
+  longTermGoal: string
   /** 行业需求与趋势分析 */
-  industryTrend: string;
+  industryTrend: string
   /** 岗位图谱路径 */
-  careerPath: CareerPath;
+  careerPath: CareerPath
 
   // ---- 3. 分阶段个性化成长计划 ----
-  tasks: GrowthTask[];
+  tasks: GrowthTask[]
 
   // ---- 4. 评估周期与动态调整机制 ----
-  milestones: EvaluationMilestone[];
+  milestones: EvaluationMilestone[]
 
   // ---- 5. 导出 ----
   /** 报告全文（Markdown），供复制、导出与存档 */
-  markdown: string;
+  markdown: string
 
   /** 生成方式（本地规则 / 大模型） */
-  parseMethod: ParseSource;
+  parseMethod: ParseSource
   /** 数据可靠性说明（两侧画像的解析置信度均值） */
-  confidence: number;
+  confidence: number
 
   /**
    * 生成本报告时所依据的「学生能力画像」的生成时间戳（student.parsed_at）。
@@ -151,18 +151,18 @@ export interface CareerReport {
    * 再进来看到的还是旧报告，且没有任何提示。有了这个指纹就能自动识别：
    * 指纹不一致 → 底层数据已更新 → 重新计算（同时保留任务勾选进度）。
    */
-  sourceStudentParsedAt: string;
+  sourceStudentParsedAt: string
 }
 
 // ====================== 统计辅助 ======================
 
 /** 任务完成情况统计 */
 export interface TaskProgress {
-  total: number;
-  done: number;
+  total: number
+  done: number
   /** 完成率 0-100 */
-  percent: number;
-  byPhase: Record<PlanPhase, { total: number; done: number }>;
+  percent: number
+  byPhase: Record<PlanPhase, { total: number; done: number }>
 }
 
 export const calcTaskProgress = (tasks: GrowthTask[]): TaskProgress => {
@@ -170,24 +170,24 @@ export const calcTaskProgress = (tasks: GrowthTask[]): TaskProgress => {
     short: { total: 0, done: 0 },
     medium: { total: 0, done: 0 },
     long: { total: 0, done: 0 },
-  };
+  }
 
-  let done = 0;
+  let done = 0
   tasks.forEach((t) => {
-    byPhase[t.phase].total += 1;
+    byPhase[t.phase].total += 1
     if (t.done) {
-      byPhase[t.phase].done += 1;
-      done += 1;
+      byPhase[t.phase].done += 1
+      done += 1
     }
-  });
+  })
 
   return {
     total: tasks.length,
     done,
     percent: tasks.length ? Math.round((done / tasks.length) * 100) : 0,
     byPhase,
-  };
-};
+  }
+}
 
 /** 存储键：报告与任务完成状态保存在本地 */
-export const CAREER_REPORT_STORAGE_KEY = 'careerReport';
+export const CAREER_REPORT_STORAGE_KEY = 'careerReport'

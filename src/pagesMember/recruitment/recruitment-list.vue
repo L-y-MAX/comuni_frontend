@@ -631,7 +631,7 @@ onShareAppMessage(() => {
   return {
     title: '招聘信息列表', // 分享标题
     path: sharePath, // 分享页面路径
-    imageUrl: 'https://youupro.xyz/notes/static/icons/share-recruitment.png', // 可选：分享图片（需替换为实际图片路径）
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-recruitment.png', // 可选：分享图片（需替换为实际图片路径）
   }
 })
 
@@ -639,7 +639,7 @@ onShareAppMessage(() => {
 onShareTimeline(() => {
   return {
     title: '最新招聘信息，快来看看！', // 朋友圈分享标题
-    imageUrl: 'https://youupro.xyz/notes/static/icons/share-recruitment.png', // 可选：朋友圈分享图片（需替换为实际图片路径）
+    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-recruitment.png', // 可选：朋友圈分享图片（需替换为实际图片路径）
   }
 })
 </script>
@@ -681,7 +681,7 @@ $effect2-gradient2: linear-gradient(
 
 // 按钮样式（核心修改：高度减小1/3 + 纯白背景 + 无阴影）
 .effect-btn {
-  --primary: #FF7239;
+  --primary: #ff7239;
   --primary-light: #ff9a7a;
   font-size: 26rpx;
   padding: 0 40rpx; /* 固定左右内边距，宽度由内容决定 */
@@ -962,7 +962,7 @@ $effect2-gradient2: linear-gradient(
 }
 
 .tag-item.active {
-  background: linear-gradient(135deg, #FF8A54, #FF7239);
+  background: linear-gradient(135deg, #ff8a54, #ff7239);
   color: #fff;
   border-color: #ff7a4d;
 }

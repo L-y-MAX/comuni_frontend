@@ -122,7 +122,9 @@ function main() {
   fs.writeFileSync(OUT_SCHEMA, JSON.stringify(buildSchema(dimensions), null, 2) + '\n', 'utf8')
 
   console.log(`✅ 已从 JOB_DIMENSIONS 生成 ${dimensions.length} 个维度`)
-  dimensions.forEach((d, i) => console.log(`   ${String(i + 1).padStart(2)}. ${d.key.padEnd(22)} ${d.label}`))
+  dimensions.forEach((d, i) =>
+    console.log(`   ${String(i + 1).padStart(2)}. ${d.key.padEnd(22)} ${d.label}`),
+  )
   console.log(`   权重和 ${weightSum.toFixed(3)}`)
   console.log(`   -> skills/_shared/dimensions.json`)
   console.log(`   -> skills/student-profile-analyze/schema.json`)

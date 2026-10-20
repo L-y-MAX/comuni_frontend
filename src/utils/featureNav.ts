@@ -15,26 +15,26 @@
  */
 
 /** 打开方式：tabBar 页面 vs 普通页面 */
-export type FeatureNavType = 'tab' | 'page';
+export type FeatureNavType = 'tab' | 'page'
 
 export interface FeatureNavItem {
   /** 唯一标识，同时用于标记「当前所在功能」 */
-  key: string;
-  name: string;
-  desc: string;
-  type: FeatureNavType;
-  path: string;
+  key: string
+  name: string
+  desc: string
+  type: FeatureNavType
+  path: string
   /** 需要登录才能使用（未登录时先引导登录） */
-  needLogin?: boolean;
+  needLogin?: boolean
 }
 
 export interface FeatureNavGroup {
-  title: string;
-  items: FeatureNavItem[];
+  title: string
+  items: FeatureNavItem[]
 }
 
 /** 当前所在功能（侧边栏据此高亮） */
-export const CURRENT_FEATURE_KEY = 'abilityProfile';
+export const CURRENT_FEATURE_KEY = 'abilityProfile'
 
 export const FEATURE_NAV_GROUPS: FeatureNavGroup[] = [
   {
@@ -144,10 +144,10 @@ export const FEATURE_NAV_GROUPS: FeatureNavGroup[] = [
       },
     ],
   },
-];
+]
 
 /** 全部条目（扁平化，便于检索与统计） */
-export const ALL_FEATURE_ITEMS: FeatureNavItem[] = FEATURE_NAV_GROUPS.flatMap((g) => g.items);
+export const ALL_FEATURE_ITEMS: FeatureNavItem[] = FEATURE_NAV_GROUPS.flatMap((g) => g.items)
 
 /**
  * 打开某个功能。
@@ -163,23 +163,23 @@ export const openFeatureNav = (item: FeatureNavItem): boolean => {
       cancelText: '再看看',
       success: (res) => {
         if (res.confirm) {
-          uni.navigateTo({ url: '/pagesMember/login/login' });
+          uni.navigateTo({ url: '/pagesMember/login/login' })
         }
       },
-    });
-    return false;
+    })
+    return false
   }
 
   const onFail = (err: unknown) => {
-    console.error(`跳转「${item.name}」失败：`, err);
-    uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 });
-  };
+    console.error(`跳转「${item.name}」失败：`, err)
+    uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
+  }
 
   // tabBar 页面与非 tabBar 页面的打开方式不同，用错会静默失败
   if (item.type === 'tab') {
-    uni.switchTab({ url: item.path, fail: onFail });
+    uni.switchTab({ url: item.path, fail: onFail })
   } else {
-    uni.navigateTo({ url: item.path, fail: onFail });
+    uni.navigateTo({ url: item.path, fail: onFail })
   }
-  return true;
-};
+  return true
+}

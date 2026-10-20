@@ -1,6 +1,6 @@
-import { baseURL } from '@/utils/request';
-import { CAREER_RESOURCES, filterResources } from '@/utils/careerResources';
-import type { CareerResource } from '@/types/careerResource';
+import { baseURL } from '@/utils/request'
+import { CAREER_RESOURCES, filterResources } from '@/utils/careerResources'
+import type { CareerResource } from '@/types/careerResource'
 import { computed, ref } from 'vue'
 
 /**
@@ -32,84 +32,84 @@ const debounce = <A extends unknown[]>(fn: (...args: A) => unknown, wait: number
 
 // 1. 补充知识库类型定义（匹配后端返回字段）
 interface KnowledgeBase {
-  id: string | number;
-  name: string;
-  description?: string;
-  short_id?: string; // 新增：匹配后端返回的short_id字段
-  is_public?: boolean; // 新增：匹配后端返回的is_public字段
-  creator?: string | number; // 修正：后端返回creator而非creator_id
-  is_followed?: boolean; // 是否已关注
-  created_at?: string;
-  updated_at?: string;
+  id: string | number
+  name: string
+  description?: string
+  short_id?: string // 新增：匹配后端返回的short_id字段
+  is_public?: boolean // 新增：匹配后端返回的is_public字段
+  creator?: string | number // 修正：后端返回creator而非creator_id
+  is_followed?: boolean // 是否已关注
+  created_at?: string
+  updated_at?: string
 }
 
 // 精准适配后端返回的 Node 类型（对应原 documents）
 interface SearchResultNode {
-  id: string | number; // 兼容UUID/数字ID
-  name: string;
-  content?: string;
-  description?: string;
-  knowledge_base_id?: string | number;
-  created_at?: string;
-  updated_at?: string;
-  creator?: string; // 补充后端实际返回的创建者字段
-  knowledge_base?: string; // 补充知识库名称/ID字段
-  creator_user_id?: string; // 补充知识库名称/ID字段
-  creator_username?: string; // 补充知识库名称/ID字段
-  knowledge_base_name?: string; // 补充知识库名称/ID字段
+  id: string | number // 兼容UUID/数字ID
+  name: string
+  content?: string
+  description?: string
+  knowledge_base_id?: string | number
+  created_at?: string
+  updated_at?: string
+  creator?: string // 补充后端实际返回的创建者字段
+  knowledge_base?: string // 补充知识库名称/ID字段
+  creator_user_id?: string // 补充知识库名称/ID字段
+  creator_username?: string // 补充知识库名称/ID字段
+  knowledge_base_name?: string // 补充知识库名称/ID字段
 }
 
 // 统一用户类型（合并原有User和SearchResultUser，避免类型冗余）
 export interface User {
-  id:               string;
-  gender_text:      string;
-  avatar_text:      string;
-  is_followed:      boolean;
-  vip_info:         VipInfo;
-  password:         string;
-  last_login:       string; // 修正：后端返回字符串而非Date类型
-  is_superuser:     boolean;
-  username:         string;
-  first_name:       string;
-  last_name:        string;
-  is_staff:         boolean;
-  is_active:        boolean;
-  date_joined:      string; // 修正：后端返回字符串而非Date类型
-  user_id:          string;
-  email:            string;
-  gender:           string;
-  wechat_openid:    null;
-  avatar:           string;
-  bio:              string;
-  is_private:       boolean;
-  created_at:       string; // 修正：后端返回字符串而非Date类型
-  updated_at:       string; // 修正：后端返回字符串而非Date类型
-  totp_secret:      null;
-  is_totp_enabled:  boolean;
-  backup_codes:     string;
-  groups:           any[];
-  user_permissions: any[];
+  id: string
+  gender_text: string
+  avatar_text: string
+  is_followed: boolean
+  vip_info: VipInfo
+  password: string
+  last_login: string // 修正：后端返回字符串而非Date类型
+  is_superuser: boolean
+  username: string
+  first_name: string
+  last_name: string
+  is_staff: boolean
+  is_active: boolean
+  date_joined: string // 修正：后端返回字符串而非Date类型
+  user_id: string
+  email: string
+  gender: string
+  wechat_openid: null
+  avatar: string
+  bio: string
+  is_private: boolean
+  created_at: string // 修正：后端返回字符串而非Date类型
+  updated_at: string // 修正：后端返回字符串而非Date类型
+  totp_secret: null
+  is_totp_enabled: boolean
+  backup_codes: string
+  groups: any[]
+  user_permissions: any[]
 }
 
 export interface VipInfo {
-  isVip:      boolean;
-  expireDate: null;
+  isVip: boolean
+  expireDate: null
 }
 
 // 适配后端返回的响应结构（完全对齐后端返回）
 interface SearchResponse {
-  code: number;
-  msg: string;
-  count: number;
-  next: string | null;
-  previous: string | null;
+  code: number
+  msg: string
+  count: number
+  next: string | null
+  previous: string | null
   results: {
-    comments: any[];
-    knowledge_bases: KnowledgeBase[]; // 补充知识库类型
-    nodes: SearchResultNode[];
-    tags: any[];
-    users: User[]; // 统一使用User类型
-  };
+    comments: any[]
+    knowledge_bases: KnowledgeBase[] // 补充知识库类型
+    nodes: SearchResultNode[]
+    tags: any[]
+    users: User[] // 统一使用User类型
+  }
 }
 
 // 2. 响应式数据
@@ -175,11 +175,11 @@ export const getMyKnowledgeBases = async () => {
         url: `${baseURL}/api/v1/knowledge/knowledgebase/my-knowledge-bases/`,
         method: 'GET',
         header: {
-          'Authorization': `JWT ${accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `JWT ${accessToken}`,
+          'Content-Type': 'application/json',
         },
         success: resolve,
-        fail: reject
+        fail: reject,
       })
     })
 
@@ -204,7 +204,7 @@ export const getMyKnowledgeBases = async () => {
       // 非200状态码的错误提示
       uni.showToast({
         title: `获取失败：状态码${res.statusCode}`,
-        icon: 'none'
+        icon: 'none',
       })
     }
   } catch (error) {
@@ -229,11 +229,11 @@ export const getFollowedKnowledgeBases = async () => {
         url: `${baseURL}/api/v1/knowledge/knowledgebase/followed-knowledge-bases/`,
         method: 'GET',
         header: {
-          'Authorization': `JWT ${accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `JWT ${accessToken}`,
+          'Content-Type': 'application/json',
         },
         success: resolve,
-        fail: reject
+        fail: reject,
       })
     })
 
@@ -241,7 +241,7 @@ export const getFollowedKnowledgeBases = async () => {
       const responseData = res.data as { results?: KnowledgeBase[] }
       const followedKBList = responseData?.results || []
       // 更新本地关注列表
-      followedKBs.value = followedKBList.map(kb => kb.id)
+      followedKBs.value = followedKBList.map((kb) => kb.id)
       // 持久化
       uni.setStorageSync('followedKBs', JSON.stringify(followedKBs.value))
       return followedKBList
@@ -275,17 +275,17 @@ export const createKnowledgeBase = async () => {
         url: `${baseURL}/api/v1/knowledge/knowledgebase/`,
         method: 'POST',
         header: {
-          'Authorization': `JWT ${accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `JWT ${accessToken}`,
+          'Content-Type': 'application/json',
         },
         data: {
           name: newKBName.value.trim(),
           description: '从搜索结果添加文档创建的知识库',
           // 显式传递creator字段（用户ID），避免后端校验报错
-          creator: userInfo?.id || userInfo?.userId // 兼容不同的用户ID字段名
+          creator: userInfo?.id || userInfo?.userId, // 兼容不同的用户ID字段名
         },
         success: resolve,
-        fail: reject
+        fail: reject,
       })
     })
 
@@ -297,9 +297,11 @@ export const createKnowledgeBase = async () => {
       await addDocToKnowledgeBase(currentDoc.value!, newKB.id)
     } else {
       // 显示具体的错误信息
-      const responseData = res.data as { msg?: string; detail?: string; creator?: string[] };
-      const errMsg = responseData?.msg || responseData?.detail ||
-        (responseData?.creator?.length ? responseData.creator[0] : '创建知识库失败');
+      const responseData = res.data as { msg?: string; detail?: string; creator?: string[] }
+      const errMsg =
+        responseData?.msg ||
+        responseData?.detail ||
+        (responseData?.creator?.length ? responseData.creator[0] : '创建知识库失败')
       uni.showToast({ title: errMsg, icon: 'none' })
     }
   } catch (error) {
@@ -331,17 +333,17 @@ export const addDocToKnowledgeBase = async (doc: SearchResultNode, kbId: string 
         url: `${baseURL}/api/v1/knowledge/knowledgebase/${kbId}/nodes/${doc.id}/copy/`,
         method: 'POST',
         header: {
-          'Authorization': `JWT ${accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `JWT ${accessToken}`,
+          'Content-Type': 'application/json',
         },
         success: resolve,
-        fail: reject
+        fail: reject,
       })
     })
 
     // 【修复TypeScript类型错误】对res.data做类型断言和安全访问
-    const responseData = res.data as { msg?: string; detail?: string }; // 类型断言为包含msg/detail的对象
-    const errorMsg = responseData?.msg || responseData?.detail || '未知错误'; // 兼容后端可能返回的detail字段
+    const responseData = res.data as { msg?: string; detail?: string } // 类型断言为包含msg/detail的对象
+    const errorMsg = responseData?.msg || responseData?.detail || '未知错误' // 兼容后端可能返回的detail字段
 
     // 适配后端响应码和提示
     if (res.statusCode === 201) {
@@ -392,8 +394,8 @@ const runSearch = async () => {
         knowledge_bases: [],
         nodes: [],
         tags: [],
-        comments: []
-      }
+        comments: [],
+      },
     }
     return
   }
@@ -427,8 +429,8 @@ const runSearch = async () => {
         method: 'GET',
         withCredentials: true,
         header: {
-          'Authorization': `JWT ${accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `JWT ${accessToken}`,
+          'Content-Type': 'application/json',
         },
         success: resolve,
         fail: reject,
@@ -445,7 +447,6 @@ const runSearch = async () => {
     if (session !== searchSession) return
     // 修复核心：将接口返回结果赋值给响应式数据，页面才能获取到数据
     searchResult.value = result
-
   } catch (error: any) {
     console.error('搜索失败：', error)
     if (session !== searchSession) return
@@ -461,7 +462,7 @@ const runSearch = async () => {
         knowledge_bases: [],
         nodes: [],
         tags: [],
-        comments: []
+        comments: [],
       },
     }
   } finally {
@@ -481,7 +482,7 @@ export const visibleSearchKbs = computed(() => {
   const list = searchResult.value?.results?.knowledge_bases ?? []
   const userInfo = (uni.getStorageSync('userInfo') || {}) as Record<string, unknown>
   const myId = String(
-    userInfo.id || userInfo.user_id || userInfo.creator_id || userInfo.username || ''
+    userInfo.id || userInfo.user_id || userInfo.creator_id || userInfo.username || '',
   )
 
   return list.filter((kb) => {
@@ -535,11 +536,12 @@ export const exitSearch = () => {
 // 8. 统计结果数（支持多维度统计，兼容新旧结构）
 export const getResultCount = (result: SearchResponse): number => {
   // 统计所有类型结果总数
-  const total = (result.results?.users?.length || 0) +
-                (result.results?.nodes?.length || 0) +
-                (result.results?.knowledge_bases?.length || 0) +
-                (result.results?.tags?.length || 0) +
-                (result.results?.comments?.length || 0)
+  const total =
+    (result.results?.users?.length || 0) +
+    (result.results?.nodes?.length || 0) +
+    (result.results?.knowledge_bases?.length || 0) +
+    (result.results?.tags?.length || 0) +
+    (result.results?.comments?.length || 0)
   // 优先返回后端count，无则返回计算值
   return result.count || total
 }
@@ -561,7 +563,7 @@ export const navigateToKnowledge = (doc: SearchResultNode) => {
   if (!doc.id) return
 
   uni.navigateTo({
-    url: `/pagesMember/knowledge/showNode/showNode?id=${encodeURIComponent(doc.id as string)}&kbId=${encodeURIComponent(doc.knowledge_base_id as string)}`
+    url: `/pagesMember/knowledge/showNode/showNode?id=${encodeURIComponent(doc.id as string)}&kbId=${encodeURIComponent(doc.knowledge_base_id as string)}`,
   })
 }
 
@@ -628,13 +630,13 @@ export const followUser = async (user: User | undefined | null) => {
       ? {
           apiUrl: `${baseURL}/api/v1/auth/users/user/unfollow_user/`,
           method: 'DELETE' as const, // 取消关注用DELETE方法
-          successMsg: '已取消关注'
+          successMsg: '已取消关注',
         }
       : {
           apiUrl: `${baseURL}/api/v1/auth/user/follow/follow-user/`,
           method: 'POST' as const, // 关注用POST方法
-          successMsg: '关注成功'
-        };
+          successMsg: '关注成功',
+        }
 
     // 调用接口（根据状态使用不同的请求方法）
     const response = await new Promise<UniApp.RequestSuccessCallbackResult>((resolve, reject) => {
@@ -642,12 +644,12 @@ export const followUser = async (user: User | undefined | null) => {
         url: config.apiUrl,
         method: config.method, // 动态使用POST/DELETE方法
         header: {
-          'Authorization': `JWT ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `JWT ${token}`,
+          'Content-Type': 'application/json',
         },
         data: { followed_user_id: userId }, // 传递用户ID参数（DELETE请求也可携带data）
         success: resolve,
-        fail: reject
+        fail: reject,
       })
     })
 
@@ -658,16 +660,17 @@ export const followUser = async (user: User | undefined | null) => {
       uni.showToast({ title: config.successMsg, icon: 'success' })
     } else {
       // 显示具体错误信息
-      const errMsg = (response.data as { msg?: string; detail?: string })?.msg ||
-                    (response.data as { msg?: string; detail?: string })?.detail ||
-                    (isCurrentFollowed ? '取消关注失败' : '关注失败')
+      const errMsg =
+        (response.data as { msg?: string; detail?: string })?.msg ||
+        (response.data as { msg?: string; detail?: string })?.detail ||
+        (isCurrentFollowed ? '取消关注失败' : '关注失败')
       uni.showToast({ title: errMsg, icon: 'none' })
     }
   } catch (error: any) {
     console.error('关注操作失败：', error)
     uni.showToast({
       title: `操作失败：${error.message || '网络异常'}`,
-      icon: 'none'
+      icon: 'none',
     })
   }
 }
@@ -715,13 +718,14 @@ export const followKB = async (kb: KnowledgeBase) => {
         uni.request({
           url: `${baseURL}/api/v1/knowledge/user-follow-knowledgebase/unfollow/`,
           method: 'POST',
-          header: { // 修复：将headers改为header（单数）
-            'Authorization': `JWT ${token}`,
-            'Content-Type': 'application/json'
+          header: {
+            // 修复：将headers改为header（单数）
+            Authorization: `JWT ${token}`,
+            'Content-Type': 'application/json',
           },
           data: { knowledge_base: kb.id },
           success: resolve,
-          fail: reject
+          fail: reject,
         })
       })
     } else {
@@ -730,13 +734,14 @@ export const followKB = async (kb: KnowledgeBase) => {
         uni.request({
           url: `${baseURL}/api/v1/knowledge/user-follow-knowledgebase/`,
           method: 'POST',
-          header: { // 修复：将headers改为header（单数）
-            'Authorization': `JWT ${token}`,
-            'Content-Type': 'application/json'
+          header: {
+            // 修复：将headers改为header（单数）
+            Authorization: `JWT ${token}`,
+            'Content-Type': 'application/json',
           },
           data: { knowledge_base: kb.id },
           success: resolve,
-          fail: reject
+          fail: reject,
         })
       })
     }
@@ -745,7 +750,7 @@ export const followKB = async (kb: KnowledgeBase) => {
     if (response.statusCode === 200 && response.data?.code === 200) {
       if (isCurrentFollowed) {
         // 取消关注
-        followedKBs.value = followedKBs.value.filter(id => id !== kb.id)
+        followedKBs.value = followedKBs.value.filter((id) => id !== kb.id)
         uni.showToast({ title: '已取消关注', icon: 'none' })
       } else {
         // 关注
@@ -755,10 +760,11 @@ export const followKB = async (kb: KnowledgeBase) => {
       // 持久化关注列表
       uni.setStorageSync('followedKBs', JSON.stringify(followedKBs.value))
     } else {
-      const errMsg = response.data?.msg || (isCurrentFollowed ? '取消关注知识库失败' : '关注知识库失败')
+      const errMsg =
+        response.data?.msg || (isCurrentFollowed ? '取消关注知识库失败' : '关注知识库失败')
       uni.showToast({
         title: errMsg,
-        icon: 'none'
+        icon: 'none',
       })
     }
   } catch (error) {
@@ -779,7 +785,7 @@ export const navigateToUserDetail = (user: User) => {
   try {
     // 修复：对所有参数进行encodeURIComponent，避免特殊字符导致参数丢失
     uni.navigateTo({
-      url: `/pagesMember/user-detail/user-detail?userId=${encodeURIComponent(userId)}&username=${encodeURIComponent(user.username || '')}`
+      url: `/pagesMember/user-detail/user-detail?userId=${encodeURIComponent(userId)}&username=${encodeURIComponent(user.username || '')}`,
     })
   } catch (e) {
     console.error('跳转到用户主页失败：', e)
@@ -790,11 +796,11 @@ export const navigateToUserDetail = (user: User) => {
 // 14. 格式化性别显示（适配 gender_text 字段）
 export const formatGender = (genderText: string | null | undefined): string => {
   const genderMap: Record<string, string> = {
-    '未填写': '未知',
-    '男': '男',
-    '女': '女',
-    '未知': '未知',
-    '隐藏': '隐藏' // 补充：适配“隐藏”场景
+    未填写: '未知',
+    男: '男',
+    女: '女',
+    未知: '未知',
+    隐藏: '隐藏', // 补充：适配“隐藏”场景
   }
   return genderMap[genderText || '未填写'] || '未知'
 }
@@ -806,13 +812,13 @@ export const formatGender = (genderText: string | null | undefined): string => {
  * @returns 分享参数
  */
 export const getShareAppMessageParams = (shareTarget?: {
-  type: 'search' | 'doc' | 'user' | 'kb',
+  type: 'search' | 'doc' | 'user' | 'kb'
   data: SearchResultNode | User | KnowledgeBase | string
 }) => {
   // 默认分享标题和路径
   let title = '知识搜索平台'
   let path = '/pagesMember/search/search'
-  const imageUrl = `${baseURL}/notes/static/icons/share-icon.png` // 替换为实际分享图片地址
+  const imageUrl = `${baseURL}/noteshttps://youupro.xyz/ly/static/icons/share-icon.png` // 替换为实际分享图片地址
 
   // 根据分享目标定制参数
   if (shareTarget) {
@@ -847,7 +853,7 @@ export const getShareAppMessageParams = (shareTarget?: {
   return {
     title,
     path,
-    imageUrl
+    imageUrl,
   }
 }
 
@@ -857,13 +863,13 @@ export const getShareAppMessageParams = (shareTarget?: {
  * @returns 分享参数
  */
 export const getShareTimelineParams = (shareTarget?: {
-  type: 'search' | 'doc' | 'user' | 'kb',
+  type: 'search' | 'doc' | 'user' | 'kb'
   data: SearchResultNode | User | KnowledgeBase | string
 }) => {
   // 默认分享标题和查询参数
   let title = '知识搜索平台'
   let query = ''
-  const imageUrl = `${baseURL}/notes/static/icons/share-icon.png` // 替换为实际分享图片地址
+  const imageUrl = `${baseURL}/noteshttps://youupro.xyz/ly/static/icons/share-icon.png` // 替换为实际分享图片地址
 
   // 根据分享目标定制参数
   if (shareTarget) {
@@ -898,6 +904,6 @@ export const getShareTimelineParams = (shareTarget?: {
   return {
     title,
     query,
-    imageUrl
+    imageUrl,
   }
 }

@@ -30,26 +30,26 @@ export type JobDimensionKey =
   | 'internship' // 实习能力
   | 'teamwork' // 团队协作
   | 'logical_thinking' // 逻辑思维
-  | 'industry_cognition'; // 行业认知
+  | 'industry_cognition' // 行业认知
 
 /** 能力等级（对齐计划书示例中的「高/中/低」表述） */
-export type AbilityLevel = 'high' | 'medium' | 'low';
+export type AbilityLevel = 'high' | 'medium' | 'low'
 
 /** 解析来源 */
-export type ParseSource = 'qwen' | 'rule';
+export type ParseSource = 'qwen' | 'rule'
 
 /** 要求强度：必须 / 优先 */
-export type RequirementStrength = 'must' | 'preferred';
+export type RequirementStrength = 'must' | 'preferred'
 
 /** 维度元定义 */
 export interface JobDimensionMeta {
-  key: JobDimensionKey;
+  key: JobDimensionKey
   /** 中文维度名 */
-  label: string;
+  label: string
   /** 默认权重，10 项合计为 1 */
-  defaultWeight: number;
+  defaultWeight: number
   /** 维度说明（用于界面提示） */
-  description: string;
+  description: string
 }
 
 /**
@@ -118,10 +118,10 @@ export const JOB_DIMENSIONS: readonly JobDimensionMeta[] = [
     defaultWeight: 0.05,
     description: '对所属行业、产业政策、市场趋势的理解要求',
   },
-] as const;
+] as const
 
 /** 十大维度 key 的固定顺序数组 */
-export const JOB_DIMENSION_KEYS: readonly JobDimensionKey[] = JOB_DIMENSIONS.map((d) => d.key);
+export const JOB_DIMENSION_KEYS: readonly JobDimensionKey[] = JOB_DIMENSIONS.map((d) => d.key)
 
 /**
  * 语义化别名：这十个维度是「岗位要求」与「学生能力」共用的同一套基准，
@@ -133,117 +133,117 @@ export const JOB_DIMENSION_KEYS: readonly JobDimensionKey[] = JOB_DIMENSIONS.map
  *   - 学生侧分值高 = 该学生在这一维度上能力强
  * 后续人岗匹配需要同时用到这两层语义。
  */
-export type AbilityDimensionKey = JobDimensionKey;
+export type AbilityDimensionKey = JobDimensionKey
 
 /** level → 默认分值映射（当后端只给等级、未给分值时使用） */
 export const LEVEL_TO_SCORE: Record<AbilityLevel, number> = {
   high: 85,
   medium: 65,
   low: 45,
-};
+}
 
 /** 等级中文 label */
 export const LEVEL_LABEL: Record<AbilityLevel, string> = {
   high: '高',
   medium: '中',
   low: '低',
-};
+}
 
 /** 解析来源中文 label */
 export const PARSE_SOURCE_LABEL: Record<ParseSource, string> = {
   qwen: 'DeepSeek 解析',
   rule: '本地规则解析',
-};
+}
 
 /** 分值 → 等级 */
 export const scoreToLevel = (score: number): AbilityLevel => {
-  if (score >= 80) return 'high';
-  if (score >= 60) return 'medium';
-  return 'low';
-};
+  if (score >= 80) return 'high'
+  if (score >= 60) return 'medium'
+  return 'low'
+}
 
 /** 等级 → 分值 */
-export const levelToScore = (level: AbilityLevel): number => LEVEL_TO_SCORE[level] ?? 60;
+export const levelToScore = (level: AbilityLevel): number => LEVEL_TO_SCORE[level] ?? 60
 
 /** 按 key 取维度元数据 */
 export const getDimensionMeta = (key: JobDimensionKey): JobDimensionMeta | undefined =>
-  JOB_DIMENSIONS.find((d) => d.key === key);
+  JOB_DIMENSIONS.find((d) => d.key === key)
 
 // ====================== 维度内的结构化明细 ======================
 
 /** 技能项（仅「专业技能」维度使用） */
 export interface JobSkillItem {
   /** 技能名，如 Java、SpringBoot、MySQL */
-  name: string;
+  name: string
   /** 要求强度 */
-  requirement: RequirementStrength;
+  requirement: RequirementStrength
   /** 技能分类，如 编程语言 / 框架 / 数据库 / 工具 */
-  category?: string;
+  category?: string
 }
 
 /** 证书项（仅「证书要求」维度使用） */
 export interface JobCertItem {
   /** 证书名，如 计算机二级、英语四级 */
-  name: string;
+  name: string
   /** 要求强度 */
-  requirement: RequirementStrength;
+  requirement: RequirementStrength
 }
 
 // ====================== 单个维度 ======================
 
 export interface JobDimension {
-  key: JobDimensionKey;
+  key: JobDimensionKey
   /** 中文维度名（冗余存储，便于离线缓存后直接渲染） */
-  label: string;
+  label: string
   /** 0-100 归一化分值，供人岗匹配加权计算 */
-  score: number;
+  score: number
   /** 高 / 中 / 低 */
-  level: AbilityLevel;
+  level: AbilityLevel
   /** 权重，10 项合计为 1 */
-  weight: number;
+  weight: number
   /** 解析置信度 0-1，本地规则兜底时通常偏低 */
-  confidence: number;
+  confidence: number
   /** 该维度的解析来源 */
-  source: ParseSource;
+  source: ParseSource
   /** 从原始招聘文本中抽取的证据片段，保证结论可追溯 */
-  evidence: string[];
+  evidence: string[]
   /** 仅「专业技能」维度：技能清单 */
-  skills?: JobSkillItem[];
+  skills?: JobSkillItem[]
   /** 仅「证书要求」维度：证书清单 */
-  certificates?: JobCertItem[];
+  certificates?: JobCertItem[]
 }
 
 // ====================== 岗位画像主体 ======================
 
 export interface JobProfile {
   /** 岗位名称 */
-  job_name: string;
+  job_name: string
   /** 企业名称 */
-  enterprise_name: string;
+  enterprise_name: string
   /** 所属行业 */
-  industry: string;
+  industry: string
   /** 招聘专业（拆分为数组） */
-  recruit_major: string[];
+  recruit_major: string[]
   /** 月薪范围（原始字符串，如 6000-9000） */
-  salary_range: string;
+  salary_range: string
   /** 招聘人数（原始字符串） */
-  recruit_number: string;
+  recruit_number: string
   /** 来源招聘记录的信用代码（对应 recruitment.credit_code） */
-  recruitment_id: string;
+  recruitment_id: string
   /** 固定 10 项的维度画像 */
-  dimensions: JobDimension[];
+  dimensions: JobDimension[]
   /** 画像总述（一段话总结该岗位的能力侧重） */
-  summary: string;
+  summary: string
   /** 能力侧重标签，如 ['专业技能', '学习能力'] */
-  focus_dimensions: JobDimensionKey[];
+  focus_dimensions: JobDimensionKey[]
   /** 垂直晋升路径（为后续「岗位垂直晋升图谱」预留） */
-  promotion_path: string[];
+  promotion_path: string[]
   /** 整体解析来源 */
-  parse_method: ParseSource;
+  parse_method: ParseSource
   /** 整体解析置信度 0-1 */
-  confidence: number;
+  confidence: number
   /** 解析时间 ISO 字符串 */
-  parsed_at: string;
+  parsed_at: string
 }
 
 // ====================== 接口契约（异步任务模式） ======================
@@ -258,47 +258,47 @@ export interface JobProfile {
  */
 export interface JobProfileParsePayload {
   /** 来源招聘记录信用代码，用于后端缓存与去重 */
-  recruitment_id: string;
-  job_name: string;
-  enterprise_name: string;
-  industry: string;
-  recruit_major: string;
-  monthly_salary: string;
-  recruit_number: string;
+  recruitment_id: string
+  job_name: string
+  enterprise_name: string
+  industry: string
+  recruit_major: string
+  monthly_salary: string
+  recruit_number: string
   /** 企业简介，作为解析岗位软性要求的重要上下文 */
-  enterprise_intro: string;
+  enterprise_intro: string
   /** 期望输出的维度 key，固定为十大维度 */
-  dimensions: JobDimensionKey[];
+  dimensions: JobDimensionKey[]
 }
 
 /** 异步任务状态 */
-export type TaskStatus = 'PENDING' | 'SUCCESS' | 'FAILURE';
+export type TaskStatus = 'PENDING' | 'SUCCESS' | 'FAILURE'
 
 /** 任务创建响应 */
 export interface JobProfileTaskCreated {
-  task_id: string;
+  task_id: string
 }
 
 /** 任务结果响应 */
 export interface JobProfileTaskResult {
-  status: TaskStatus;
+  status: TaskStatus
   data?: {
-    profile?: JobProfile;
-  };
-  error?: string;
+    profile?: JobProfile
+  }
+  error?: string
 }
 
 // ====================== 生成结果（供页面直接消费） ======================
 
 /** 生成入口的返回结构 */
 export interface JobProfileGenerateResult {
-  profile: JobProfile;
+  profile: JobProfile
   /** 实际生效的解析方式 */
-  method: ParseSource;
+  method: ParseSource
   /** 是否发生了降级（千问不可用 → 本地规则兜底） */
-  degraded: boolean;
+  degraded: boolean
   /** 降级原因，便于界面提示与排查 */
-  degradedReason?: string;
+  degradedReason?: string
 }
 
 // ====================== 归一化 / 校验工具 ======================
@@ -308,19 +308,19 @@ export interface JobProfileGenerateResult {
  * 后端字段可能不全（例如遗漏某个维度），此处保证界面前提成立。
  */
 export const normalizeJobProfile = (raw: Partial<JobProfile>): JobProfile => {
-  const rawMap = new Map<JobDimensionKey, JobDimension>();
-  (raw.dimensions ?? []).forEach((d) => {
-    if (d && d.key) rawMap.set(d.key, d as JobDimension);
-  });
+  const rawMap = new Map<JobDimensionKey, JobDimension>()
+  ;(raw.dimensions ?? []).forEach((d) => {
+    if (d && d.key) rawMap.set(d.key, d as JobDimension)
+  })
 
   const dimensions: JobDimension[] = JOB_DIMENSIONS.map((meta) => {
-    const found = rawMap.get(meta.key);
+    const found = rawMap.get(meta.key)
     const score =
       typeof found?.score === 'number' && !Number.isNaN(found.score)
         ? Math.max(0, Math.min(100, found.score))
         : found?.level
           ? levelToScore(found.level)
-          : levelToScore('medium');
+          : levelToScore('medium')
 
     return {
       key: meta.key,
@@ -333,18 +333,18 @@ export const normalizeJobProfile = (raw: Partial<JobProfile>): JobProfile => {
       evidence: found?.evidence ?? [],
       skills: meta.key === 'professional_skill' ? (found?.skills ?? []) : undefined,
       certificates: meta.key === 'certificate' ? (found?.certificates ?? []) : undefined,
-    };
-  });
+    }
+  })
 
   // 权重归一化，保证合计为 1
-  const weightSum = dimensions.reduce((sum, d) => sum + d.weight, 0);
+  const weightSum = dimensions.reduce((sum, d) => sum + d.weight, 0)
   if (weightSum > 0 && Math.abs(weightSum - 1) > 0.001) {
     dimensions.forEach((d) => {
-      d.weight = Number((d.weight / weightSum).toFixed(4));
-    });
+      d.weight = Number((d.weight / weightSum).toFixed(4))
+    })
   }
 
-  const parseMethod: ParseSource = raw.parse_method ?? 'rule';
+  const parseMethod: ParseSource = raw.parse_method ?? 'rule'
 
   return {
     job_name: raw.job_name ?? '未知岗位',
@@ -365,11 +365,11 @@ export const normalizeJobProfile = (raw: Partial<JobProfile>): JobProfile => {
         : Number(
             (
               dimensions.reduce((sum, d) => sum + d.confidence, 0) / (dimensions.length || 1)
-            ).toFixed(2)
+            ).toFixed(2),
           ),
     parsed_at: raw.parsed_at ?? new Date().toISOString(),
-  };
-};
+  }
+}
 
 /**
  * 校验后端返回的画像是否可用。
@@ -380,10 +380,10 @@ export const normalizeJobProfile = (raw: Partial<JobProfile>): JobProfile => {
  * 多出来的维度由 normalizeJobProfile 原样保留即可。
  */
 export const isValidJobProfile = (profile: unknown): profile is JobProfile => {
-  if (!profile || typeof profile !== 'object') return false;
-  const dims = (profile as JobProfile).dimensions;
-  if (!Array.isArray(dims)) return false;
+  if (!profile || typeof profile !== 'object') return false
+  const dims = (profile as JobProfile).dimensions
+  if (!Array.isArray(dims)) return false
   return JOB_DIMENSION_KEYS.every((key) =>
-    dims.some((d) => d?.key === key && typeof d.score === 'number' && !Number.isNaN(d.score))
-  );
-};
+    dims.some((d) => d?.key === key && typeof d.score === 'number' && !Number.isNaN(d.score)),
+  )
+}
