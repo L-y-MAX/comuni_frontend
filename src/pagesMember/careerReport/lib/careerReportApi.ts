@@ -24,47 +24,47 @@
  * 引导用户用「复制全文」完成作业提交与存档，功能不中断。
  */
 
-import { baseURL } from '@/utils/request';
-import type { CareerReport } from '@/types/careerReport';
+import { baseURL } from '@/utils/request'
+import type { CareerReport } from '@/types/careerReport'
 
 // ====================== 端点 ======================
 
 export const CAREER_REPORT_ENDPOINTS = {
   export: '/api/v1/auth/user/career-report/export/',
   detail: '/api/v1/auth/user/career-report/',
-} as const;
+} as const
 
 /** 支持的导出格式 */
-export type ExportFormat = 'pdf' | 'docx';
+export type ExportFormat = 'pdf' | 'docx'
 
 export interface ExportResult {
   /** 是否成功导出为文件 */
-  ok: boolean;
+  ok: boolean
   /** 成功时的本地临时文件路径 */
-  filePath?: string;
+  filePath?: string
   /** 失败原因（含"后端接口未就绪"） */
-  reason?: string;
+  reason?: string
   /** 降级时回传的 Markdown 全文，供页面引导用户复制 */
-  fallbackMarkdown?: string;
+  fallbackMarkdown?: string
 }
 
 // ====================== 请求封装 ======================
 
 interface RawResponse<T> {
-  statusCode: number;
-  data: T;
+  statusCode: number
+  data: T
 }
 
 const authHeader = (): Record<string, string> => ({
   Authorization: `JWT ${uni.getStorageSync('accessToken') || ''}`,
   'Content-Type': 'application/json',
-});
+})
 
 const rawRequest = <T = unknown>(
   url: string,
   method: 'GET' | 'POST',
   data?: unknown,
-  timeout = 15000
+  timeout = 15000,
 ): Promise<RawResponse<T>> =>
   new Promise((resolve, reject) => {
     uni.request({
@@ -75,8 +75,8 @@ const rawRequest = <T = unknown>(
       timeout,
       success: (res) => resolve({ statusCode: res.statusCode, data: res.data as T }),
       fail: (err) => reject(new Error(err?.errMsg || '网络请求失败')),
-    });
-  });
+    })
+  })
 
 // ====================== 导出 ======================
 
@@ -89,12 +89,12 @@ const rawRequest = <T = unknown>(
  */
 export const exportCareerReport = async (
   report: CareerReport,
-  format: ExportFormat
+  format: ExportFormat,
 ): Promise<ExportResult> => {
-  const fallbackMarkdown = report.markdown;
+  const fallbackMarkdown = report.markdown
 
   // ---- 1. 请求后端生成文件 ----
-  let fileUrl = '';
+  let fileUrl = ''
   try {
     const res = await rawRequest<{ file_url?: string; detail?: string; error?: string }>(
       CAREER_REPORT_ENDPOINTS.export,
@@ -104,29 +104,26 @@ export const exportCareerReport = async (
         format,
         title: `职业生涯发展报告-${report.student.major || '学生'}`,
         markdown: report.markdown,
-      }
-    );
+      },
+    )
 
     if (res.statusCode < 200 || res.statusCode >= 300) {
       return {
         ok: false,
-        reason:
-          res.data?.detail ||
-          res.data?.error ||
-          `导出接口不可用（HTTP ${res.statusCode}）`,
+        reason: res.data?.detail || res.data?.error || `导出接口不可用（HTTP ${res.statusCode}）`,
         fallbackMarkdown,
-      };
+      }
     }
     if (!res.data?.file_url) {
-      return { ok: false, reason: '导出接口未返回文件地址', fallbackMarkdown };
+      return { ok: false, reason: '导出接口未返回文件地址', fallbackMarkdown }
     }
-    fileUrl = res.data.file_url;
+    fileUrl = res.data.file_url
   } catch (err) {
     return {
       ok: false,
       reason: err instanceof Error ? err.message : '导出请求失败',
       fallbackMarkdown,
-    };
+    }
   }
 
   // ---- 2. 下载文件 ----
@@ -134,17 +131,17 @@ export const exportCareerReport = async (
     uni.downloadFile({
       url: fileUrl,
       success: (res) => {
-        if (res.statusCode === 200 && res.tempFilePath) resolve(res.tempFilePath);
-        else reject(new Error(`下载失败（HTTP ${res.statusCode}）`));
+        if (res.statusCode === 200 && res.tempFilePath) resolve(res.tempFilePath)
+        else reject(new Error(`下载失败（HTTP ${res.statusCode}）`))
       },
       fail: (err) => reject(new Error(err?.errMsg || '下载失败')),
-    });
+    })
   }).catch((err: Error) => {
-    return `__ERROR__${err.message}`;
-  });
+    return `__ERROR__${err.message}`
+  })
 
   if (filePath.startsWith('__ERROR__')) {
-    return { ok: false, reason: filePath.replace('__ERROR__', ''), fallbackMarkdown };
+    return { ok: false, reason: filePath.replace('__ERROR__', ''), fallbackMarkdown }
   }
 
   // ---- 3. 用系统组件打开 ----
@@ -155,28 +152,28 @@ export const exportCareerReport = async (
       showMenu: true,
       success: () => resolve(true),
       fail: () => resolve(false),
-    });
-  });
+    })
+  })
 
   if (!opened) {
     // 文件已下载成功，只是打不开：仍然算导出成功，把路径给出去
-    return { ok: true, filePath, fallbackMarkdown };
+    return { ok: true, filePath, fallbackMarkdown }
   }
 
-  return { ok: true, filePath };
-};
+  return { ok: true, filePath }
+}
 
 // ====================== 保存 / 读取（可选） ======================
 
 /** 把报告同步到后端（失败静默，本地缓存才是主存储） */
 export const saveReportToServer = async (report: CareerReport): Promise<boolean> => {
   try {
-    const res = await rawRequest(CAREER_REPORT_ENDPOINTS.detail, 'POST', report, 8000);
-    return res.statusCode >= 200 && res.statusCode < 300;
+    const res = await rawRequest(CAREER_REPORT_ENDPOINTS.detail, 'POST', report, 8000)
+    return res.statusCode >= 200 && res.statusCode < 300
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 /** 从后端读取报告（未登录或接口未就绪时返回 null） */
 export const fetchReportFromServer = async (): Promise<CareerReport | null> => {
@@ -185,13 +182,13 @@ export const fetchReportFromServer = async (): Promise<CareerReport | null> => {
       CAREER_REPORT_ENDPOINTS.detail,
       'GET',
       undefined,
-      8000
-    );
-    if (res.statusCode < 200 || res.statusCode >= 300) return null;
-    const raw = (res.data as { report?: CareerReport })?.report ?? (res.data as CareerReport);
-    if (!raw || typeof raw !== 'object' || !Array.isArray((raw as CareerReport).tasks)) return null;
-    return raw as CareerReport;
+      8000,
+    )
+    if (res.statusCode < 200 || res.statusCode >= 300) return null
+    const raw = (res.data as { report?: CareerReport })?.report ?? (res.data as CareerReport)
+    if (!raw || typeof raw !== 'object' || !Array.isArray((raw as CareerReport).tasks)) return null
+    return raw as CareerReport
   } catch {
-    return null;
+    return null
   }
-};
+}

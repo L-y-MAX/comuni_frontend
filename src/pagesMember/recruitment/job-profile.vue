@@ -107,7 +107,10 @@
         >
           <view class="pick-item-main">
             <text class="pick-item-name">{{ item.jobName }}</text>
-            <text class="pick-item-meta">{{ item.enterpriseName }}<text v-if="item.industry"> · {{ item.industry }}</text></text>
+            <text class="pick-item-meta">
+              {{ item.enterpriseName }}
+              <text v-if="item.industry">· {{ item.industry }}</text>
+            </text>
           </view>
           <text
             class="pick-item-badge"
@@ -381,9 +384,7 @@
       </view>
 
       <view class="page-footer-source">
-        <text class="source-text">
-          岗位数据由齐鲁人才网&聊城大学毕业生就业指导中心提供支持
-        </text>
+        <text class="source-text">岗位数据由齐鲁人才网&聊城大学毕业生就业指导中心提供支持</text>
       </view>
     </scroll-view>
 
@@ -407,82 +408,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { onLoad, onUnload, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue'
+import { onLoad, onUnload, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import {
   LEVEL_LABEL,
   PARSE_SOURCE_LABEL,
   type AbilityLevel,
   type JobDimensionKey,
   type JobProfile,
-} from '@/types/jobProfile';
+} from '@/types/jobProfile'
 import {
   fetchRecruitmentByCreditCode,
   fetchRecruitmentList,
   generateJobProfile,
   type RecruitmentRecord,
-} from '@/api/jobProfile';
-import { SAMPLE_RECRUITMENTS } from '@/utils/jobProfileSamples';
-import { parseJobProfileByRules } from '@/utils/jobProfileParser';
+} from '@/api/jobProfile'
+import { SAMPLE_RECRUITMENTS } from '@/utils/jobProfileSamples'
+import { parseJobProfileByRules } from '@/utils/jobProfileParser'
 
 // 招聘原始记录的类型与读取函数统一由 @/api/jobProfile 提供
 // （RecruitmentRecord / fetchRecruitmentByCreditCode），此处不再重复定义。
 
 // ====================== 页面状态 ======================
 
-const loading = ref(true);
-const errorMsg = ref('');
-const progressText = ref('');
-const degradedReason = ref('');
+const loading = ref(true)
+const errorMsg = ref('')
+const progressText = ref('')
+const degradedReason = ref('')
 
-const profile = ref<JobProfile | null>(null);
-const currentCreditCode = ref('');
-const expandedKey = ref<JobDimensionKey | null>(null);
+const profile = ref<JobProfile | null>(null)
+const currentCreditCode = ref('')
+const expandedKey = ref<JobDimensionKey | null>(null)
 
 /** 是否有一次生成流程正在进行中（防止重复点击并发发起请求） */
-let inFlight = false;
+let inFlight = false
 /** 页面是否已卸载（用于中止DeepSeek轮询，避免离开后仍在发请求） */
-let unloaded = false;
+let unloaded = false
 
 onUnload(() => {
-  unloaded = true;
-});
+  unloaded = true
+})
 
 // ====================== 计算属性 ======================
 
-const isDegraded = computed(() => !!degradedReason.value);
+const isDegraded = computed(() => !!degradedReason.value)
 
 const sourceLabel = computed(() =>
-  profile.value ? PARSE_SOURCE_LABEL[profile.value.parse_method] : ''
-);
+  profile.value ? PARSE_SOURCE_LABEL[profile.value.parse_method] : '',
+)
 
 const confidencePercent = computed(() =>
-  profile.value ? Math.round(profile.value.confidence * 100) : 0
-);
+  profile.value ? Math.round(profile.value.confidence * 100) : 0,
+)
 
 const focusDimensions = computed(() => {
-  if (!profile.value) return [];
-  return profile.value.dimensions.filter((d) =>
-    profile.value!.focus_dimensions.includes(d.key)
-  );
-});
+  if (!profile.value) return []
+  return profile.value.dimensions.filter((d) => profile.value!.focus_dimensions.includes(d.key))
+})
 
 // ====================== 展示辅助 ======================
 
-const levelLabel = (level: AbilityLevel): string => LEVEL_LABEL[level] ?? '中';
+const levelLabel = (level: AbilityLevel): string => LEVEL_LABEL[level] ?? '中'
 
 /** 等级配色：要求越高越突出，要求低用中性灰而非绿色（避免误读为「好消息」） */
 const levelColor = (level: AbilityLevel): string => {
-  if (level === 'high') return '#ff4500';
-  if (level === 'medium') return '#f59e0b';
-  return '#94a3b8';
-};
+  if (level === 'high') return '#ff4500'
+  if (level === 'medium') return '#f59e0b'
+  return '#94a3b8'
+}
 
-const weightPercent = (weight: number): string => (weight * 100).toFixed(0);
+const weightPercent = (weight: number): string => (weight * 100).toFixed(0)
 
 const toggleDim = (key: JobDimensionKey) => {
-  expandedKey.value = expandedKey.value === key ? null : key;
-};
+  expandedKey.value = expandedKey.value === key ? null : key
+}
 
 // ====================== 数据加载 ======================
 
@@ -490,37 +489,37 @@ const toggleDim = (key: JobDimensionKey) => {
 
 /** 岗位候选项 */
 interface PickJobItem {
-  key: string;
-  jobName: string;
-  enterpriseName: string;
-  industry: string;
+  key: string
+  jobName: string
+  enterpriseName: string
+  industry: string
   /** real = 校招真实岗位（需登录）；sample = 内置示例岗位（离线可用） */
-  source: 'real' | 'sample';
-  creditCode?: string;
-  sampleIndex?: number;
+  source: 'real' | 'sample'
+  creditCode?: string
+  sampleIndex?: number
 }
 
-const pickerMode = ref(false);
-const pickerItems = ref<PickJobItem[]>([]);
-const pickerLoading = ref(false);
+const pickerMode = ref(false)
+const pickerItems = ref<PickJobItem[]>([])
+const pickerLoading = ref(false)
 
 /**
  * 岗位搜索关键词。
  * 只过滤「候选岗位列表」，不影响真实岗位 / 示例岗位的解析流程。
  */
-const pickerKeyword = ref('');
+const pickerKeyword = ref('')
 
 /** 搜索图标加载失败时退回 emoji，避免出现破图 */
-const searchIconError = ref(false);
+const searchIconError = ref(false)
 
 /** 过滤后的候选岗位；关键词为空时返回全部 */
 const filteredPickerItems = computed<PickJobItem[]>(() => {
-  const kw = pickerKeyword.value.trim().toLowerCase();
-  if (!kw) return pickerItems.value;
+  const kw = pickerKeyword.value.trim().toLowerCase()
+  if (!kw) return pickerItems.value
   return pickerItems.value.filter((it) =>
-    [it.jobName, it.enterpriseName, it.industry].join(' ').toLowerCase().includes(kw)
-  );
-});
+    [it.jobName, it.enterpriseName, it.industry].join(' ').toLowerCase().includes(kw),
+  )
+})
 
 /** 内置示例岗位：交出原始招聘输入，由同一套解析逻辑生成画像 */
 const buildSamplePicker = (): PickJobItem[] =>
@@ -531,7 +530,7 @@ const buildSamplePicker = (): PickJobItem[] =>
     industry: r.industry ?? '',
     source: 'sample' as const,
     sampleIndex: i,
-  }));
+  }))
 
 /**
  * 载入岗位候选。
@@ -541,11 +540,11 @@ const buildSamplePicker = (): PickJobItem[] =>
  * 这个入口在未登录状态下等于死路。
  */
 const loadPicker = async () => {
-  pickerLoading.value = true;
-  const samples = buildSamplePicker();
-  pickerItems.value = samples;
+  pickerLoading.value = true
+  const samples = buildSamplePicker()
+  pickerItems.value = samples
   try {
-    const real = await fetchRecruitmentList();
+    const real = await fetchRecruitmentList()
     const realItems: PickJobItem[] = real
       .filter((r) => r.credit_code && r.job_name)
       .map((r) => ({
@@ -555,56 +554,56 @@ const loadPicker = async () => {
         industry: r.industry ?? '',
         source: 'real' as const,
         creditCode: r.credit_code,
-      }));
-    const realNames = new Set(realItems.map((i) => i.jobName));
-    pickerItems.value = [...realItems, ...samples.filter((s) => !realNames.has(s.jobName))];
+      }))
+    const realNames = new Set(realItems.map((i) => i.jobName))
+    pickerItems.value = [...realItems, ...samples.filter((s) => !realNames.has(s.jobName))]
   } catch {
     // 拉不到真实岗位不是错误：内置示例足够演示
-    pickerItems.value = samples;
+    pickerItems.value = samples
   } finally {
-    pickerLoading.value = false;
+    pickerLoading.value = false
   }
-};
+}
 
 /** 选中岗位：真实岗位走原有流程，示例岗位直接用本地规则解析 */
 const chooseJob = async (item: PickJobItem) => {
   if (item.source === 'real' && item.creditCode) {
-    pickerMode.value = false;
-    currentCreditCode.value = item.creditCode;
-    await loadAll();
-    return;
+    pickerMode.value = false
+    currentCreditCode.value = item.creditCode
+    await loadAll()
+    return
   }
 
-  if (item.sampleIndex === undefined) return;
-  const raw = SAMPLE_RECRUITMENTS[item.sampleIndex];
-  if (!raw) return;
+  if (item.sampleIndex === undefined) return
+  const raw = SAMPLE_RECRUITMENTS[item.sampleIndex]
+  if (!raw) return
 
-  pickerMode.value = false;
-  expandedKey.value = null;
+  pickerMode.value = false
+  expandedKey.value = null
   // 如实标注这是内置示例 + 本地规则解析，不伪装成真实岗位或大模型结果
   degradedReason.value =
-    '当前展示的是内置示例岗位，由本地关键词规则解析生成；登录后可从校招招聘信息中解析真实岗位文本。';
-  profile.value = parseJobProfileByRules(raw);
-  uni.pageScrollTo({ scrollTop: 0, duration: 200 });
-};
+    '当前展示的是内置示例岗位，由本地关键词规则解析生成；登录后可从校招招聘信息中解析真实岗位文本。'
+  profile.value = parseJobProfileByRules(raw)
+  uni.pageScrollTo({ scrollTop: 0, duration: 200 })
+}
 
 onLoad((options) => {
-  const creditCode = options?.id;
+  const creditCode = options?.id
   if (!creditCode) {
     // 未带岗位参数进入（例如从侧边栏或「我的」直接点「岗位能力画像」）：
     // 不报参数错误，改为进入岗位选择模式，由用户在本页内选岗位。
-    loading.value = false;
-    pickerMode.value = true;
-    void loadPicker();
-    return;
+    loading.value = false
+    pickerMode.value = true
+    void loadPicker()
+    return
   }
-  currentCreditCode.value = creditCode;
-  loadAll();
-});
+  currentCreditCode.value = creditCode
+  loadAll()
+})
 
 /** 拉取招聘原始数据：复用 api/jobProfile 的共享实现，避免三个页面各写一份 */
 const fetchRecruitment = (creditCode: string): Promise<RecruitmentRecord> =>
-  fetchRecruitmentByCreditCode(creditCode);
+  fetchRecruitmentByCreditCode(creditCode)
 
 /** 主流程：拉数据 → 生成画像 */
 /**
@@ -614,21 +613,21 @@ const fetchRecruitment = (creditCode: string): Promise<RecruitmentRecord> =>
  * 避免逻辑分叉导致某条路径漏重置状态（初版三份拷贝就出现了 expandedKey 未重置的差异）。
  */
 const runGenerate = async (
-  opts: { useCache?: boolean; forceLocal?: boolean; toast?: string } = {}
+  opts: { useCache?: boolean; forceLocal?: boolean; toast?: string } = {},
 ) => {
-  if (!currentCreditCode.value) return;
+  if (!currentCreditCode.value) return
   // 已在进行中则忽略重复触发，避免两次流程互相覆盖结果
-  if (inFlight) return;
-  inFlight = true;
+  if (inFlight) return
+  inFlight = true
 
-  loading.value = true;
-  errorMsg.value = '';
-  degradedReason.value = '';
-  expandedKey.value = null;
+  loading.value = true
+  errorMsg.value = ''
+  degradedReason.value = ''
+  expandedKey.value = null
 
   try {
-    progressText.value = '正在读取岗位数据…';
-    const r = await fetchRecruitment(currentCreditCode.value);
+    progressText.value = '正在读取岗位数据…'
+    const r = await fetchRecruitment(currentCreditCode.value)
 
     const result = await generateJobProfile(
       {
@@ -648,70 +647,66 @@ const runGenerate = async (
         // 离开页面后停止轮询
         shouldStop: () => unloaded,
         onProgress: (msg) => {
-          progressText.value = msg;
+          progressText.value = msg
         },
-      }
-    );
+      },
+    )
 
-    profile.value = result.profile;
-    degradedReason.value = result.degraded ? result.degradedReason || '接口未就绪' : '';
+    profile.value = result.profile
+    degradedReason.value = result.degraded ? result.degradedReason || '接口未就绪' : ''
 
     if (opts.toast) {
-      uni.showToast({ title: opts.toast, icon: 'success', duration: 1500 });
+      uni.showToast({ title: opts.toast, icon: 'success', duration: 1500 })
     }
   } catch (err) {
     // 用户已离开页面导致的取消：不提示错误、不改状态
     if (err instanceof Error && err.name === 'AbortError') {
-      return;
+      return
     }
-    errorMsg.value = err instanceof Error ? err.message : '生成岗位画像失败';
+    errorMsg.value = err instanceof Error ? err.message : '生成岗位画像失败'
   } finally {
-    inFlight = false;
-    loading.value = false;
-    progressText.value = '';
+    inFlight = false
+    loading.value = false
+    progressText.value = ''
   }
-};
+}
 
 /** 首次加载：允许命中后端缓存 */
-const loadAll = () => runGenerate();
+const loadAll = () => runGenerate()
 
 /** 重新解析：跳过后端缓存，重新走DeepSeek */
-const regenerate = () => runGenerate({ useCache: false, toast: '已重新生成' });
+const regenerate = () => runGenerate({ useCache: false, toast: '已重新生成' })
 
 /** 强制本地规则解析：调试/降级演示用，不发DeepSeek请求 */
-const forceLocalParse = () => runGenerate({ forceLocal: true, toast: '已切换本地规则解析' });
+const forceLocalParse = () => runGenerate({ forceLocal: true, toast: '已切换本地规则解析' })
 
 /** 跳转到人岗匹配页，带上当前岗位标识 */
 const goJobMatch = () => {
   if (!currentCreditCode.value) {
-    uni.showToast({ title: '岗位信息未就绪', icon: 'none', duration: 2000 });
-    return;
+    uni.showToast({ title: '岗位信息未就绪', icon: 'none', duration: 2000 })
+    return
   }
   uni.navigateTo({
     url: `/pagesMember/jobMatch/jobMatch?id=${encodeURIComponent(currentCreditCode.value)}`,
     fail: (err) => {
-      console.error('跳转人岗匹配页失败：', err);
-      uni.showToast({ title: '跳转失败，请重试', icon: 'none', duration: 2000 });
+      console.error('跳转人岗匹配页失败：', err)
+      uni.showToast({ title: '跳转失败，请重试', icon: 'none', duration: 2000 })
     },
-  });
-};
+  })
+}
 
 // ====================== 分享 ======================
 
 onShareAppMessage(() => ({
-  title: profile.value
-    ? `${profile.value.job_name}岗位能力画像`
-    : '岗位能力画像',
+  title: profile.value ? `${profile.value.job_name}岗位能力画像` : '岗位能力画像',
   path: `/pagesMember/recruitment/job-profile?id=${currentCreditCode.value}`,
   imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png',
-}));
+}))
 
 onShareTimeline(() => ({
-  title: profile.value
-    ? `${profile.value.job_name}需要什么能力？来看岗位画像`
-    : '岗位能力画像',
+  title: profile.value ? `${profile.value.job_name}需要什么能力？来看岗位画像` : '岗位能力画像',
   path: `/pagesMember/recruitment/job-profile?id=${currentCreditCode.value}`,
-}));
+}))
 </script>
 
 <style scoped lang="scss">
@@ -766,7 +761,7 @@ onShareTimeline(() => ({
   width: 56rpx;
   height: 56rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #FF7239;
+  border-top-color: #ff7239;
   border-radius: 50%;
   margin-bottom: 28rpx;
   animation: spin 0.9s linear infinite;
@@ -1149,14 +1144,14 @@ onShareTimeline(() => ({
 }
 
 .primary-btn {
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
 }
 
 .ghost-btn {
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
 }
 
 // ========== 底部数据源 ==========

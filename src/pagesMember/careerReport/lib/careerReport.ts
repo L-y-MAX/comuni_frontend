@@ -12,11 +12,11 @@
  *   3. 结构化数据与 Markdown 全文由同一份数据生成，保证界面看到的就是导出的内容。
  */
 
-import { DIMENSION_ADVICE, rankJobsByMatch } from '@/utils/jobMatch';
-import { buildJobGraph } from './jobGraph';
-import type { AbilityDimensionKey, JobProfile, ParseSource } from '@/types/jobProfile';
-import type { MatchResult } from '@/types/jobMatch';
-import type { StudentProfile } from '@/types/studentProfile';
+import { DIMENSION_ADVICE, rankJobsByMatch } from '@/utils/jobMatch'
+import { buildJobGraph } from './jobGraph'
+import type { AbilityDimensionKey, JobProfile, ParseSource } from '@/types/jobProfile'
+import type { MatchResult } from '@/types/jobMatch'
+import type { StudentProfile } from '@/types/studentProfile'
 import {
   CAREER_REPORT_STORAGE_KEY,
   PLAN_PHASE_LABEL,
@@ -25,17 +25,17 @@ import {
   type EvaluationMilestone,
   type GrowthTask,
   type PlanPhase,
-} from '@/types/careerReport';
+} from '@/types/careerReport'
 
 // ====================== 选项 ======================
 
 export interface BuildReportOptions {
   /** 参与匹配的岗位数量上限（取匹配度最高的若干个） */
-  topN?: number;
+  topN?: number
   /** 学生姓名（用于报告抬头，选填） */
-  studentName?: string;
+  studentName?: string
   /** 是否把已存在的任务完成状态带过来（重新生成报告时保留勾选进度） */
-  previousTasks?: GrowthTask[];
+  previousTasks?: GrowthTask[]
 }
 
 // ====================== 成长计划生成 ======================
@@ -49,9 +49,9 @@ export interface BuildReportOptions {
  * 软素质是用人面谈阶段才区分的。
  */
 export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
-  const tasks: GrowthTask[] = [];
-  let seq = 0;
-  const nextId = (phase: PlanPhase) => `task-${phase}-${(seq += 1)}`;
+  const tasks: GrowthTask[] = []
+  let seq = 0
+  const nextId = (phase: PlanPhase) => `task-${phase}-${(seq += 1)}`
 
   if (!match) {
     // 没有匹配结果时也给一份通用的成长框架，避免报告空白
@@ -59,18 +59,19 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       id: nextId('short'),
       phase: 'short',
       title: '明确职业目标岗位',
-      detail: '先确定 1–2 个意向岗位，才能生成有针对性的成长计划。可在「能力画像」页补充职业意向后重新生成报告。',
+      detail:
+        '先确定 1–2 个意向岗位，才能生成有针对性的成长计划。可在「能力画像」页补充职业意向后重新生成报告。',
       priority: 'high',
       dueMonth: 1,
       done: false,
-    });
-    return tasks;
+    })
+    return tasks
   }
 
   // ---- 短期：补齐硬门槛 ----
-  const mustSkills = match.skillGaps.filter((g) => g.requirement === 'must');
-  const mustCerts = match.certGaps.filter((c) => c.requirement === 'must');
-  const otherCerts = match.certGaps.filter((c) => c.requirement !== 'must');
+  const mustSkills = match.skillGaps.filter((g) => g.requirement === 'must')
+  const mustCerts = match.certGaps.filter((c) => c.requirement === 'must')
+  const otherCerts = match.certGaps.filter((c) => c.requirement !== 'must')
 
   mustSkills.slice(0, 3).forEach((s, i) => {
     tasks.push({
@@ -85,8 +86,8 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       priority: 'high',
       dueMonth: Math.min(3, i + 1),
       done: false,
-    });
-  });
+    })
+  })
 
   mustCerts.slice(0, 2).forEach((c, i) => {
     tasks.push({
@@ -99,8 +100,8 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       priority: 'high',
       dueMonth: Math.min(3, i + 2),
       done: false,
-    });
-  });
+    })
+  })
 
   otherCerts.slice(0, 1).forEach((c) => {
     tasks.push({
@@ -113,17 +114,17 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       priority: 'medium',
       dueMonth: 3,
       done: false,
-    });
-  });
+    })
+  })
 
   // ---- 短期：单维度最短板 ----
   const weakDims = [...match.gaps]
     .filter((g) => g.gap > 0 && !g.insufficientInfo)
-    .sort((a, b) => b.gap * b.effectiveWeight - a.gap * a.effectiveWeight);
+    .sort((a, b) => b.gap * b.effectiveWeight - a.gap * a.effectiveWeight)
 
   const shortDims = weakDims.filter(
-    (g) => g.key !== 'professional_skill' && g.key !== 'certificate' && g.key !== 'internship'
-  );
+    (g) => g.key !== 'professional_skill' && g.key !== 'certificate' && g.key !== 'internship',
+  )
 
   shortDims.slice(0, 1).forEach((g) => {
     tasks.push({
@@ -135,12 +136,12 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       priority: 'medium',
       dueMonth: 3,
       done: false,
-    });
-  });
+    })
+  })
 
   // ---- 中期：实践经历 ----
-  const internshipGap = match.gaps.find((g) => g.key === 'internship');
-  const needPractice = !internshipGap || internshipGap.gap > 0 || internshipGap.studentScore < 75;
+  const internshipGap = match.gaps.find((g) => g.key === 'internship')
+  const needPractice = !internshipGap || internshipGap.gap > 0 || internshipGap.studentScore < 75
 
   if (needPractice) {
     tasks.push({
@@ -155,7 +156,7 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       priority: 'high',
       dueMonth: 6,
       done: false,
-    });
+    })
   }
 
   tasks.push({
@@ -169,7 +170,7 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
     priority: 'medium',
     dueMonth: 8,
     done: false,
-  });
+  })
 
   // ---- 中期：其余弱项维度 ----
   shortDims.slice(1, 3).forEach((g, i) => {
@@ -182,8 +183,8 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
       priority: 'medium',
       dueMonth: 9 + i,
       done: false,
-    });
-  });
+    })
+  })
 
   // ---- 长期：持续建设与晋升准备 ----
   tasks.push({
@@ -197,7 +198,7 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
     priority: 'low',
     dueMonth: 18,
     done: false,
-  });
+  })
 
   tasks.push({
     id: nextId('long'),
@@ -209,10 +210,10 @@ export const buildGrowthTasks = (match: MatchResult | null): GrowthTask[] => {
     priority: 'low',
     dueMonth: 24,
     done: false,
-  });
+  })
 
-  return tasks;
-};
+  return tasks
+}
 
 // ====================== 评估节点 ======================
 
@@ -242,7 +243,7 @@ export const buildMilestones = (): EvaluationMilestone[] => [
     focus: '全面复算，与目标岗位重新匹配，动态调整下一阶段路径',
     metrics: ['学习完成率', '技能提升度', '实践成果', '综合竞争力评分'],
   },
-];
+]
 
 // ====================== 目标与趋势文案 ======================
 
@@ -251,43 +252,48 @@ const buildGoals = (student: StudentProfile, best: MatchResult | null) => {
     return {
       shortTerm: '明确 1–2 个意向岗位，并完成一次能力画像自评。',
       longTerm: '在目标方向上形成可展示的能力证明（项目、实习或证书）。',
-    };
+    }
   }
 
-  const mustSkills = best.skillGaps.filter((g) => g.requirement === 'must').map((g) => g.name);
-  const certs = best.certGaps.map((c) => c.name);
+  const mustSkills = best.skillGaps.filter((g) => g.requirement === 'must').map((g) => g.name)
+  const certs = best.certGaps.map((c) => c.name)
 
-  const shortParts: string[] = [];
-  if (mustSkills.length) shortParts.push(`补齐「${mustSkills.slice(0, 3).join('、')}」等硬性技能`);
-  if (certs.length) shortParts.push(`考取「${certs.slice(0, 2).join('、')}」`);
+  const shortParts: string[] = []
+  if (mustSkills.length) shortParts.push(`补齐「${mustSkills.slice(0, 3).join('、')}」等硬性技能`)
+  if (certs.length) shortParts.push(`考取「${certs.slice(0, 2).join('、')}」`)
   if (!shortParts.length && best.gaps.length) {
-    const weakest = [...best.gaps].sort((a, b) => b.gap - a.gap)[0];
-    shortParts.push(`把「${weakest.label}」从 ${weakest.studentScore} 分提升到 ${weakest.requiredScore} 分以上`);
+    const weakest = [...best.gaps].sort((a, b) => b.gap - a.gap)[0]
+    shortParts.push(
+      `把「${weakest.label}」从 ${weakest.studentScore} 分提升到 ${weakest.requiredScore} 分以上`,
+    )
   }
 
   const shortTerm = shortParts.length
     ? `3 个月内达到「${best.jobName}」岗位的硬性门槛：${shortParts.join('，')}。`
-    : `3 个月内把与「${best.jobName}」的匹配度从 ${best.matchScore}% 提升到 85% 以上。`;
+    : `3 个月内把与「${best.jobName}」的匹配度从 ${best.matchScore}% 提升到 85% 以上。`
 
   const longTerm =
     `毕业后进入「${best.jobName}」方向的相关岗位，` +
     `${student.target_industry ? `聚焦${student.target_industry}行业，` : ''}` +
-    `并在 3–5 年内沿垂直晋升路径成长到骨干岗位。`;
+    `并在 3–5 年内沿垂直晋升路径成长到骨干岗位。`
 
-  return { shortTerm, longTerm };
-};
+  return { shortTerm, longTerm }
+}
 
 const buildIndustryTrend = (best: MatchResult | null, jobs: JobProfile[]): string => {
   if (!best) {
-    return '建议先确定意向行业。聊城市当前重点发展智能制造、现代农业、数字经济三大核心产业，可结合本专业与区域产业需求选择方向。';
+    return '建议先确定意向行业。聊城市当前重点发展智能制造、现代农业、数字经济三大核心产业，可结合本专业与区域产业需求选择方向。'
   }
 
-  const job = jobs.find((j) => j.job_name === best.jobName);
+  const job = jobs.find((j) => j.job_name === best.jobName)
   const topDims = job
-    ? [...job.dimensions].sort((a, b) => b.score - a.score).slice(0, 3).map((d) => d.label)
-    : [];
+    ? [...job.dimensions]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map((d) => d.label)
+    : []
 
-  const industryText = best.industry ? `「${best.industry}」` : '该方向';
+  const industryText = best.industry ? `「${best.industry}」` : '该方向'
 
   return (
     `${industryText}是聊城市重点培育的核心产业方向之一，相关岗位需求持续增长。` +
@@ -296,48 +302,50 @@ const buildIndustryTrend = (best: MatchResult | null, jobs: JobProfile[]): strin
       : '') +
     `建议在补齐硬性要求的同时，持续关注该行业的政策走向与技术演进，` +
     `把这些理解转化为面试中能讲清楚的求职理由——这是很多同学容易忽略、但面试官很在意的部分。`
-  );
-};
+  )
+}
 
 // ====================== Markdown 全文 ======================
 
 const buildMarkdown = (report: CareerReport): string => {
-  const { student, bestMatch, matches, careerPath } = report;
-  const lines: string[] = [];
+  const { student, bestMatch, matches, careerPath } = report
+  const lines: string[] = []
 
-  lines.push('# 个性化职业生涯发展报告');
-  lines.push('');
-  lines.push(`**专业**：${student.major || '未填写'}　**年级**：${student.gradeLabel || '未填写'}`);
-  lines.push(`**意向岗位**：${student.targetJob || '未填写'}`);
-  lines.push(`**综合就业竞争力评分**：${student.competitiveness} / 100　**信息完整度**：${student.completeness}%`);
-  lines.push('');
-  lines.push(`**生成时间**：${new Date(report.generatedAt).toLocaleString('zh-CN')}`);
-  lines.push('');
-  lines.push('---');
-  lines.push('');
+  lines.push('# 个性化职业生涯发展报告')
+  lines.push('')
+  lines.push(`**专业**：${student.major || '未填写'}　**年级**：${student.gradeLabel || '未填写'}`)
+  lines.push(`**意向岗位**：${student.targetJob || '未填写'}`)
+  lines.push(
+    `**综合就业竞争力评分**：${student.competitiveness} / 100　**信息完整度**：${student.completeness}%`,
+  )
+  lines.push('')
+  lines.push(`**生成时间**：${new Date(report.generatedAt).toLocaleString('zh-CN')}`)
+  lines.push('')
+  lines.push('---')
+  lines.push('')
 
   // 一、匹配分析
-  lines.push('## 一、职业探索与人岗匹配分析');
-  lines.push('');
-  lines.push(report.matchSummary);
-  lines.push('');
+  lines.push('## 一、职业探索与人岗匹配分析')
+  lines.push('')
+  lines.push(report.matchSummary)
+  lines.push('')
   if (bestMatch) {
-    lines.push('### 1.1 四大维度契合度');
-    lines.push('');
-    lines.push('| 维度 | 得分 | 权重 |');
-    lines.push('| --- | --- | --- |');
+    lines.push('### 1.1 四大维度契合度')
+    lines.push('')
+    lines.push('| 维度 | 得分 | 权重 |')
+    lines.push('| --- | --- | --- |')
     bestMatch.categories.forEach((c) => {
-      lines.push(`| ${c.label} | ${c.score} | ${(c.weight * 100).toFixed(0)}% |`);
-    });
-    lines.push('');
+      lines.push(`| ${c.label} | ${c.score} | ${(c.weight * 100).toFixed(0)}% |`)
+    })
+    lines.push('')
 
-    lines.push('### 1.2 十大能力项差距');
-    lines.push('');
+    lines.push('### 1.2 十大能力项差距')
+    lines.push('')
     // 统一用「达成度」作为主口径：
     // 专业技能/证书按岗位要求条目覆盖率算，其余按分值比例算，
     // 两者都由 fitPercent 给出，避免同一维度出现两个互相矛盾的数。
-    lines.push('| 能力项 | 达成度 | 岗位要求 | 状态 |');
-    lines.push('| --- | --- | --- | --- |');
+    lines.push('| 能力项 | 达成度 | 岗位要求 | 状态 |')
+    lines.push('| --- | --- | --- | --- |')
     bestMatch.gaps.forEach((g) => {
       const status = g.noRequirement
         ? '岗位未提要求'
@@ -345,10 +353,10 @@ const buildMarkdown = (report: CareerReport): string => {
           ? '已达标'
           : g.insufficientInfo
             ? '信息不足'
-            : '未达标';
+            : '未达标'
 
       // 岗位没提要求的项不参与总评，用「—」表示，避免显示成 100% 让人误以为达标
-      const achievement = g.noRequirement ? '—' : `${g.fitPercent}%`;
+      const achievement = g.noRequirement ? '—' : `${g.fitPercent}%`
 
       const requirement = g.noRequirement
         ? '—'
@@ -356,119 +364,125 @@ const buildMarkdown = (report: CareerReport): string => {
           ? g.key === 'professional_skill'
             ? '岗位列明的技能清单'
             : '岗位列明的证书清单'
-          : `${g.requiredScore} 分`;
+          : `${g.requiredScore} 分`
 
-      lines.push(`| ${g.label} | ${achievement} | ${requirement} | ${status} |`);
-    });
-    lines.push('');
+      lines.push(`| ${g.label} | ${achievement} | ${requirement} | ${status} |`)
+    })
+    lines.push('')
     lines.push(
       '> 达成度说明：专业技能与证书资质按「岗位要求条目中已具备的比例」计算，' +
-        '其余能力项按「个人水平 / 岗位要求」计算。岗位未明确提出要求的项不参与总评。'
-    );
-    lines.push('');
+        '其余能力项按「个人水平 / 岗位要求」计算。岗位未明确提出要求的项不参与总评。',
+    )
+    lines.push('')
 
     if (bestMatch.skillGaps.length) {
-      lines.push('### 1.3 硬技能缺口');
-      lines.push('');
+      lines.push('### 1.3 硬技能缺口')
+      lines.push('')
       bestMatch.skillGaps.forEach((s) => {
-        lines.push(`- ${s.name}（${s.requirement === 'must' ? '岗位要求' : '加分项'}）`);
-      });
-      lines.push('');
+        lines.push(`- ${s.name}（${s.requirement === 'must' ? '岗位要求' : '加分项'}）`)
+      })
+      lines.push('')
     }
 
     if (bestMatch.certGaps.length) {
-      lines.push('### 1.4 证书缺口');
-      lines.push('');
-      bestMatch.certGaps.forEach((c) => lines.push(`- ${c.name}`));
-      lines.push('');
+      lines.push('### 1.4 证书缺口')
+      lines.push('')
+      bestMatch.certGaps.forEach((c) => lines.push(`- ${c.name}`))
+      lines.push('')
     }
 
     if (matches.length > 1) {
-      lines.push('### 1.5 适配岗位排序');
-      lines.push('');
-      lines.push('| 排名 | 岗位 | 企业 | 匹配度 |');
-      lines.push('| --- | --- | --- | --- |');
+      lines.push('### 1.5 适配岗位排序')
+      lines.push('')
+      lines.push('| 排名 | 岗位 | 企业 | 匹配度 |')
+      lines.push('| --- | --- | --- | --- |')
       matches.slice(0, 5).forEach((m, i) => {
-        lines.push(`| ${i + 1} | ${m.jobName} | ${m.enterpriseName || '-'} | ${m.matchScore}% |`);
-      });
-      lines.push('');
+        lines.push(`| ${i + 1} | ${m.jobName} | ${m.enterpriseName || '-'} | ${m.matchScore}% |`)
+      })
+      lines.push('')
     }
   }
-  lines.push('---');
-  lines.push('');
+  lines.push('---')
+  lines.push('')
 
   // 二、职业目标与路径
-  lines.push('## 二、职业目标与职业路径规划');
-  lines.push('');
-  lines.push('### 2.1 职业目标');
-  lines.push('');
-  lines.push(`**短期目标**：${report.shortTermGoal}`);
-  lines.push('');
-  lines.push(`**长期目标**：${report.longTermGoal}`);
-  lines.push('');
-  lines.push('### 2.2 行业需求与发展趋势');
-  lines.push('');
-  lines.push(report.industryTrend);
-  lines.push('');
+  lines.push('## 二、职业目标与职业路径规划')
+  lines.push('')
+  lines.push('### 2.1 职业目标')
+  lines.push('')
+  lines.push(`**短期目标**：${report.shortTermGoal}`)
+  lines.push('')
+  lines.push(`**长期目标**：${report.longTermGoal}`)
+  lines.push('')
+  lines.push('### 2.2 行业需求与发展趋势')
+  lines.push('')
+  lines.push(report.industryTrend)
+  lines.push('')
 
   if (careerPath.verticalPath.length) {
-    lines.push('### 2.3 垂直晋升路径');
-    lines.push('');
-    lines.push('```');
-    lines.push(careerPath.verticalPath.join('  →  '));
-    lines.push('```');
-    lines.push('');
+    lines.push('### 2.3 垂直晋升路径')
+    lines.push('')
+    lines.push('```')
+    lines.push(careerPath.verticalPath.join('  →  '))
+    lines.push('```')
+    lines.push('')
   }
 
   if (careerPath.lateralPaths.length) {
-    lines.push('### 2.4 跨岗换路路径');
-    lines.push('');
-    lines.push('基于能力要求相似度计算，以下方向属于平滑转岗路径：');
-    lines.push('');
+    lines.push('### 2.4 跨岗换路路径')
+    lines.push('')
+    lines.push('基于能力要求相似度计算，以下方向属于平滑转岗路径：')
+    lines.push('')
     careerPath.lateralPaths.forEach((p, i) => {
-      lines.push(`**${i + 1}. ${p.jobName}**（${p.industry || '行业未标注'}，能力相似度 ${Math.round(p.similarity * 100)}%）`);
-      lines.push('');
-      lines.push(`> ${p.reason}`);
-      lines.push('');
-    });
+      lines.push(
+        `**${i + 1}. ${p.jobName}**（${p.industry || '行业未标注'}，能力相似度 ${Math.round(p.similarity * 100)}%）`,
+      )
+      lines.push('')
+      lines.push(`> ${p.reason}`)
+      lines.push('')
+    })
   }
-  lines.push('---');
-  lines.push('');
+  lines.push('---')
+  lines.push('')
 
   // 三、成长计划
-  lines.push('## 三、分阶段个性化成长计划');
-  lines.push('');
-  (['short', 'medium', 'long'] as PlanPhase[]).forEach((phase) => {
-    const phaseTasks = report.tasks.filter((t) => t.phase === phase);
-    if (!phaseTasks.length) return;
-    lines.push(`### ${PLAN_PHASE_LABEL[phase]}`);
-    lines.push('');
+  lines.push('## 三、分阶段个性化成长计划')
+  lines.push('')
+  ;(['short', 'medium', 'long'] as PlanPhase[]).forEach((phase) => {
+    const phaseTasks = report.tasks.filter((t) => t.phase === phase)
+    if (!phaseTasks.length) return
+    lines.push(`### ${PLAN_PHASE_LABEL[phase]}`)
+    lines.push('')
     phaseTasks.forEach((t) => {
-      lines.push(`- [${t.done ? 'x' : ' '}] **${t.title}**　\`${TASK_PRIORITY_LABEL[t.priority]} · 第 ${t.dueMonth} 个月\``);
-      lines.push(`  ${t.detail}`);
-    });
-    lines.push('');
-  });
-  lines.push('---');
-  lines.push('');
+      lines.push(
+        `- [${t.done ? 'x' : ' '}] **${t.title}**　\`${TASK_PRIORITY_LABEL[t.priority]} · 第 ${t.dueMonth} 个月\``,
+      )
+      lines.push(`  ${t.detail}`)
+    })
+    lines.push('')
+  })
+  lines.push('---')
+  lines.push('')
 
   // 四、评估机制
-  lines.push('## 四、评估周期与动态调整机制');
-  lines.push('');
-  lines.push('| 评估节点 | 复盘重点 | 核心指标 |');
-  lines.push('| --- | --- | --- |');
+  lines.push('## 四、评估周期与动态调整机制')
+  lines.push('')
+  lines.push('| 评估节点 | 复盘重点 | 核心指标 |')
+  lines.push('| --- | --- | --- |')
   report.milestones.forEach((m) => {
-    lines.push(`| ${m.label} | ${m.focus} | ${m.metrics.join('、')} |`);
-  });
-  lines.push('');
-  lines.push('每次复盘后，重新生成本报告并与上一版对比，动态调整成长路径。');
-  lines.push('');
-  lines.push('---');
-  lines.push('');
-  lines.push('> 本报告由「Comuni 职途」根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考，不作为招聘录用依据。');
+    lines.push(`| ${m.label} | ${m.focus} | ${m.metrics.join('、')} |`)
+  })
+  lines.push('')
+  lines.push('每次复盘后，重新生成本报告并与上一版对比，动态调整成长路径。')
+  lines.push('')
+  lines.push('---')
+  lines.push('')
+  lines.push(
+    '> 本报告由「Comuni 职途」根据能力画像与人岗匹配结果自动生成，仅供生涯规划参考，不作为招聘录用依据。',
+  )
 
-  return lines.join('\n');
-};
+  return lines.join('\n')
+}
 
 // ====================== 主入口 ======================
 
@@ -482,18 +496,18 @@ const buildMarkdown = (report: CareerReport): string => {
 export const buildCareerReport = (
   student: StudentProfile,
   jobs: JobProfile[],
-  options: BuildReportOptions = {}
+  options: BuildReportOptions = {},
 ): CareerReport => {
-  const { topN = 5, studentName = '', previousTasks } = options;
+  const { topN = 5, studentName = '', previousTasks } = options
 
   // 1) 匹配（功能 3）
-  const allMatches = rankJobsByMatch(student, jobs);
-  const matches = allMatches.slice(0, topN);
-  const bestMatch = matches[0] ?? null;
+  const allMatches = rankJobsByMatch(student, jobs)
+  const matches = allMatches.slice(0, topN)
+  const bestMatch = matches[0] ?? null
 
   // 2) 岗位图谱（核心创新）
-  const graph = buildJobGraph(jobs);
-  const node = bestMatch ? graph.find((n) => n.jobName === bestMatch.jobName) : undefined;
+  const graph = buildJobGraph(jobs)
+  const node = bestMatch ? graph.find((n) => n.jobName === bestMatch.jobName) : undefined
 
   const careerPath = {
     currentJob: bestMatch?.jobName ?? '',
@@ -505,20 +519,20 @@ export const buildCareerReport = (
       similarity: p.similarity,
       reason: p.reason,
     })),
-  };
+  }
 
   // 3) 目标与趋势
-  const { shortTerm, longTerm } = buildGoals(student, bestMatch);
-  const industryTrend = buildIndustryTrend(bestMatch, jobs);
+  const { shortTerm, longTerm } = buildGoals(student, bestMatch)
+  const industryTrend = buildIndustryTrend(bestMatch, jobs)
 
   // 4) 成长计划（保留上次的勾选进度）
-  const freshTasks = buildGrowthTasks(bestMatch);
+  const freshTasks = buildGrowthTasks(bestMatch)
   const tasks = previousTasks?.length
     ? freshTasks.map((t) => ({
         ...t,
         done: previousTasks.find((p) => p.title === t.title)?.done ?? t.done,
       }))
-    : freshTasks;
+    : freshTasks
 
   // 5) 匹配分析结论
   const matchSummary = bestMatch
@@ -526,16 +540,18 @@ export const buildCareerReport = (
         const parts = [
           `本次共比对 ${allMatches.length} 个岗位，与你的能力画像匹配度最高的是「${bestMatch.jobName}」` +
             `${bestMatch.enterpriseName ? `（${bestMatch.enterpriseName}）` : ''}，综合匹配度 ${bestMatch.matchScore}%，${bestMatch.matchLevelLabel}。`,
-        ];
+        ]
         if (bestMatch.criticalGaps.length) {
-          parts.push(`主要差距集中在：${bestMatch.criticalGaps.join('；')}。`);
+          parts.push(`主要差距集中在：${bestMatch.criticalGaps.join('；')}。`)
         } else {
-          parts.push('未发现明显短板，建议尽快投递并把相关经历写得更具体。');
+          parts.push('未发现明显短板，建议尽快投递并把相关经历写得更具体。')
         }
-        parts.push(`十大能力项中已有 ${bestMatch.satisfiedCount}/${bestMatch.totalCount} 项达到该岗位要求。`);
-        return parts.join('');
+        parts.push(
+          `十大能力项中已有 ${bestMatch.satisfiedCount}/${bestMatch.totalCount} 项达到该岗位要求。`,
+        )
+        return parts.join('')
       })()
-    : '暂无可匹配的岗位数据，请先在岗位画像模块生成岗位后再生成报告。';
+    : '暂无可匹配的岗位数据，请先在岗位画像模块生成岗位后再生成报告。'
 
   // 6) 组装
   const report: CareerReport = {
@@ -559,25 +575,23 @@ export const buildCareerReport = (
     tasks,
     milestones: buildMilestones(),
     markdown: '',
-    parseMethod: (bestMatch?.isRuleBased ?? true) ? ('rule' as ParseSource) : ('qwen' as ParseSource),
+    parseMethod:
+      (bestMatch?.isRuleBased ?? true) ? ('rule' as ParseSource) : ('qwen' as ParseSource),
     sourceStudentParsedAt: student.parsed_at ?? '',
     confidence: Number(
-      (
-        (student.confidence + (bestMatch?.confidence ?? student.confidence)) /
-        2
-      ).toFixed(2)
+      ((student.confidence + (bestMatch?.confidence ?? student.confidence)) / 2).toFixed(2),
     ),
-  };
+  }
 
-  report.markdown = buildMarkdown(report);
-  return report;
-};
+  report.markdown = buildMarkdown(report)
+  return report
+}
 
 /** 重新生成 Markdown（用户编辑目标后需要同步全文） */
 export const refreshReportMarkdown = (report: CareerReport): CareerReport => ({
   ...report,
   markdown: buildMarkdown(report),
-});
+})
 
-export { CAREER_REPORT_STORAGE_KEY };
-export type { CareerReport };
+export { CAREER_REPORT_STORAGE_KEY }
+export type { CareerReport }

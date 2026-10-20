@@ -232,7 +232,6 @@ onPullDownRefresh(async () => {
     uni.stopPullDownRefresh()
   }
 })
-
 </script>
 
 <style scoped lang="scss">

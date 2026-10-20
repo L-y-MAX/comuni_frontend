@@ -20,6 +20,6 @@
  *
  * 执行：`node scripts/build-echarts-bundle.mjs`
  */
-import echarts from './echarts.bundle.js';
+import echarts from './echarts.bundle.js'
 
-export default echarts;
+export default echarts

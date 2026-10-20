@@ -1052,12 +1052,25 @@ const renderMarkdown = async (content: string): Promise<string> => {
 
   // 其余块级/行内元素：统一补内联样式（允许带属性，如 <a href>、<th align>）
   const styledTags = [
-    'p', 'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'strong', 'em', 'table', 'th', 'td', 'img',
+    'p',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'hr',
+    'a',
+    'strong',
+    'em',
+    'table',
+    'th',
+    'td',
+    'img',
   ]
   for (const tag of styledTags) {
     const re = new RegExp('<' + tag + '(\\s[^>]*)?>', 'g')
-    html = html.replace(re, (whole, attrs?: string) =>
-      `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
+    html = html.replace(
+      re,
+      (whole, attrs?: string) => `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
     )
   }
 
@@ -1117,7 +1130,6 @@ onPullDownRefresh(async () => {
     uni.stopPullDownRefresh()
   }
 })
-
 </script>
 
 <style scoped lang="scss">

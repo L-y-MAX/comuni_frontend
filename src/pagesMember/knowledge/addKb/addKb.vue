@@ -34,11 +34,15 @@
           <text
             v-if="showNameError"
             class="field-error"
-          >{{ nameError }}</text>
+          >
+            {{ nameError }}
+          </text>
           <text
             v-else
             class="field-hint"
-          >{{ formData.name.length }}/20 字</text>
+          >
+            {{ formData.name.length }}/20 字
+          </text>
         </uni-forms-item>
 
         <!-- 描述 -->

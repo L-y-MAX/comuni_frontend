@@ -12,12 +12,12 @@
 
 ## 一、四项核心能力
 
-| #   | 功能                   | 做什么                                                                               | 入口                                      |
-| --- | ---------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------- |
-| 1   | **岗位能力画像**       | 把一段招聘信息拆成十个维度的要求强度（0–100），并列出「必须 / 优先」的具体技能与证书 | 首页 → 岗位招聘（或 首页 → 岗位能力画像） |
-| 2   | **学生就业能力画像**   | 把个人经历拆成同一套十维得分，输出能力星球图、职业徽章墙、信息完整度与综合就业竞争力 | 底部导航「能力画像」                      |
-| 3   | **人岗智能匹配**       | 两套画像逐项比对，给出综合匹配度、四类目得分、十维达成度、技能/证书缺口与提升建议    | 能力画像结果页 → 查看岗位匹配             |
-| 4   | **个性化生涯发展报告** | 职业路径规划（垂直晋升 + 跨岗换路）+ 分阶段成长计划 + 评估节点与动态调整             | 能力画像结果页 → 生涯发展报告             |
+| # | 功能 | 做什么 | 入口 |
+| --- | --- | --- | --- |
+| 1 | **岗位能力画像** | 把一段招聘信息拆成十个维度的要求强度（0–100），并列出「必须 / 优先」的具体技能与证书 | 首页 → 岗位招聘（或 首页 → 岗位能力画像） |
+| 2 | **学生就业能力画像** | 把个人经历拆成同一套十维得分，输出能力星球图、职业徽章墙、信息完整度与综合就业竞争力 | 底部导航「能力画像」 |
+| 3 | **人岗智能匹配** | 两套画像逐项比对，给出综合匹配度、四类目得分、十维达成度、技能/证书缺口与提升建议 | 能力画像结果页 → 查看岗位匹配 |
+| 4 | **个性化生涯发展报告** | 职业路径规划（垂直晋升 + 跨岗换路）+ 分阶段成长计划 + 评估节点与动态调整 | 能力画像结果页 → 生涯发展报告 |
 
 另有两个求职资源类功能：
 
@@ -76,8 +76,7 @@ npm run build:mp-weixin
 
 ### 3.4 用微信开发者工具打开
 
-> ⚠️ **必须导入 `dist/dev/mp-weixin`（或 `dist/build/mp-weixin`），不要导入仓库根目录。** 根目录没有 `project.config.json`，导进去会报「在项目根目录未找到 app.json」。
-> ⚠️ **导入后请在「详情 → 本地设置」里关闭「编译热重载」。** `uni` 的构建会整体删除并重建 `dist/dev/mp-weixin`；热重载走增量更新，会在目录被清空的瞬间读取失败，报 `The file app.json doesn't exist` → `routeTo appLaunch timeout`，小程序起不来，界面停在上一次的渲染结果上。
+> ⚠️ **必须导入 `dist/dev/mp-weixin`（或 `dist/build/mp-weixin`），不要导入仓库根目录。** 根目录没有 `project.config.json`，导进去会报「在项目根目录未找到 app.json」。⚠️ **导入后请在「详情 → 本地设置」里关闭「编译热重载」。** `uni` 的构建会整体删除并重建 `dist/dev/mp-weixin`；热重载走增量更新，会在目录被清空的瞬间读取失败，报 `The file app.json doesn't exist` → `routeTo appLaunch timeout`，小程序起不来，界面停在上一次的渲染结果上。
 
 更完整的开发环境说明、编译开关与常见坑，见仓库根目录的 **`开发环境说明.md`**。
 
@@ -119,15 +118,15 @@ comuni_frontend/
 
 只列出本项目的就业能力相关模块（其余为知识平台原有代码）。
 
-| 功能               | 数据模型                  | 纯逻辑                                                            | 接口                                              | 页面                                              |
-| ------------------ | ------------------------- | ----------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
-| 岗位能力画像       | `types/jobProfile.ts`     | `utils/jobProfileParser.ts`                                       | `api/jobProfile.ts`                               | `pagesMember/recruitment/job-profile.vue`         |
-| 学生就业能力画像   | `types/studentProfile.ts` | `utils/studentProfileParser.ts`、`utils/abilityPlanet.ts`         | `api/studentProfile.ts`                           | `pages/abilityProfile/abilityProfile.vue`         |
-| 人岗智能匹配       | `types/jobMatch.ts`       | `utils/jobMatch.ts`                                               | —                                                 | `pagesMember/jobMatch/jobMatch.vue`               |
-| 生涯发展报告       | `types/careerReport.ts`   | `pagesMember/careerReport/lib/careerReport.ts`、`lib/jobGraph.ts` | `pagesMember/careerReport/lib/careerReportApi.ts` | `pagesMember/careerReport/careerReport.vue`       |
-| 历史报告           | `utils/reportHistory.ts`  | —                                                                 | —                                                 | `pagesMember/reportHistory/reportHistory.vue`     |
-| 就业政策与校招资源 | `types/careerResource.ts` | `utils/careerResources.ts`                                        | —                                                 | `pagesMember/careerResources/careerResources.vue` |
-| 功能侧边栏         | —                         | `utils/featureNav.ts`                                             | —                                                 | 能力画像页内                                      |
+| 功能 | 数据模型 | 纯逻辑 | 接口 | 页面 |
+| --- | --- | --- | --- | --- |
+| 岗位能力画像 | `types/jobProfile.ts` | `utils/jobProfileParser.ts` | `api/jobProfile.ts` | `pagesMember/recruitment/job-profile.vue` |
+| 学生就业能力画像 | `types/studentProfile.ts` | `utils/studentProfileParser.ts`、`utils/abilityPlanet.ts` | `api/studentProfile.ts` | `pages/abilityProfile/abilityProfile.vue` |
+| 人岗智能匹配 | `types/jobMatch.ts` | `utils/jobMatch.ts` | — | `pagesMember/jobMatch/jobMatch.vue` |
+| 生涯发展报告 | `types/careerReport.ts` | `pagesMember/careerReport/lib/careerReport.ts`、`lib/jobGraph.ts` | `pagesMember/careerReport/lib/careerReportApi.ts` | `pagesMember/careerReport/careerReport.vue` |
+| 历史报告 | `utils/reportHistory.ts` | — | — | `pagesMember/reportHistory/reportHistory.vue` |
+| 就业政策与校招资源 | `types/careerResource.ts` | `utils/careerResources.ts` | — | `pagesMember/careerResources/careerResources.vue` |
+| 功能侧边栏 | — | `utils/featureNav.ts` | — | 能力画像页内 |
 
 **分层原则**：`types` 只放类型与常量，`utils` 只放纯函数（可在 Node 里直接单测）， `api` 负责网络与降级，页面只做渲染与交互编排。
 

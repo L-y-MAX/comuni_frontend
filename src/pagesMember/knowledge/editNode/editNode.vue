@@ -389,12 +389,25 @@ const renderMarkdown = async (content: string): Promise<string> => {
 
   // 其余块级/行内元素：统一补内联样式（允许带属性，如 <a href>、<th align>）
   const styledTags = [
-    'p', 'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'strong', 'em', 'table', 'th', 'td', 'img',
+    'p',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'hr',
+    'a',
+    'strong',
+    'em',
+    'table',
+    'th',
+    'td',
+    'img',
   ]
   for (const tag of styledTags) {
     const re = new RegExp('<' + tag + '(\\s[^>]*)?>', 'g')
-    html = html.replace(re, (whole, attrs?: string) =>
-      `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
+    html = html.replace(
+      re,
+      (whole, attrs?: string) => `<${tag}${attrs || ''} style="${MD_STYLE[tag]}">`,
     )
   }
 
@@ -438,8 +451,8 @@ const fetchNodeDetail = async (id: string) => {
   try {
     const res = (await getKnowledgeNodeDetail(id)) as KnowledgeNode
     formData.name = res.name
-      // 历史文章可能是纯文本/Markdown，富文本编辑器需要 HTML 才能保留分段
-      formData.content = looksLikeHtml(res.content) ? res.content : textToHtml(res.content)
+    // 历史文章可能是纯文本/Markdown，富文本编辑器需要 HTML 才能保留分段
+    formData.content = looksLikeHtml(res.content) ? res.content : textToHtml(res.content)
     formData.description = res.description
     formData.knowledge_base_id = res.knowledge_base_id
 
@@ -503,7 +516,7 @@ const handleBtnClick = async () => {
  */
 const submit = async (isFromBack?: boolean) => {
   // 正文由富文本编辑器产出 HTML，这里只做空值收敛（展示端 marked 会透传 HTML）
-  formData.content = String(formData.content || "").trim()
+  formData.content = String(formData.content || '').trim()
 
   try {
     if (type.value === 'edit') {
@@ -712,7 +725,7 @@ page {
     }
 
     // 保存按钮样式：适配行内显示
-            .save-btn {
+    .save-btn {
       flex-shrink: 0; // 固定宽度不收缩
       width: 100px;
       height: 36px;
@@ -722,7 +735,7 @@ page {
       font-size: 14px;
       font-weight: 600;
       border: none;
-      background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+      background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
       color: #fff;
       padding: 0;
       margin: 0;

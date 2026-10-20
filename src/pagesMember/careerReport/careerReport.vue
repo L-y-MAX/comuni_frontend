@@ -251,7 +251,9 @@
             class="goal-dialog"
             @click.stop
           >
-            <text class="goal-dialog-title">{{ goalEditing === 'shortTermGoal' ? '编辑短期目标' : '编辑长期目标' }}</text>
+            <text class="goal-dialog-title">
+              {{ goalEditing === 'shortTermGoal' ? '编辑短期目标' : '编辑长期目标' }}
+            </text>
             <textarea
               v-model="goalDraft"
               class="goal-dialog-textarea"
@@ -266,11 +268,15 @@
                 <text
                   class="goal-dialog-btn cancel"
                   @click="closeGoalDialog"
-                >取消</text>
+                >
+                  取消
+                </text>
                 <text
                   class="goal-dialog-btn save"
                   @click="saveGoal"
-                >保存</text>
+                >
+                  保存
+                </text>
               </view>
             </view>
           </view>
@@ -332,7 +338,9 @@
             <text class="section-title">分阶段个性化成长计划</text>
           </view>
           <text class="sub-note">
-            已完成 {{ progress.done }} / {{ progress.total }} 项（{{ progress.percent }}%），点击任务可勾选
+            已完成 {{ progress.done }} / {{ progress.total }} 项（{{
+              progress.percent
+            }}%），点击任务可勾选
           </text>
 
           <view
@@ -458,8 +466,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue'
+import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
 import {
   CAREER_REPORT_STORAGE_KEY,
   PLAN_PHASE_LABEL,
@@ -468,53 +476,47 @@ import {
   type CareerReport,
   type PlanPhase,
   type TaskPriority,
-} from '@/types/careerReport';
-import { MATCH_LEVEL_COLOR, type DimensionGap, type MatchLevel } from '@/types/jobMatch';
-import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile';
-import { buildCareerReport, refreshReportMarkdown } from './lib/careerReport';
-import { getSampleJobProfiles } from '@/utils/jobProfileSamples';
-import { exportCareerReport, type ExportFormat } from './lib/careerReportApi';
-import {
-  getHistoryEntry,
-  pushReportHistory,
-  updateHistoryEntry,
-} from '@/utils/reportHistory';
+} from '@/types/careerReport'
+import { MATCH_LEVEL_COLOR, type DimensionGap, type MatchLevel } from '@/types/jobMatch'
+import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile'
+import { buildCareerReport, refreshReportMarkdown } from './lib/careerReport'
+import { getSampleJobProfiles } from '@/utils/jobProfileSamples'
+import { exportCareerReport, type ExportFormat } from './lib/careerReportApi'
+import { getHistoryEntry, pushReportHistory, updateHistoryEntry } from '@/utils/reportHistory'
 
 // ====================== 状态 ======================
 
-const student = ref<StudentProfile | null>(null);
-const report = ref<CareerReport | null>(null);
-const generating = ref(false);
+const student = ref<StudentProfile | null>(null)
+const report = ref<CareerReport | null>(null)
+const generating = ref(false)
 
 /** 是否正在查看历史版本（历史版本只读，不参与重算） */
-const isHistoryView = ref(false);
+const isHistoryView = ref(false)
 
-const phases: PlanPhase[] = ['short', 'medium', 'long'];
+const phases: PlanPhase[] = ['short', 'medium', 'long']
 
-let unloaded = false;
+let unloaded = false
 onUnload(() => {
-  unloaded = true;
-});
+  unloaded = true
+})
 
 // ====================== 派生 ======================
 
-const progress = computed(() =>
-  calcTaskProgress(report.value?.tasks ?? [])
-);
+const progress = computed(() => calcTaskProgress(report.value?.tasks ?? []))
 
 const generatedAtText = computed(() => {
-  if (!report.value) return '';
-  const d = new Date(report.value.generatedAt);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-});
+  if (!report.value) return ''
+  const d = new Date(report.value.generatedAt)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+})
 
 const tasksOfPhase = (phase: PlanPhase) =>
-  (report.value?.tasks ?? []).filter((t) => t.phase === phase);
+  (report.value?.tasks ?? []).filter((t) => t.phase === phase)
 
-const phaseLabel = (phase: PlanPhase) => PLAN_PHASE_LABEL[phase];
-const priorityLabel = (p: TaskPriority) => TASK_PRIORITY_LABEL[p];
-const matchColor = (level: MatchLevel) => MATCH_LEVEL_COLOR[level] ?? '#94a3b8';
+const phaseLabel = (phase: PlanPhase) => PLAN_PHASE_LABEL[phase]
+const priorityLabel = (p: TaskPriority) => TASK_PRIORITY_LABEL[p]
+const matchColor = (level: MatchLevel) => MATCH_LEVEL_COLOR[level] ?? '#94a3b8'
 
 /**
  * 维度状态文案。
@@ -522,185 +524,183 @@ const matchColor = (level: MatchLevel) => MATCH_LEVEL_COLOR[level] ?? '#94a3b8';
  * 用分值差展示会和上面的达成度条自相矛盾。
  */
 const gapStatusText = (g: DimensionGap): string => {
-  if (g.noRequirement) return '岗位未提要求';
-  if (g.satisfied) return '已达标';
-  if (g.insufficientInfo) return '信息不足';
-  return g.basis === 'coverage' ? '覆盖不足' : '未达标';
-};
+  if (g.noRequirement) return '岗位未提要求'
+  if (g.satisfied) return '已达标'
+  if (g.insufficientInfo) return '信息不足'
+  return g.basis === 'coverage' ? '覆盖不足' : '未达标'
+}
 
 // ====================== 存储 ======================
 
 const readStudent = (): StudentProfile | null => {
   try {
-    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY);
-    return raw && typeof raw === 'object' ? (raw as StudentProfile) : null;
+    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY)
+    return raw && typeof raw === 'object' ? (raw as StudentProfile) : null
   } catch {
-    return null;
+    return null
   }
-};
+}
 
 const readReport = (): CareerReport | null => {
   try {
-    const raw = uni.getStorageSync(CAREER_REPORT_STORAGE_KEY);
+    const raw = uni.getStorageSync(CAREER_REPORT_STORAGE_KEY)
     return raw && typeof raw === 'object' && Array.isArray((raw as CareerReport).tasks)
       ? (raw as CareerReport)
-      : null;
+      : null
   } catch {
-    return null;
+    return null
   }
-};
+}
 
 const saveReport = () => {
-  if (!report.value) return;
+  if (!report.value) return
   try {
-    uni.setStorageSync(CAREER_REPORT_STORAGE_KEY, report.value);
+    uni.setStorageSync(CAREER_REPORT_STORAGE_KEY, report.value)
   } catch {
     // 存储失败不影响展示
   }
-};
+}
 
 // ====================== 生成 ======================
 
 const generate = (previousTasks = report.value?.tasks) => {
-  if (!student.value) return;
-  generating.value = true;
+  if (!student.value) return
+  generating.value = true
 
   // 本地纯计算，用微任务让 loading 先渲染出来再算
   setTimeout(() => {
     if (unloaded || !student.value) {
-      generating.value = false;
-      return;
+      generating.value = false
+      return
     }
     try {
       const built = buildCareerReport(student.value, getSampleJobProfiles(), {
         topN: 5,
         previousTasks,
-      });
-      report.value = built;
-      saveReport();
+      })
+      report.value = built
+      saveReport()
       // 每次生成都归档一份历史，供后续回看与趋势对比
-      pushReportHistory(built);
-      isHistoryView.value = false;
+      pushReportHistory(built)
+      isHistoryView.value = false
     } catch (err) {
-      console.error('生成生涯报告失败：', err);
-      uni.showToast({ title: '生成失败，请重试', icon: 'none', duration: 2000 });
+      console.error('生成生涯报告失败：', err)
+      uni.showToast({ title: '生成失败，请重试', icon: 'none', duration: 2000 })
     } finally {
-      generating.value = false;
+      generating.value = false
     }
-  }, 50);
-};
+  }, 50)
+}
 
 const regenerate = () => {
   uni.showModal({
     title: '重新生成报告',
     content: '将按当前能力画像重新计算，已完成的任务勾选会保留。',
     success: (res) => {
-      if (res.confirm) generate();
+      if (res.confirm) generate()
     },
-  });
-};
+  })
+}
 
 // ====================== 交互 ======================
 
 /** 勾选/取消任务（成长计划的"可追踪"落点） */
 const toggleTask = (taskId: string) => {
-  if (!report.value) return;
-  const tasks = report.value.tasks.map((t) =>
-    t.id === taskId ? { ...t, done: !t.done } : t
-  );
-  report.value = refreshReportMarkdown({ ...report.value, tasks });
-  saveReport();
+  if (!report.value) return
+  const tasks = report.value.tasks.map((t) => (t.id === taskId ? { ...t, done: !t.done } : t))
+  report.value = refreshReportMarkdown({ ...report.value, tasks })
+  saveReport()
   // 同步到历史，保证「历史列表里的完成率」和当前一致
-  updateHistoryEntry(report.value);
-};
+  updateHistoryEntry(report.value)
+}
 
 /** 目标编辑弹窗状态 */
-const goalEditing = ref<'shortTermGoal' | 'longTermGoal' | null>(null);
-const goalDraft = ref('');
+const goalEditing = ref<'shortTermGoal' | 'longTermGoal' | null>(null)
+const goalDraft = ref('')
 
 /** 打开目标编辑弹窗（计划书要求支持手动修改） */
 const openGoalDialog = (field: 'shortTermGoal' | 'longTermGoal') => {
-  if (!report.value) return;
-  goalEditing.value = field;
-  goalDraft.value = report.value[field] || '';
-};
+  if (!report.value) return
+  goalEditing.value = field
+  goalDraft.value = report.value[field] || ''
+}
 
 const closeGoalDialog = () => {
-  goalEditing.value = null;
-  goalDraft.value = '';
-};
+  goalEditing.value = null
+  goalDraft.value = ''
+}
 
 const saveGoal = () => {
-  const field = goalEditing.value;
-  if (!report.value || !field) return;
-  const next = goalDraft.value.trim();
+  const field = goalEditing.value
+  if (!report.value || !field) return
+  const next = goalDraft.value.trim()
   if (!next) {
-    uni.showToast({ title: '目标不能为空', icon: 'none', duration: 1500 });
-    return;
+    uni.showToast({ title: '目标不能为空', icon: 'none', duration: 1500 })
+    return
   }
-  report.value = refreshReportMarkdown({ ...report.value, [field]: next });
-  saveReport();
-  updateHistoryEntry(report.value);
-  closeGoalDialog();
-  uni.showToast({ title: '已保存', icon: 'success', duration: 1200 });
-};
+  report.value = refreshReportMarkdown({ ...report.value, [field]: next })
+  saveReport()
+  updateHistoryEntry(report.value)
+  closeGoalDialog()
+  uni.showToast({ title: '已保存', icon: 'success', duration: 1200 })
+}
 
 const goAbilityProfile = () => {
   // 能力画像现在是 tabBar 页面，只能用 switchTab
-  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' });
-};
+  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
+}
 
 /** 打开历史报告列表 */
 const goReportHistory = () => {
   uni.navigateTo({
     url: '/pagesMember/reportHistory/reportHistory',
     fail: (err) => {
-      console.error('打开历史报告失败：', err);
-      uni.showToast({ title: '打开失败，请重试', icon: 'none', duration: 2000 });
+      console.error('打开历史报告失败：', err)
+      uni.showToast({ title: '打开失败，请重试', icon: 'none', duration: 2000 })
     },
-  });
-};
+  })
+}
 
 /**
  * 从历史版本回到最新。
  * 优先用当前缓存的最新报告；若没有（例如缓存已被覆盖）则按当前画像重算。
  */
 const backToLatest = () => {
-  isHistoryView.value = false;
-  const latest = readReport();
+  isHistoryView.value = false
+  const latest = readReport()
   if (latest) {
-    report.value = latest;
-    return;
+    report.value = latest
+    return
   }
-  student.value = readStudent();
-  if (student.value) generate();
-};
+  student.value = readStudent()
+  if (student.value) generate()
+}
 
 // ====================== 导出 ======================
 
 const copyMarkdown = () => {
-  if (!report.value) return;
+  if (!report.value) return
   uni.setClipboardData({
     data: report.value.markdown,
     success: () => {
-      uni.showToast({ title: '报告全文已复制', icon: 'success', duration: 1800 });
+      uni.showToast({ title: '报告全文已复制', icon: 'success', duration: 1800 })
     },
     fail: () => {
-      uni.showToast({ title: '复制失败，请重试', icon: 'none', duration: 2000 });
+      uni.showToast({ title: '复制失败，请重试', icon: 'none', duration: 2000 })
     },
-  });
-};
+  })
+}
 
 const exportAs = async (format: ExportFormat) => {
-  if (!report.value) return;
+  if (!report.value) return
 
-  uni.showLoading({ title: '正在导出…', mask: true });
-  const result = await exportCareerReport(report.value, format);
-  uni.hideLoading();
+  uni.showLoading({ title: '正在导出…', mask: true })
+  const result = await exportCareerReport(report.value, format)
+  uni.hideLoading()
 
   if (result.ok) {
-    uni.showToast({ title: '导出成功', icon: 'success', duration: 1800 });
-    return;
+    uni.showToast({ title: '导出成功', icon: 'success', duration: 1800 })
+    return
   }
 
   // 降级：诚实说明原因，并引导用「复制全文」完成同样目的
@@ -713,57 +713,57 @@ const exportAs = async (format: ExportFormat) => {
     confirmText: '复制全文',
     cancelText: '知道了',
     success: (res) => {
-      if (res.confirm) copyMarkdown();
+      if (res.confirm) copyMarkdown()
     },
-  });
-};
+  })
+}
 
 // ====================== 生命周期 ======================
 
 onLoad((options) => {
   // ---- 历史版本模式：只读展示某一份历史报告 ----
-  const historyId = options?.historyId ? decodeURIComponent(options.historyId) : '';
+  const historyId = options?.historyId ? decodeURIComponent(options.historyId) : ''
   if (historyId) {
-    const entry = getHistoryEntry(historyId);
+    const entry = getHistoryEntry(historyId)
     if (entry) {
-      report.value = entry.report;
-      isHistoryView.value = true;
-      return;
+      report.value = entry.report
+      isHistoryView.value = true
+      return
     }
-    uni.showToast({ title: '该历史报告已不存在', icon: 'none', duration: 2000 });
+    uni.showToast({ title: '该历史报告已不存在', icon: 'none', duration: 2000 })
   }
 
-  student.value = readStudent();
-  if (!student.value) return;
+  student.value = readStudent()
+  if (!student.value) return
 
-  const cached = readReport();
+  const cached = readReport()
 
   if (cached) {
     // ---- 缓存校验（这是之前漏掉的一步）----
     // 只判断「有没有缓存」是不够的：用户改完能力画像再进来，
     // 底层数据已经变了，却还在显示旧报告，而且没有任何提示。
     // 这里用能力画像的 parsed_at 当版本指纹，不一致就重算。
-    const cachedFingerprint = cached.sourceStudentParsedAt || '';
-    const currentFingerprint = student.value.parsed_at || '';
+    const cachedFingerprint = cached.sourceStudentParsedAt || ''
+    const currentFingerprint = student.value.parsed_at || ''
 
     if (cachedFingerprint === currentFingerprint) {
-      report.value = cached;
-      return;
+      report.value = cached
+      return
     }
 
-    console.log('[生涯报告] 能力画像已更新，缓存失效，重新生成');
+    console.log('[生涯报告] 能力画像已更新，缓存失效，重新生成')
     uni.showToast({
       title: '检测到能力画像已更新，正在重新生成',
       icon: 'none',
       duration: 2200,
-    });
+    })
     // 重算时把已完成的任务勾选带过去，不丢用户进度
-    generate(cached.tasks);
-    return;
+    generate(cached.tasks)
+    return
   }
 
-  generate();
-});
+  generate()
+})
 
 // ====================== 分享 ======================
 
@@ -772,7 +772,7 @@ onShareAppMessage(() => ({
     ? `我的生涯发展报告：与${report.value.bestMatch.jobName}匹配度 ${report.value.bestMatch.matchScore}%`
     : '生成我的个性化职业生涯发展报告',
   path: '/pagesMember/careerReport/careerReport',
-}));
+}))
 </script>
 
 <style scoped lang="scss">
@@ -824,7 +824,7 @@ onShareAppMessage(() => ({
   width: 54rpx;
   height: 54rpx;
   border: 5rpx solid #ffe0d3;
-  border-top-color: #FF7239;
+  border-top-color: #ff7239;
   border-radius: 50%;
   margin-bottom: 26rpx;
   animation: spin 0.9s linear infinite;
@@ -1445,7 +1445,7 @@ onShareAppMessage(() => ({
 
 .primary-btn {
   width: 100%;
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
 }
 
@@ -1453,7 +1453,7 @@ onShareAppMessage(() => ({
   flex: 1;
   background: #fff;
   color: #ff4500;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
 }
 
 .text-btn {
@@ -1548,73 +1548,73 @@ onShareAppMessage(() => ({
   line-height: 1.5;
 }
 
-  /* 目标编辑弹窗：宽度 86%，高度以 260rpx 起步、最多 46vh */
-  .goal-mask {
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 900;
-  }
-  .goal-dialog {
-    position: fixed;
-    left: 7%;
-    right: 7%;
-    top: 20%;
-    z-index: 901;
-    background: #ffffff;
-    border-radius: 20rpx;
-    padding: 30rpx 28rpx 24rpx;
-    box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.18);
-  }
-  .goal-dialog-title {
-    display: block;
-    font-size: 30rpx;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 18rpx;
-  }
-  .goal-dialog-textarea {
-    width: 100%;
-    min-height: 260rpx;
-    max-height: 46vh;
-    box-sizing: border-box;
-    padding: 18rpx 20rpx;
-    font-size: 28rpx;
-    line-height: 1.6;
-    color: #333333;
-    background: #f8fafc;
-    border: 1rpx solid #e5e7eb;
-    border-radius: 12rpx;
-  }
-  .goal-dialog-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 20rpx;
-  }
-  .goal-dialog-count {
-    font-size: 22rpx;
-    color: #9ca3af;
-  }
-  .goal-dialog-btns {
-    display: flex;
-    align-items: center;
-  }
-  .goal-dialog-btn {
-    padding: 14rpx 34rpx;
-    border-radius: 999rpx;
-    font-size: 28rpx;
-    margin-left: 16rpx;
-  }
-  .goal-dialog-btn.cancel {
-    background: #f1f5f9;
-    color: #475569;
-  }
-  .goal-dialog-btn.save {
-    background: #2563eb;
-    color: #ffffff;
-  }
+/* 目标编辑弹窗：宽度 86%，高度以 260rpx 起步、最多 46vh */
+.goal-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 900;
+}
+.goal-dialog {
+  position: fixed;
+  left: 7%;
+  right: 7%;
+  top: 20%;
+  z-index: 901;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 30rpx 28rpx 24rpx;
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.18);
+}
+.goal-dialog-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 18rpx;
+}
+.goal-dialog-textarea {
+  width: 100%;
+  min-height: 260rpx;
+  max-height: 46vh;
+  box-sizing: border-box;
+  padding: 18rpx 20rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #333333;
+  background: #f8fafc;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+}
+.goal-dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+}
+.goal-dialog-count {
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+.goal-dialog-btns {
+  display: flex;
+  align-items: center;
+}
+.goal-dialog-btn {
+  padding: 14rpx 34rpx;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  margin-left: 16rpx;
+}
+.goal-dialog-btn.cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+.goal-dialog-btn.save {
+  background: #2563eb;
+  color: #ffffff;
+}
 </style>

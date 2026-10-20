@@ -32,12 +32,8 @@
  * 「匹配准确率 ≥85%」是目标值，需要真实标注数据回归验证后才能宣称，本实现不作保证。
  */
 
-import {
-  JOB_DIMENSIONS,
-  type AbilityDimensionKey,
-  type JobProfile,
-} from '@/types/jobProfile';
-import type { StudentProfile } from '@/types/studentProfile';
+import { JOB_DIMENSIONS, type AbilityDimensionKey, type JobProfile } from '@/types/jobProfile'
+import type { StudentProfile } from '@/types/studentProfile'
 import {
   MATCH_CATEGORIES,
   MAX_SKILL_PENALTY,
@@ -53,7 +49,7 @@ import {
   type MatchCategoryResult,
   type MatchResult,
   type SkillGap,
-} from '@/types/jobMatch';
+} from '@/types/jobMatch'
 
 // ====================== 调参常量 ======================
 
@@ -66,7 +62,7 @@ import {
  * 但学生一项要求技能都没有（覆盖率 0%），
  * 于是界面出现「专业技能达成度 0%」+「关键短板：（空）」+「建议：各项要求均已达成」。
  */
-export const WEAK_DIM_FIT_THRESHOLD = 0.75;
+export const WEAK_DIM_FIT_THRESHOLD = 0.75
 
 /**
  * 核心技能门槛下限：专业技能达成度为 0 时，总评匹配度的上限。
@@ -78,11 +74,11 @@ export const WEAK_DIM_FIT_THRESHOLD = 0.75;
  * 真实招聘里核心技能不达标，其余项再漂亮也不会算基本匹配。
  * 达成度 100% 时上限为 100，不产生任何约束。
  */
-export const CORE_GATE_FLOOR = 30;
+export const CORE_GATE_FLOOR = 30
 
 // ====================== 基础工具 ======================
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
 
 /**
  * 单维度达成度。
@@ -91,24 +87,24 @@ const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(ma
  */
 export const calcDimensionFit = (studentScore: number, requiredScore: number): number => {
   // 岗位侧给不出有效要求（中性基准分及以下）时，不视为门槛
-  if (requiredScore <= NO_REQUIREMENT_THRESHOLD) return 1;
-  return clamp(studentScore / requiredScore, 0, 1);
-};
+  if (requiredScore <= NO_REQUIREMENT_THRESHOLD) return 1
+  return clamp(studentScore / requiredScore, 0, 1)
+}
 
 /** 低于等于该值视为「岗位未提出有效要求」 */
-export const NO_REQUIREMENT_THRESHOLD = 55;
+export const NO_REQUIREMENT_THRESHOLD = 55
 
 // ====================== 技能 / 证书覆盖率 ======================
 
 export interface CoverageResult {
   /** 加权覆盖率 0-1；-1 表示岗位未列出该项要求 */
-  coverage: number;
+  coverage: number
   /** 「必须」类子集覆盖率 0-1；无必须项时为 1 */
-  mustCoverage: number;
+  mustCoverage: number
   /** 岗位共列出几项 */
-  total: number;
+  total: number
   /** 学生已具备几项 */
-  matched: number;
+  matched: number
 }
 
 /**
@@ -125,41 +121,41 @@ export interface CoverageResult {
  */
 export const calcRequirementCoverage = (
   required: { name: string; requirement: 'must' | 'preferred' }[],
-  possessed: Set<string>
+  possessed: Set<string>,
 ): CoverageResult => {
   if (!required.length) {
-    return { coverage: -1, mustCoverage: 1, total: 0, matched: 0 };
+    return { coverage: -1, mustCoverage: 1, total: 0, matched: 0 }
   }
 
-  let weightedTotal = 0;
-  let weightedMatched = 0;
-  let mustTotal = 0;
-  let mustMatched = 0;
-  let matched = 0;
+  let weightedTotal = 0
+  let weightedMatched = 0
+  let mustTotal = 0
+  let mustMatched = 0
+  let matched = 0
 
   required.forEach((item) => {
-    const isMust = item.requirement === 'must';
-    const w = isMust ? 2 : 1;
-    const has = possessed.has(item.name.toLowerCase());
+    const isMust = item.requirement === 'must'
+    const w = isMust ? 2 : 1
+    const has = possessed.has(item.name.toLowerCase())
 
-    weightedTotal += w;
+    weightedTotal += w
     if (has) {
-      weightedMatched += w;
-      matched += 1;
+      weightedMatched += w
+      matched += 1
     }
     if (isMust) {
-      mustTotal += w;
-      if (has) mustMatched += w;
+      mustTotal += w
+      if (has) mustMatched += w
     }
-  });
+  })
 
   return {
     coverage: weightedTotal > 0 ? weightedMatched / weightedTotal : 0,
     mustCoverage: mustTotal > 0 ? mustMatched / mustTotal : 1,
     total: required.length,
     matched,
-  };
-};
+  }
+}
 
 // ====================== 提升建议模板 ======================
 
@@ -168,8 +164,7 @@ export const DIMENSION_ADVICE: Record<AbilityDimensionKey, string> = {
   professional_skill:
     '通过课程、认证或项目实战系统补齐岗位要求的硬技能，并在简历中用可量化的产出证明',
   certificate: '规划考证时间表，优先拿下岗位明确要求的证书',
-  innovation:
-    '在项目中主动记录你提出的改进方案与优化效果，沉淀成可讲述的创新案例',
+  innovation: '在项目中主动记录你提出的改进方案与优化效果，沉淀成可讲述的创新案例',
   learning: '整理一份「新技术上手记录」，体现你快速学习并落地的完整过程',
   stress_resistance: '用「多任务并行、按时交付」的具体事例体现抗压能力，避免只写形容词',
   communication: '主动承担小组汇报、需求对接等角色，积累跨角色沟通的实例',
@@ -177,7 +172,7 @@ export const DIMENSION_ADVICE: Record<AbilityDimensionKey, string> = {
   teamwork: '在项目经历中写明你的协作角色与团队成果，而不只是个人产出',
   logical_thinking: '练习用「背景—目标—方案—结果」的结构拆解问题，并在简历中体现',
   industry_cognition: '关注目标行业的政策与趋势，准备能体现行业理解的求职理由',
-};
+}
 
 // ====================== 主匹配函数 ======================
 
@@ -188,56 +183,56 @@ export const DIMENSION_ADVICE: Record<AbilityDimensionKey, string> = {
  * @param job 岗位画像
  */
 export const matchStudentToJob = (student: StudentProfile, job: JobProfile): MatchResult => {
-  const studentDim = (key: AbilityDimensionKey) => student.dimensions.find((d) => d.key === key);
-  const jobDim = (key: AbilityDimensionKey) => job.dimensions.find((d) => d.key === key);
+  const studentDim = (key: AbilityDimensionKey) => student.dimensions.find((d) => d.key === key)
+  const jobDim = (key: AbilityDimensionKey) => job.dimensions.find((d) => d.key === key)
 
   // ---------- 0. 先抽取技能 / 证书集合（专业技能与证书的达成度靠集合重合度算） ----------
-  const jobSkills = jobDim('professional_skill')?.skills ?? [];
-  const studentSkills = studentDim('professional_skill')?.skills ?? [];
-  const studentSkillNames = new Set(studentSkills.map((s) => s.name.toLowerCase()));
+  const jobSkills = jobDim('professional_skill')?.skills ?? []
+  const studentSkills = studentDim('professional_skill')?.skills ?? []
+  const studentSkillNames = new Set(studentSkills.map((s) => s.name.toLowerCase()))
 
-  const jobCerts = jobDim('certificate')?.certificates ?? [];
-  const studentCerts = studentDim('certificate')?.certificates ?? [];
-  const studentCertNames = new Set(studentCerts.map((c) => c.name.toLowerCase()));
+  const jobCerts = jobDim('certificate')?.certificates ?? []
+  const studentCerts = studentDim('certificate')?.certificates ?? []
+  const studentCertNames = new Set(studentCerts.map((c) => c.name.toLowerCase()))
 
-  const skillCoverage = calcRequirementCoverage(jobSkills, studentSkillNames);
-  const certCoverage = calcRequirementCoverage(jobCerts, studentCertNames);
+  const skillCoverage = calcRequirementCoverage(jobSkills, studentSkillNames)
+  const certCoverage = calcRequirementCoverage(jobCerts, studentCertNames)
 
   // ---------- 1. 十维差距 ----------
   const gaps: DimensionGap[] = JOB_DIMENSIONS.map((meta) => {
-    const s = studentDim(meta.key);
-    const j = jobDim(meta.key);
+    const s = studentDim(meta.key)
+    const j = jobDim(meta.key)
 
-    const studentScore = s?.score ?? 0;
-    const requiredScore = j?.score ?? 0;
+    const studentScore = s?.score ?? 0
+    const requiredScore = j?.score ?? 0
 
     // 岗位是否列出了具体技能/证书条目（有清单就说明这一项有实打实的要求，
     // 即使维度分不高也不能当成"没要求"）
     const hasExplicitList =
       (meta.key === 'professional_skill' && skillCoverage.coverage >= 0) ||
-      (meta.key === 'certificate' && certCoverage.coverage >= 0);
+      (meta.key === 'certificate' && certCoverage.coverage >= 0)
 
     // 岗位对这一维度是否提出了有效要求
-    const noRequirement = !hasExplicitList && requiredScore <= NO_REQUIREMENT_THRESHOLD;
+    const noRequirement = !hasExplicitList && requiredScore <= NO_REQUIREMENT_THRESHOLD
 
     // 专业技能 / 证书资质：用「岗位要求的集合里学生覆盖了多少」来衡量，
     // 而不是比两边的分数——分数只说明"有多少"，不说明"对不对口"。
     // 岗位没列出具体条目时，退回分值比例。
-    let fit: number;
-    let basis: FitBasis = 'score';
+    let fit: number
+    let basis: FitBasis = 'score'
     if (meta.key === 'professional_skill' && skillCoverage.coverage >= 0) {
-      fit = skillCoverage.coverage;
-      basis = 'coverage';
+      fit = skillCoverage.coverage
+      basis = 'coverage'
     } else if (meta.key === 'certificate' && certCoverage.coverage >= 0) {
-      fit = certCoverage.coverage;
-      basis = 'coverage';
+      fit = certCoverage.coverage
+      basis = 'coverage'
     } else {
-      fit = calcDimensionFit(studentScore, requiredScore);
+      fit = calcDimensionFit(studentScore, requiredScore)
     }
 
     // 有效权重：基准权重 × 双方置信度
-    const studentConf = s?.confidence ?? 0.5;
-    const jobConf = j?.confidence ?? 0.5;
+    const studentConf = s?.confidence ?? 0.5
+    const jobConf = j?.confidence ?? 0.5
 
     // 关键：岗位没提要求时，这一维度**不能算满分**。
     // 早先的实现在这种情况下给 fit=1 且保留全权重，
@@ -246,16 +241,16 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     // 正确做法是：没要求 = 这条维度不携带任何匹配信息，直接不参与加权。
     const effectiveWeight = noRequirement
       ? 0
-      : Number((meta.defaultWeight * studentConf * jobConf).toFixed(6));
+      : Number((meta.defaultWeight * studentConf * jobConf).toFixed(6))
 
-    const gap = requiredScore - studentScore;
+    const gap = requiredScore - studentScore
 
     // 达标判定必须和 fit 用同一把尺子，否则会出现
     // 「类目得分 0 分」却在表格里写「已达标」的矛盾
     const rawSatisfied =
       basis === 'coverage'
         ? fit >= COVERAGE_SATISFY_THRESHOLD
-        : studentScore >= requiredScore - SATISFY_TOLERANCE;
+        : studentScore >= requiredScore - SATISFY_TOLERANCE
 
     // 岗位未提要求的维度必须回到「中性」。
     // calcDimensionFit 在 requiredScore 低于阈值时返回 1，于是这类维度
@@ -263,8 +258,8 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     // 「覆盖率 100%（岗位未提要求）」配一条绿色满格进度条，看起来像"已达标"，
     // 与它「不参与评分」的定位自相矛盾。
     // 达成度归零、达标标记去除，改由 noRequirement 单独表达"不适用"。
-    const finalFit = noRequirement ? 0 : fit;
-    const satisfied = noRequirement ? false : rawSatisfied;
+    const finalFit = noRequirement ? 0 : fit
+    const satisfied = noRequirement ? false : rawSatisfied
 
     return {
       key: meta.key,
@@ -279,17 +274,17 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
       noRequirement,
       insufficientInfo: studentConf < INSUFFICIENT_INFO_CONFIDENCE,
       effectiveWeight,
-    };
-  });
+    }
+  })
 
   // 真正参与打分的维度（剔除了岗位未提要求的项）
-  const activeGaps = gaps.filter((g) => g.effectiveWeight > 0);
+  const activeGaps = gaps.filter((g) => g.effectiveWeight > 0)
 
   // 可评估维度太少时，匹配度不可靠（见 types/jobMatch.ts 中 MIN_EVALUABLE_DIMS 的说明）。
   // 真实案例：岗位原文没写要求，画像只解析出「专业技能 60 分」一项，学生 88 分
   // → 唯一维度达成度 100% → 总评 100%，用户会误以为「完全匹配这个岗位」。
-  const evaluatedDimCount = activeGaps.length;
-  const informationInsufficient = evaluatedDimCount < MIN_EVALUABLE_DIMS;
+  const evaluatedDimCount = activeGaps.length
+  const informationInsufficient = evaluatedDimCount < MIN_EVALUABLE_DIMS
 
   /**
    * 信息不足时的匹配度上限：按「可评估维度占比」线性折算。
@@ -298,13 +293,13 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
    */
   const infoCap = informationInsufficient
     ? Math.round(CORE_GATE_FLOOR + (100 - CORE_GATE_FLOOR) * (evaluatedDimCount / gaps.length))
-    : 100;
+    : 100
 
   // ---------- 2. 四大类目得分 ----------
   const categories: MatchCategoryResult[] = MATCH_CATEGORIES.map((cat) => {
-    const inCat = gaps.filter((g) => cat.dimensions.includes(g.key));
-    const active = inCat.filter((g) => g.effectiveWeight > 0);
-    const wSum = active.reduce((sum, g) => sum + g.effectiveWeight, 0);
+    const inCat = gaps.filter((g) => cat.dimensions.includes(g.key))
+    const active = inCat.filter((g) => g.effectiveWeight > 0)
+    const wSum = active.reduce((sum, g) => sum + g.effectiveWeight, 0)
 
     // 类目下所有维度岗位都没提要求 → 该类目不参与总评（active=false）
     if (!active.length || wSum <= 0) {
@@ -315,10 +310,10 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
         weight: cat.weight,
         description: cat.description,
         active: false,
-      };
+      }
     }
 
-    const score = (active.reduce((sum, g) => sum + g.fit * g.effectiveWeight, 0) / wSum) * 100;
+    const score = (active.reduce((sum, g) => sum + g.fit * g.effectiveWeight, 0) / wSum) * 100
 
     return {
       key: cat.key,
@@ -327,32 +322,33 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
       weight: cat.weight,
       description: cat.description,
       active: true,
-    };
-  });
+    }
+  })
 
   // ---------- 3. 基础综合分 ----------
   // 只在「有要求的类目」之间按权重归一化，避免整块缺席的类目拉低总分
-  const activeCats = categories.filter((c) => c.active);
-  const activeCatWeight = activeCats.reduce((sum, c) => sum + c.weight, 0);
+  const activeCats = categories.filter((c) => c.active)
+  const activeCatWeight = activeCats.reduce((sum, c) => sum + c.weight, 0)
 
-  const baseScore = activeCatWeight > 0
-    ? activeCats.reduce((sum, c) => sum + c.score * c.weight, 0) / activeCatWeight
-    : 0;
+  const baseScore =
+    activeCatWeight > 0
+      ? activeCats.reduce((sum, c) => sum + c.score * c.weight, 0) / activeCatWeight
+      : 0
 
   // ---------- 4. 技能 / 证书缺口（集合已在第 0 步抽取） ----------
   const skillGaps: SkillGap[] = jobSkills
     .map((js) => {
-      const possessed = studentSkillNames.has(js.name.toLowerCase());
-      const matched = studentSkills.find((ss) => ss.name.toLowerCase() === js.name.toLowerCase());
+      const possessed = studentSkillNames.has(js.name.toLowerCase())
+      const matched = studentSkills.find((ss) => ss.name.toLowerCase() === js.name.toLowerCase())
       return {
         name: js.name,
         requirement: js.requirement,
         possessed,
         studentProficiency: matched?.proficiency,
-      };
+      }
     })
     // 只关心缺口，已具备的不列出
-    .filter((g) => !g.possessed);
+    .filter((g) => !g.possessed)
 
   const certGaps: CertGap[] = jobCerts
     .map((jc) => ({
@@ -360,24 +356,21 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
       requirement: jc.requirement,
       possessed: studentCertNames.has(jc.name.toLowerCase()),
     }))
-    .filter((g) => !g.possessed);
+    .filter((g) => !g.possessed)
 
-  const missingMustSkills = skillGaps.filter((g) => g.requirement === 'must').length;
-  const missingCerts = certGaps.length;
+  const missingMustSkills = skillGaps.filter((g) => g.requirement === 'must').length
+  const missingCerts = certGaps.length
 
-  const penalty = Math.min(
-    MAX_SKILL_PENALTY,
-    missingMustSkills * 3 + missingCerts * 2
-  );
+  const penalty = Math.min(MAX_SKILL_PENALTY, missingMustSkills * 3 + missingCerts * 2)
 
-  const rawScore = Math.round(clamp(baseScore - penalty, 0, 100));
+  const rawScore = Math.round(clamp(baseScore - penalty, 0, 100))
 
   // ---------- 4.5 核心技能门槛 ----------
   // 只在「岗位确实列出了技能要求」且「学生侧信息足够」时生效：
   // 学生没写技能（信息不足）不等于学生不会技能，那种情况不能压分。
-  const profGap = gaps.find((g) => g.key === 'professional_skill');
-  let matchScore = rawScore;
-  let gateNote = '';
+  const profGap = gaps.find((g) => g.key === 'professional_skill')
+  let matchScore = rawScore
+  let gateNote = ''
 
   if (
     profGap &&
@@ -385,46 +378,46 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     !profGap.noRequirement &&
     !profGap.insufficientInfo
   ) {
-    const cap = Math.round(CORE_GATE_FLOOR + (100 - CORE_GATE_FLOOR) * profGap.fit);
+    const cap = Math.round(CORE_GATE_FLOOR + (100 - CORE_GATE_FLOOR) * profGap.fit)
     if (cap < rawScore) {
-      matchScore = cap;
+      matchScore = cap
       gateNote =
         `核心技能门槛：岗位要求的 ${skillCoverage.total} 项技能中你只覆盖了 ${profGap.fitPercent}%，` +
-        `核心能力未达标，总评从 ${rawScore}% 封顶到 ${cap}%`;
+        `核心能力未达标，总评从 ${rawScore}% 封顶到 ${cap}%`
     }
   }
 
   // ---------- 4.6 信息不足封顶 ----------
   // 可评估维度太少时（岗位没写要求 / 画像只解析出一两项），不能按「满足已知要求」
   // 直接照常归一化——否则「满足唯一一项要求」就是 100%，用户会误读为岗位完全匹配。
-  let infoNote = '';
+  let infoNote = ''
   if (informationInsufficient && infoCap < matchScore) {
-    matchScore = infoCap;
+    matchScore = infoCap
     infoNote =
       `岗位要求信息不足：原文只解析出 ${evaluatedDimCount}/10 项可评估的要求，` +
-      `匹配度按信息完整度封顶为 ${infoCap}%，仅代表已知要求的满足程度，不代表岗位整体匹配`;
+      `匹配度按信息完整度封顶为 ${infoCap}%，仅代表已知要求的满足程度，不代表岗位整体匹配`
   }
 
-  const matchLevel = scoreToMatchLevel(matchScore);
+  const matchLevel = scoreToMatchLevel(matchScore)
 
   // ---------- 5. 关键短板 ----------
-  const criticalGaps: string[] = [];
+  const criticalGaps: string[] = []
 
   // 5a. 信息不足说明（最优先，先解释清楚为什么分数被限制）
-  if (infoNote) criticalGaps.push(infoNote);
+  if (infoNote) criticalGaps.push(infoNote)
 
   // 5b. 门槛封顶说明（放最前，避免用户看到分数骤降却不知道原因）
-  if (gateNote) criticalGaps.push(gateNote);
+  if (gateNote) criticalGaps.push(gateNote)
 
   // 5a. 硬技能缺失（优先级最高）
-  const mustMissing = skillGaps.filter((g) => g.requirement === 'must').map((g) => g.name);
+  const mustMissing = skillGaps.filter((g) => g.requirement === 'must').map((g) => g.name)
   if (mustMissing.length) {
-    criticalGaps.push(`${mustMissing.join('、')} 等 ${mustMissing.length} 项硬技能未体现`);
+    criticalGaps.push(`${mustMissing.join('、')} 等 ${mustMissing.length} 项硬技能未体现`)
   }
 
   // 5b. 证书缺失
   if (missingCerts) {
-    criticalGaps.push(`${certGaps.map((c) => c.name).join('、')} 证书未获取`);
+    criticalGaps.push(`${certGaps.map((c) => c.name).join('、')} 证书未获取`)
   }
 
   // 5c. 显著偏低的维度（按「未达成程度 × 有效权重」排序，取前 3）
@@ -432,13 +425,10 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   const weakDims = gaps
     .filter(
       (g) =>
-        !g.noRequirement &&
-        !g.satisfied &&
-        g.fit < WEAK_DIM_FIT_THRESHOLD &&
-        g.effectiveWeight > 0
+        !g.noRequirement && !g.satisfied && g.fit < WEAK_DIM_FIT_THRESHOLD && g.effectiveWeight > 0,
     )
     .sort((a, b) => (1 - b.fit) * b.effectiveWeight - (1 - a.fit) * a.effectiveWeight)
-    .slice(0, 3);
+    .slice(0, 3)
 
   if (weakDims.length) {
     criticalGaps.push(
@@ -446,22 +436,22 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
         .map((g) =>
           g.basis === 'coverage'
             ? `${g.label}（岗位要求条目覆盖率仅 ${g.fitPercent}%）`
-            : `${g.label}（要求 ${g.requiredScore}，你 ${g.studentScore}）`
+            : `${g.label}（要求 ${g.requiredScore}，你 ${g.studentScore}）`,
         )
-        .join('；')
-    );
+        .join('；'),
+    )
   }
 
   // ---------- 6. 提升建议 ----------
-  const suggestions: string[] = [];
+  const suggestions: string[] = []
 
-  const mustSkillGaps = skillGaps.filter((g) => g.requirement === 'must');
+  const mustSkillGaps = skillGaps.filter((g) => g.requirement === 'must')
 
   mustSkillGaps.slice(0, 3).forEach((g) => {
     suggestions.push(
-      `补齐「${g.name}」：岗位将其列为硬性要求，建议通过项目实战或系统课程掌握，并在简历中体现产出`
-    );
-  });
+      `补齐「${g.name}」：岗位将其列为硬性要求，建议通过项目实战或系统课程掌握，并在简历中体现产出`,
+    )
+  })
 
   // 岗位只写「优先」项时（一条「必须」都没有），上面的分支一条建议都不产生，
   // 而核心维度达成度可能依然很低，于是界面会是「达成度很低」+「各项要求均已达成」。
@@ -470,37 +460,37 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     (g) =>
       (g.key === 'professional_skill' || g.key === 'certificate') &&
       !g.noRequirement &&
-      !g.satisfied
-  );
+      !g.satisfied,
+  )
   if (!mustSkillGaps.length && coreDimFailed) {
     skillGaps.slice(0, 3).forEach((g) => {
-      suggestions.push(`补齐「${g.name}」：岗位将其列为优先要求，是当前提高匹配度性价比最高的一项`);
-    });
+      suggestions.push(`补齐「${g.name}」：岗位将其列为优先要求，是当前提高匹配度性价比最高的一项`)
+    })
   }
 
   certGaps.slice(0, 2).forEach((c) => {
-    suggestions.push(`考取「${c.name}」：该岗位将其列为要求，建议纳入本学期考证计划`);
-  });
+    suggestions.push(`考取「${c.name}」：该岗位将其列为要求，建议纳入本学期考证计划`)
+  })
 
   weakDims.forEach((g) => {
-    suggestions.push(`${g.label}：${DIMENSION_ADVICE[g.key]}`);
-  });
+    suggestions.push(`${g.label}：${DIMENSION_ADVICE[g.key]}`)
+  })
 
   if (!suggestions.length) {
     suggestions.push(
       informationInsufficient
         ? '岗位要求信息不足：建议先补全岗位信息或重新生成岗位画像，再评估匹配度（当前结果仅代表已知项）'
-        : '当前各项要求均已达成，建议把相关经历补充得更具体，突出可量化的成果'
-    );
+        : '当前各项要求均已达成，建议把相关经历补充得更具体，突出可量化的成果',
+    )
   }
 
   // ---------- 7. 置信度 ----------
   // 用两侧画像自身的解析置信度，反映"这份匹配结论建立在多可靠的数据上"
-  const confidence = Number(((student.confidence + job.confidence) / 2).toFixed(2));
+  const confidence = Number(((student.confidence + job.confidence) / 2).toFixed(2))
 
   // ---------- 8. 摘要 ----------
   // 达标统计只看「岗位确实提了要求」的维度，否则分母里混入无关维度会误导用户
-  const satisfiedCount = activeGaps.filter((g) => g.satisfied).length;
+  const satisfiedCount = activeGaps.filter((g) => g.satisfied).length
   const summary = buildSummary({
     jobName: job.job_name,
     enterpriseName: job.enterprise_name,
@@ -512,7 +502,7 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     weakDims,
     matchLevel,
     informationInsufficient,
-  });
+  })
 
   return {
     jobId: job.recruitment_id || job.job_name,
@@ -536,22 +526,22 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     isRuleBased: student.parse_method === 'rule' || job.parse_method === 'rule',
     evaluatedDimCount,
     informationInsufficient,
-  };
-};
+  }
+}
 
 // ====================== 摘要生成 ======================
 
 interface SummaryInput {
-  jobName: string;
-  enterpriseName: string;
-  matchScore: number;
-  satisfiedCount: number;
-  totalCount: number;
-  mustMissing: string[];
-  missingCerts: number;
-  weakDims: DimensionGap[];
-  matchLevel: ReturnType<typeof scoreToMatchLevel>;
-  informationInsufficient: boolean;
+  jobName: string
+  enterpriseName: string
+  matchScore: number
+  satisfiedCount: number
+  totalCount: number
+  mustMissing: string[]
+  missingCerts: number
+  weakDims: DimensionGap[]
+  matchLevel: ReturnType<typeof scoreToMatchLevel>
+  informationInsufficient: boolean
 }
 
 const buildSummary = (input: SummaryInput): string => {
@@ -566,45 +556,43 @@ const buildSummary = (input: SummaryInput): string => {
     weakDims,
     matchLevel,
     informationInsufficient,
-  } = input;
+  } = input
 
-  const prefix = enterpriseName ? `${enterpriseName}的` : '';
+  const prefix = enterpriseName ? `${enterpriseName}的` : ''
 
   const levelText: Record<string, string> = {
     excellent: '整体匹配度很高，建议尽快投递',
     good: '整体较为匹配，补齐短板后竞争力会明显提升',
     fair: '基本满足要求，但存在需要补强的项',
     low: '当前差距较大，建议先按建议补齐再投递',
-  };
+  }
 
   const parts: string[] = [
     `你与${prefix}${jobName}岗位的综合匹配度为 ${matchScore}%，${
-      informationInsufficient
-        ? '但可评估的要求太少，该分数仅供参考'
-        : levelText[matchLevel] ?? ''
+      informationInsufficient ? '但可评估的要求太少，该分数仅供参考' : (levelText[matchLevel] ?? '')
     }。`,
     informationInsufficient
       ? `十维中只有 ${totalCount} 项可评估（其中 ${satisfiedCount} 项已满足）。`
       : `十大维度中已有 ${satisfiedCount}/${totalCount} 项达到岗位要求。`,
-  ];
+  ]
 
-  const shortfalls: string[] = [];
-  if (mustMissing.length) shortfalls.push(`硬技能「${mustMissing.join('、')}」尚未体现`);
-  if (missingCerts) shortfalls.push(`${missingCerts} 项要求证书未获取`);
+  const shortfalls: string[] = []
+  if (mustMissing.length) shortfalls.push(`硬技能「${mustMissing.join('、')}」尚未体现`)
+  if (missingCerts) shortfalls.push(`${missingCerts} 项要求证书未获取`)
   if (weakDims.length) {
-    shortfalls.push(`${weakDims.map((d) => d.label).join('、')}差距较大`);
+    shortfalls.push(`${weakDims.map((d) => d.label).join('、')}差距较大`)
   }
 
   if (shortfalls.length) {
-    parts.push(`主要不足：${shortfalls.join('；')}。`);
+    parts.push(`主要不足：${shortfalls.join('；')}。`)
   } else if (informationInsufficient) {
-    parts.push('建议先补全岗位信息或重新生成岗位画像，再评估匹配度。');
+    parts.push('建议先补全岗位信息或重新生成岗位画像，再评估匹配度。')
   } else {
-    parts.push('未发现明显短板。');
+    parts.push('未发现明显短板。')
   }
 
-  return parts.join('');
-};
+  return parts.join('')
+}
 
 // ====================== 岗位推荐排序 ======================
 
@@ -613,6 +601,4 @@ const buildSummary = (input: SummaryInput): string => {
  * 用于「适配岗位推荐」列表。
  */
 export const rankJobsByMatch = (student: StudentProfile, jobs: JobProfile[]): MatchResult[] =>
-  jobs
-    .map((job) => matchStudentToJob(student, job))
-    .sort((a, b) => b.matchScore - a.matchScore);
+  jobs.map((job) => matchStudentToJob(student, job)).sort((a, b) => b.matchScore - a.matchScore)

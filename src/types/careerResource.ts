@@ -15,15 +15,15 @@
 
 // ====================== 主题 ======================
 
-export type ResourceTheme = 'policy' | 'campus' | 'guide';
+export type ResourceTheme = 'policy' | 'campus' | 'guide'
 
 export interface ResourceThemeMeta {
-  key: ResourceTheme;
-  label: string;
+  key: ResourceTheme
+  label: string
   /** 主题一句话说明 */
-  desc: string;
+  desc: string
   /** 主题图标：本地图片路径（https://youupro.xyz/ly/static/resources/<key>.png） */
-  icon: string;
+  icon: string
 }
 
 /** 三个主题（顺序即界面上的顺序） */
@@ -46,7 +46,7 @@ export const RESOURCE_THEMES: ResourceThemeMeta[] = [
     desc: '平台整理的求职实务方法，可与能力画像联动使用',
     icon: 'https://youupro.xyz/ly/static/resources/guide.png',
   },
-];
+]
 
 // ====================== 来源类型 ======================
 
@@ -54,14 +54,14 @@ export const RESOURCE_THEMES: ResourceThemeMeta[] = [
  * 来源类型。
  * 界面会把它渲染成角标，避免把平台原创内容误认成官方文件。
  */
-export type ResourceKind = 'gov-doc' | 'official-platform' | 'media' | 'own';
+export type ResourceKind = 'gov-doc' | 'official-platform' | 'media' | 'own'
 
 export const RESOURCE_KIND_LABEL: Record<ResourceKind, string> = {
   'gov-doc': '官方文件',
   'official-platform': '官方平台',
   media: '媒体报道',
   own: '平台整理',
-};
+}
 
 // ====================== 标签 ======================
 
@@ -85,38 +85,38 @@ export type ResourceTag =
   | '在招企业'
   | '简历'
   | '面试'
-  | '投递';
+  | '投递'
 
 // ====================== 资源条目 ======================
 
 export interface CareerResource {
-  id: string;
-  theme: ResourceTheme;
+  id: string
+  theme: ResourceTheme
   /** 条目标题（文件名或主题名） */
-  title: string;
+  title: string
   /** 发布机构 / 来源 */
-  source: string;
+  source: string
   /** 文号，有则显示 */
-  docNo?: string;
+  docNo?: string
   /** 发布日期（YYYY-MM-DD）。未核实到确切日期时**省略该字段**，界面不显示 —— 不猜 */
-  date?: string;
+  date?: string
   /**
    * 发文层级，例如「省级」「市级」「国家与省级」。
    * 只作为卡片上的定位说明，不参与筛选 —— 筛选统一走 tags，避免出现第二个筛选维度。
    */
-  scope?: string;
-  tags: ResourceTag[];
+  scope?: string
+  tags: ResourceTag[]
   /**
    * 这条资源是什么、该怎么用。
    * 只写能站得住的内容：文件性质、发布主体、与你求职的关系；
    * 不写未经核对的条款数字。
    */
-  summary: string;
+  summary: string
   /** 使用建议：具体去原文看哪一部分 */
-  advice?: string;
+  advice?: string
   /** 官方链接 */
-  url?: string;
-  kind: ResourceKind;
+  url?: string
+  kind: ResourceKind
 }
 
 // ====================== 政策类型速查 ======================
@@ -128,11 +128,11 @@ export interface CareerResource {
  * 这里只定义结构。
  */
 export interface PolicyCategory {
-  name: string;
+  name: string
   /** 面向哪些人 */
-  audience: string;
+  audience: string
   /** 一句话说明 */
-  desc: string;
+  desc: string
   /** 关联标签，点击可筛出本页相关政策文件 */
-  tag: ResourceTag;
+  tag: ResourceTag
 }

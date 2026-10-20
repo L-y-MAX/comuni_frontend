@@ -105,6 +105,5 @@ module.exports = {
    * @type {boolean}
    */
   singleAttributePerLine: true,
-  disableLanguages: ['html']
+  disableLanguages: ['html'],
 }
-

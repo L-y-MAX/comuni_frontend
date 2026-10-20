@@ -181,7 +181,8 @@
           </text>
         </view>
         <text class="local-card-meta">
-          {{ item.source }}<text v-if="item.docNo"> · {{ item.docNo }}</text>
+          {{ item.source }}
+          <text v-if="item.docNo">· {{ item.docNo }}</text>
         </text>
         <text class="local-card-summary">{{ item.summary }}</text>
         <view class="local-tags">
@@ -588,7 +589,7 @@ const navigateToKnowledgeBase = (kb: any) => {
   // showKb 才是"查看某个知识库"的页面，onLoad 里读的正是 knowledge_base_id。
   uni.navigateTo({
     url: `/pagesMember/knowledge/showKb/showKb?knowledge_base_id=${encodeURIComponent(
-      String(kb.id)
+      String(kb.id),
     )}`,
   })
 }
@@ -788,7 +789,8 @@ onMounted(() => {
   // 按下反馈：能看出点击有没有落到这个元素上
   &:active {
     opacity: 0.6;
-  }}
+  }
+}
 
 /* 搜索图标：优先用本地图片，缺图时模板会退回 ◯ */
 .search-icon {
@@ -894,7 +896,7 @@ onMounted(() => {
   background-color: #f9f9f9;
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   color: #ff4500;
-  border: 1px solid #FF7239;
+  border: 1px solid #ff7239;
   border-radius: 8rpx;
   padding: 6rpx 12rpx;
   font-size: 22rpx;
@@ -914,15 +916,15 @@ onMounted(() => {
     }
     &:active {
       background-color: #ffe8df; // 点击按压效果
-      border-color: #FF7239;
+      border-color: #ff7239;
       transform: scale(0.96); // 轻微缩放反馈
     }
   }
   // 已关注状态样式优化
   &.followed {
-    background-color: #FF7239;
+    background-color: #ff7239;
     color: #fff;
-    border-color: #FF7239;
+    border-color: #ff7239;
     &:hover {
       background-color: #ff5a28; // 深一点的橙色hover
     }
@@ -959,7 +961,7 @@ onMounted(() => {
 }
 
 .view-btn {
-  background-color: #FF7239;
+  background-color: #ff7239;
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   color: #fff;
   border-radius: 8rpx;
@@ -1220,7 +1222,7 @@ onMounted(() => {
     .create-kb-btn {
       width: 100%;
       height: 70rpx;
-      background-color: #FF7239;
+      background-color: #ff7239;
       color: #fff;
       border: none;
       border-radius: 10rpx;
@@ -1300,7 +1302,6 @@ onMounted(() => {
   line-height: 1;
 }
 
-
 /* ========== 退出搜索快捷操作 ========== */
 .exit-search {
   margin-top: 24rpx;
@@ -1312,7 +1313,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border: 2rpx solid #FF7239;
+  border: 2rpx solid #ff7239;
   border-radius: 40rpx;
   transition: background-color 0.2s ease;
 

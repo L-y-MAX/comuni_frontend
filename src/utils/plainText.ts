@@ -56,7 +56,8 @@ export const stripMarkdown = (input: string): string => {
 }
 
 /** 写入知识库前统一处理：去 Markdown + 截断到上限 */
-export const toKbContent = (input: string): string => stripMarkdown(input).slice(0, KB_CONTENT_LIMIT)
+export const toKbContent = (input: string): string =>
+  stripMarkdown(input).slice(0, KB_CONTENT_LIMIT)
 
 /** 判断一段内容是不是富文本编辑器产出的 HTML（用于兼容历史纯文本/Markdown 文章） */
 export const looksLikeHtml = (input: string): boolean =>
@@ -69,8 +70,7 @@ export const looksLikeHtml = (input: string): boolean =>
 export const textToHtml = (input: string): string => {
   const text = String(input || '').replace(/\r\n/g, '\n')
   if (!text.trim()) return ''
-  const escape = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   return text
     .split(/\n{2,}/)
     .map((block) => `<p>${escape(block).replace(/\n/g, '<br>')}</p>`)

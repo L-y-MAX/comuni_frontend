@@ -25,7 +25,7 @@ import {
   type AbilityDimensionKey,
   type AbilityLevel,
   type ParseSource,
-} from './jobProfile';
+} from './jobProfile'
 
 // ====================== 学生侧的技能 / 证书条目 ======================
 
@@ -34,33 +34,33 @@ import {
  * 注意与岗位侧的 `RequirementStrength`（岗位要求「必须/优先」）语义不同：
  * 这里描述的是**学生自己**的掌握程度，取自其填写内容里的措辞。
  */
-export type SkillProficiency = 'proficient' | 'basic' | 'unknown';
+export type SkillProficiency = 'proficient' | 'basic' | 'unknown'
 
 export const SKILL_PROFICIENCY_LABEL: Record<SkillProficiency, string> = {
   proficient: '熟练',
   basic: '了解',
   unknown: '待补充',
-};
+}
 
 /** 学生技能项 */
 export interface StudentSkillItem {
-  name: string;
+  name: string
   /** 技能分类，如 编程语言 / 框架与中间件 */
-  category?: string;
+  category?: string
   /** 熟练度声明 */
-  proficiency: SkillProficiency;
+  proficiency: SkillProficiency
 }
 
 /** 学生证书项 */
 export interface StudentCertItem {
-  name: string;
+  name: string
 }
 
 /**
  * 学生画像的本地缓存键。
  * 能力画像页写入、人岗匹配页读取，必须共用同一个键，因此集中定义避免写错。
  */
-export const STUDENT_PROFILE_STORAGE_KEY = 'studentAbilityProfile';
+export const STUDENT_PROFILE_STORAGE_KEY = 'studentAbilityProfile'
 
 // ====================== 学生侧维度名 ======================
 
@@ -71,16 +71,16 @@ export const STUDENT_PROFILE_STORAGE_KEY = 'studentAbilityProfile';
  */
 const STUDENT_DIMENSION_LABEL_OVERRIDE: Partial<Record<AbilityDimensionKey, string>> = {
   certificate: '证书资质',
-};
+}
 
 /** 取学生视角下的维度中文名 */
 export const studentDimensionLabel = (key: AbilityDimensionKey): string =>
-  STUDENT_DIMENSION_LABEL_OVERRIDE[key] ?? JOB_DIMENSIONS.find((d) => d.key === key)?.label ?? key;
+  STUDENT_DIMENSION_LABEL_OVERRIDE[key] ?? JOB_DIMENSIONS.find((d) => d.key === key)?.label ?? key
 
 // ====================== 学生录入的原始信息 ======================
 
 /** 年级 */
-export type GradeKey = 'freshman' | 'sophomore' | 'junior' | 'senior' | 'postgraduate';
+export type GradeKey = 'freshman' | 'sophomore' | 'junior' | 'senior' | 'postgraduate'
 
 export const GRADE_LABEL: Record<GradeKey, string> = {
   freshman: '大一',
@@ -88,7 +88,7 @@ export const GRADE_LABEL: Record<GradeKey, string> = {
   junior: '大三',
   senior: '大四',
   postgraduate: '研究生',
-};
+}
 
 export const GRADE_OPTIONS: GradeKey[] = [
   'freshman',
@@ -96,38 +96,38 @@ export const GRADE_OPTIONS: GradeKey[] = [
   'junior',
   'senior',
   'postgraduate',
-];
+]
 
 /**
  * 学生提交的原始信息。
  * 字段均为文本，既支持手动录入，也支持后续「简历上传 → 后端抽取纯文本」的结果直接填充。
  */
 export interface StudentProfileInput {
-  student_id?: string;
+  student_id?: string
   /** 专业 */
-  major: string;
+  major: string
   /** 年级 */
-  grade: GradeKey | '';
+  grade: GradeKey | ''
   /** 职业意向岗位，如 Java开发工程师 */
-  target_job: string;
+  target_job: string
   /** 职业意向行业 */
-  target_industry: string;
+  target_industry: string
   /** 专业技能（自由文本，逗号/顿号/换行分隔） */
-  skills_text: string;
+  skills_text: string
   /** 证书资质 */
-  certificates_text: string;
+  certificates_text: string
   /** 项目经历 */
-  projects_text: string;
+  projects_text: string
   /** 实习/实践经历 */
-  internships_text: string;
+  internships_text: string
   /** 获奖情况 */
-  awards_text: string;
+  awards_text: string
   /** 成绩/GPA/排名（选填） */
-  gpa: string;
+  gpa: string
   /** 自我评价与其他补充（选填） */
-  self_evaluation: string;
+  self_evaluation: string
   /** 简历原文（预留：简历上传后由后端抽取的纯文本，会自动并入解析语料） */
-  resume_text?: string;
+  resume_text?: string
 }
 
 // ====================== 完整度评分 ======================
@@ -143,7 +143,7 @@ export type CompletenessField =
   | 'internships_text'
   | 'awards_text'
   | 'gpa'
-  | 'self_evaluation';
+  | 'self_evaluation'
 
 /** 各字段在完整度中的权重，合计 100 */
 export const COMPLETENESS_WEIGHTS: Record<CompletenessField, number> = {
@@ -157,7 +157,7 @@ export const COMPLETENESS_WEIGHTS: Record<CompletenessField, number> = {
   awards_text: 6,
   gpa: 3,
   self_evaluation: 3,
-};
+}
 
 /** 字段中文名（用于「还缺什么」提示） */
 export const COMPLETENESS_FIELD_LABEL: Record<CompletenessField, string> = {
@@ -171,7 +171,7 @@ export const COMPLETENESS_FIELD_LABEL: Record<CompletenessField, string> = {
   awards_text: '获奖情况',
   gpa: '成绩/GPA',
   self_evaluation: '自我评价',
-};
+}
 
 /**
  * 完整度字段的计算顺序。
@@ -189,43 +189,43 @@ export const COMPLETENESS_FIELDS_ORDER: CompletenessField[] = [
   'awards_text',
   'gpa',
   'self_evaluation',
-];
+]
 
 /** 文本字段被视为「填写充分」的最小长度（低于此长度只算半分） */
-export const FIELD_SUFFICIENT_LENGTH = 8;
+export const FIELD_SUFFICIENT_LENGTH = 8
 
 /** 完整度明细 */
 export interface CompletenessDetail {
-  field: CompletenessField;
-  label: string;
-  filled: boolean;
+  field: CompletenessField
+  label: string
+  filled: boolean
   /** 该字段得分 0-1（0 未填，0.5 内容过短，1 填写充分） */
-  ratio: number;
+  ratio: number
   /** 该字段贡献的分数 */
-  score: number;
+  score: number
   /** 该字段满分 */
-  fullScore: number;
+  fullScore: number
 }
 
 // ====================== 徽章 ======================
 
 /** 徽章定义 */
 export interface BadgeDefinition {
-  id: string;
+  id: string
   /** 徽章中文名，如「学习达人」 */
-  name: string;
+  name: string
   /** 徽章英文名，如 Learning Star */
-  name_en: string;
+  name_en: string
   /** 徽章图标：本地图片路径（https://youupro.xyz/ly/static/badges/<id>.png） */
-  icon: string;
+  icon: string
   /** 解锁条件说明 */
-  condition: string;
+  condition: string
   /** 由单个维度驱动时填写 */
-  dimension?: AbilityDimensionKey;
+  dimension?: AbilityDimensionKey
   /** 单维度解锁阈值 */
-  threshold?: number;
+  threshold?: number
   /** 需要多个维度同时达标时填写 */
-  allDimensionsAbove?: number;
+  allDimensionsAbove?: number
 }
 
 /**
@@ -339,22 +339,22 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     condition: '十项维度全部 ≥ 80',
     allDimensionsAbove: 80,
   },
-];
+]
 
 /** 徽章（含解锁状态） */
 export interface StudentBadge {
-  id: string;
-  name: string;
+  id: string
+  name: string
   /** 徽章英文名 */
-  name_en: string;
+  name_en: string
   /** 徽章图标：本地图片路径 */
-  icon: string;
-  condition: string;
-  unlocked: boolean;
+  icon: string
+  condition: string
+  unlocked: boolean
   /** 解锁进度 0-1（用于未点亮时展示进度） */
-  progress: number;
+  progress: number
   /** 关联维度（无则为全局徽章） */
-  dimension?: AbilityDimensionKey;
+  dimension?: AbilityDimensionKey
 }
 
 // ====================== 学生维度 ======================
@@ -367,102 +367,102 @@ export interface StudentBadge {
  */
 export interface DimensionParseDetail {
   /** 判定依据类型 */
-  kind: 'keyword' | 'skill' | 'certificate';
+  kind: 'keyword' | 'skill' | 'certificate'
   /** 命中的信号词（软性维度为词表命中，技能/证书维度为识别到的条目名） */
-  matched_keywords: string[];
+  matched_keywords: string[]
   /** 还没命中的信号词，界面据此告诉用户「补充什么能加分」 */
-  missed_keywords: string[];
+  missed_keywords: string[]
   /** 实际参与计分的数量：信号词命中数 / 技能数 / 证书数 */
-  matched_count: number;
+  matched_count: number
   /** 额外加成项数量（技能维度 = 标注为「熟练」的技能数） */
-  bonus_count: number;
+  bonus_count: number
   /** 该维度依据词表规模；0 表示没有词表，只能给中性基准分 */
-  signal_total: number;
+  signal_total: number
   /** 分值推导（含具体数字） */
-  score_formula: string;
+  score_formula: string
   /** 本次使用的完整评分曲线 */
-  score_curve: string;
+  score_curve: string
   /** 置信度推导（含具体数字） */
-  confidence_formula: string;
+  confidence_formula: string
   /** 怎么提高这一项 */
-  advice: string;
+  advice: string
 }
 
 export interface StudentDimension {
-  key: AbilityDimensionKey;
-  label: string;
+  key: AbilityDimensionKey
+  label: string
   /** 0-100，越高表示该能力越强（与岗位侧「要求强度」方向相反） */
-  score: number;
-  level: AbilityLevel;
+  score: number
+  level: AbilityLevel
   /** 解析置信度 0-1 */
-  confidence: number;
-  source: ParseSource;
+  confidence: number
+  source: ParseSource
   /** 解析依据片段，可追溯 */
-  evidence: string[];
+  evidence: string[]
   /** 解析明细（本地规则解析时给出；后端解析的画像可能缺省） */
-  parse_detail?: DimensionParseDetail;
+  parse_detail?: DimensionParseDetail
   /** 仅「专业技能」维度：识别出的技能清单 */
-  skills?: StudentSkillItem[];
+  skills?: StudentSkillItem[]
   /** 仅「证书要求」维度：识别出的证书清单 */
-  certificates?: StudentCertItem[];
+  certificates?: StudentCertItem[]
 }
 
 // ====================== 学生画像主体 ======================
 
 export interface StudentProfile {
-  student_id: string;
-  major: string;
-  grade: GradeKey | '';
-  grade_label: string;
-  target_job: string;
-  target_industry: string;
+  student_id: string
+  major: string
+  grade: GradeKey | ''
+  grade_label: string
+  target_job: string
+  target_industry: string
 
   /** 固定 10 项维度 */
-  dimensions: StudentDimension[];
+  dimensions: StudentDimension[]
 
   /** 信息完整度评分 0-100 */
-  completeness: number;
+  completeness: number
   /** 完整度明细 */
-  completeness_detail: CompletenessDetail[];
+  completeness_detail: CompletenessDetail[]
   /** 尚未填写的字段中文名（用于引导补全） */
-  missing_fields: string[];
+  missing_fields: string[]
 
   /** 综合就业竞争力评分 0-100 */
-  competitiveness: number;
-  competitiveness_level: AbilityLevel;
+  competitiveness: number
+  competitiveness_level: AbilityLevel
 
   /** 优势维度（分值最高的前 3） */
-  strengths: AbilityDimensionKey[];
+  strengths: AbilityDimensionKey[]
   /** 短板维度（分值最低的前 3） */
-  weaknesses: AbilityDimensionKey[];
+  weaknesses: AbilityDimensionKey[]
 
   /** 徽章墙 */
-  badges: StudentBadge[];
+  badges: StudentBadge[]
 
   /** 画像总述 */
-  summary: string;
-  parse_method: ParseSource;
-  confidence: number;
-  parsed_at: string;
+  summary: string
+  parse_method: ParseSource
+  confidence: number
+  parsed_at: string
 }
 
 // ====================== 归一化 / 校验 ======================
 
 /** 归一化后端返回的学生画像：补齐缺失十维、重算派生字段 */
 export const normalizeStudentProfile = (raw: Partial<StudentProfile>): StudentProfile => {
-  const rawMap = new Map<AbilityDimensionKey, StudentDimension>();
-  (raw.dimensions ?? []).forEach((d) => {
-    if (d && d.key) rawMap.set(d.key, d as StudentDimension);
-  });
+  const rawMap = new Map<AbilityDimensionKey, StudentDimension>()
+  ;(raw.dimensions ?? []).forEach((d) => {
+    if (d && d.key) rawMap.set(d.key, d as StudentDimension)
+  })
 
   const dimensions: StudentDimension[] = JOB_DIMENSIONS.map((meta) => {
-    const found = rawMap.get(meta.key);
+    const found = rawMap.get(meta.key)
     const score =
       typeof found?.score === 'number' && !Number.isNaN(found.score)
         ? Math.max(0, Math.min(100, found.score))
         : found?.level
           ? levelToScore(found.level)
-          : levelToScore('medium');
+          : levelToScore('medium')
 
     return {
       key: meta.key,
@@ -475,10 +475,10 @@ export const normalizeStudentProfile = (raw: Partial<StudentProfile>): StudentPr
       parse_detail: found?.parse_detail,
       skills: meta.key === 'professional_skill' ? (found?.skills ?? []) : undefined,
       certificates: meta.key === 'certificate' ? (found?.certificates ?? []) : undefined,
-    };
-  });
+    }
+  })
 
-  const grade = raw.grade ?? '';
+  const grade = raw.grade ?? ''
 
   return {
     student_id: raw.student_id ?? '',
@@ -496,14 +496,14 @@ export const normalizeStudentProfile = (raw: Partial<StudentProfile>): StudentPr
     strengths: raw.strengths ?? [],
     weaknesses: raw.weaknesses ?? [],
     badges: (raw.badges ?? []).map((b) => {
-      const def = BADGE_DEFINITIONS.find((d) => d.id === b.id);
+      const def = BADGE_DEFINITIONS.find((d) => d.id === b.id)
       return {
         ...b,
         name: def?.name ?? b.name,
         name_en: b.name_en ?? def?.name_en ?? '',
         // 旧缓存里存的是 emoji，按 id 统一换成本地图片，否则会看到破图
         icon: def?.icon ?? b.icon,
-      };
+      }
     }),
     summary: raw.summary ?? '',
     parse_method: raw.parse_method ?? 'rule',
@@ -513,21 +513,21 @@ export const normalizeStudentProfile = (raw: Partial<StudentProfile>): StudentPr
         : Number(
             (
               dimensions.reduce((sum, d) => sum + d.confidence, 0) / (dimensions.length || 1)
-            ).toFixed(2)
+            ).toFixed(2),
           ),
     parsed_at: raw.parsed_at ?? new Date().toISOString(),
-  };
-};
+  }
+}
 
 /** 校验后端返回的学生画像是否可用（必须含全部十维且分值合法） */
 export const isValidStudentProfile = (profile: unknown): profile is StudentProfile => {
-  if (!profile || typeof profile !== 'object') return false;
-  const dims = (profile as StudentProfile).dimensions;
-  if (!Array.isArray(dims)) return false;
+  if (!profile || typeof profile !== 'object') return false
+  const dims = (profile as StudentProfile).dimensions
+  if (!Array.isArray(dims)) return false
   return JOB_DIMENSION_KEYS.every((key) =>
-    dims.some((d) => d?.key === key && typeof d.score === 'number' && !Number.isNaN(d.score))
-  );
-};
+    dims.some((d) => d?.key === key && typeof d.score === 'number' && !Number.isNaN(d.score)),
+  )
+}
 
 /** 供界面复用的等级中文名 */
-export { LEVEL_LABEL };
+export { LEVEL_LABEL }

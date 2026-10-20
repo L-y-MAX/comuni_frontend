@@ -54,13 +54,24 @@ const schemaPath = path.join(__dirname, 'student-profile-analyze', 'schema.json'
 check('schema.json 已生成', fs.existsSync(schemaPath))
 const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'))
 const ds = schema.properties.dimensions
-check('schema 要求维度数固定为 10', ds.minItems === 10 && ds.maxItems === 10, `${ds.minItems}~${ds.maxItems}`)
+check(
+  'schema 要求维度数固定为 10',
+  ds.minItems === 10 && ds.maxItems === 10,
+  `${ds.minItems}~${ds.maxItems}`,
+)
 check(
   'schema 的 key 枚举就是那十个维度',
-  ds.items.properties.key.enum.length === 10 && dimKeys.every((k) => ds.items.properties.key.enum.includes(k)),
+  ds.items.properties.key.enum.length === 10 &&
+    dimKeys.every((k) => ds.items.properties.key.enum.includes(k)),
 )
-check('schema 禁止多余字段', ds.items.additionalProperties === false && schema.additionalProperties === false)
-check('schema 限制 score 0~100', ds.items.properties.score.minimum === 0 && ds.items.properties.score.maximum === 100)
+check(
+  'schema 禁止多余字段',
+  ds.items.additionalProperties === false && schema.additionalProperties === false,
+)
+check(
+  'schema 限制 score 0~100',
+  ds.items.properties.score.minimum === 0 && ds.items.properties.score.maximum === 100,
+)
 check('schema 限制 evidence 最多 3 条', ds.items.properties.evidence.maxItems === 3)
 
 // ---------- 三类样例 ----------
@@ -72,8 +83,10 @@ const SAMPLES = {
     target_industry: '互联网',
     skills_text: '熟练使用 Java、SpringBoot、MyBatis、MySQL、Redis，了解 Docker',
     certificates_text: '英语四级、计算机二级',
-    internship_text: '在某某科技公司实习三个月，负责订单模块接口开发，把接口平均耗时从 800ms 降到 220ms',
-    projects_text: '毕业设计做了一套校园二手交易平台，负责后端与数据库设计，上线后累计 300 多名同学使用',
+    internship_text:
+      '在某某科技公司实习三个月，负责订单模块接口开发，把接口平均耗时从 800ms 降到 220ms',
+    projects_text:
+      '毕业设计做了一套校园二手交易平台，负责后端与数据库设计，上线后累计 300 多名同学使用',
     awards_text: '校级程序设计竞赛二等奖',
     self_evaluation: '学习能力强，抗压能力还可以，乐于和团队协作',
   },
@@ -99,7 +112,10 @@ function snippetFrom(corpus, seed) {
   return parts[Math.floor(seed * parts.length) % parts.length].slice(0, 40)
 }
 function mockAnalyze(input) {
-  const corpus = Object.values(input || {}).map((v) => String(v ?? '')).filter(Boolean).join('\n')
+  const corpus = Object.values(input || {})
+    .map((v) => String(v ?? ''))
+    .filter(Boolean)
+    .join('\n')
   const hasContent = corpus.replace(/\s/g, '').length >= 10
   return {
     dimensions: dims.map((d) => {
@@ -135,7 +151,11 @@ for (const [name, input] of Object.entries(SAMPLES)) {
   }
   if (name === '完整') {
     const withEvidence = result.normalized.dimensions.filter((d) => d.evidence.length > 0)
-    check('完整输入：多数维度有可追溯依据', withEvidence.length >= 5, `实际 ${withEvidence.length} 个`)
+    check(
+      '完整输入：多数维度有可追溯依据',
+      withEvidence.length >= 5,
+      `实际 ${withEvidence.length} 个`,
+    )
   }
 }
 
@@ -162,8 +182,15 @@ console.log('=== D. 坏数据必须被抓住 ===')
   bad.dimensions = bad.dimensions.slice(0, 7) // 少 3 个
   const r = validateStudentAnalysis(bad, input)
   check('缺维度不算致命错误（可补齐）', r.ok, r.errors.join(' / '))
-  check('缺失的维度被记进 missing', r.normalized.missing.length === 3, JSON.stringify(r.normalized.missing))
-  check('补齐的维度给中性分', r.normalized.dimensions.every((d) => d.score >= 0 && d.score <= 100))
+  check(
+    '缺失的维度被记进 missing',
+    r.normalized.missing.length === 3,
+    JSON.stringify(r.normalized.missing),
+  )
+  check(
+    '补齐的维度给中性分',
+    r.normalized.dimensions.every((d) => d.score >= 0 && d.score <= 100),
+  )
 }
 
 // D3 维度重复 / 未知 key
@@ -177,7 +204,11 @@ console.log('=== D. 坏数据必须被抓住 ===')
   const bad = mockAnalyze(SAMPLES.完整)
   bad.dimensions[2] = { ...bad.dimensions[2], key: 'not_a_real_dimension' }
   const r = validateStudentAnalysis(bad, SAMPLES.完整)
-  check('未知维度 key 被报错', !r.ok && r.errors.some((e) => e.includes('未知维度')), r.errors.join(' / '))
+  check(
+    '未知维度 key 被报错',
+    !r.ok && r.errors.some((e) => e.includes('未知维度')),
+    r.errors.join(' / '),
+  )
 }
 
 // D4 分数越界
@@ -185,7 +216,11 @@ console.log('=== D. 坏数据必须被抓住 ===')
   const bad = mockAnalyze(SAMPLES.完整)
   bad.dimensions[3].score = 130
   const r = validateStudentAnalysis(bad, SAMPLES.完整)
-  check('score 越界被报错', !r.ok && r.errors.some((e) => e.includes('score')), r.errors.join(' / '))
+  check(
+    'score 越界被报错',
+    !r.ok && r.errors.some((e) => e.includes('score')),
+    r.errors.join(' / '),
+  )
 }
 
 // D5 level 与 score 不一致 -> 只告警并归一
@@ -196,7 +231,10 @@ console.log('=== D. 坏数据必须被抓住 ===')
   const r = validateStudentAnalysis(bad, SAMPLES.完整)
   const d = r.normalized.dimensions[4]
   check('level 与 score 不一致时按 score 归一', d.level === 'low', d.level)
-  check('并留下告警', r.warnings.some((w) => w.includes('档位不一致')))
+  check(
+    '并留下告警',
+    r.warnings.some((w) => w.includes('档位不一致')),
+  )
 }
 
 console.log('')

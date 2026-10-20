@@ -544,7 +544,8 @@ onShareAppMessage(() => {
   return {
     title: shareTitle,
     path: sharePath,
-    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png', // 可选：分享卡片图片
+    imageUrl:
+      'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png', // 可选：分享卡片图片
     desc: '查看详细的企业招聘信息，包含薪资、岗位要求等内容', // 可选：分享描述
   }
 })
@@ -562,7 +563,8 @@ onShareTimeline(() => {
   return {
     title: timelineTitle,
     path: sharePath,
-    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png', // 可选：朋友圈分享图片
+    imageUrl:
+      'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png', // 可选：朋友圈分享图片
   }
 })
 </script>
@@ -587,7 +589,7 @@ onShareTimeline(() => {
 
 // 按钮样式（核心修改：高度减小1/3 + 纯白背景 + 无阴影）
 .effect-btn {
-  --primary: #FF7239;
+  --primary: #ff7239;
   --primary-light: #ff9a7a;
   font-size: 26rpx;
   padding: 0 40rpx; /* 固定左右内边距，宽度由内容决定 */
@@ -705,7 +707,7 @@ onShareTimeline(() => {
   justify-content: center;
   padding: 8rpx 20rpx;
   border: 2rpx solid #e03e00;
-  background-color: #FF7239;
+  background-color: #ff7239;
   color: #ffffff;
   font-size: 22rpx;
   cursor: pointer;
@@ -859,7 +861,7 @@ onShareTimeline(() => {
 .copy-btn {
   margin-left: 15rpx;
   padding: 4rpx 12rpx;
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
   border-radius: 6rpx;
   font-size: 24rpx;
@@ -891,7 +893,7 @@ onShareTimeline(() => {
   margin: 24rpx 0 0;
   height: 76rpx;
   line-height: 76rpx;
-  background: #FF7239;
+  background: #ff7239;
   color: #fff;
   border-radius: 14rpx;
   font-size: 28rpx;

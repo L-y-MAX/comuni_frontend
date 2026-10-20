@@ -22,7 +22,7 @@
         v-for="(msg, index) in messages"
         :key="index"
         :class="['message-item', msg.isUser ? 'user-message' : 'ai-message']"
-          @longpress="onMessageLongPress(msg)"
+        @longpress="onMessageLongPress(msg)"
         :style="{ animationDelay: `${index * 0.05}s` }"
       >
         <view class="message-content">
@@ -40,7 +40,10 @@
           class="msg-source"
           @click="toggleSource(index)"
         >
-          <text class="msg-source-text">参考来源 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }} 处可核对</text>
+          <text class="msg-source-text">
+            参考来源 {{ verifyQuotes(msg.content).ok }}/{{ verifyQuotes(msg.content).total }}
+            处可核对
+          </text>
           <text class="msg-source-toggle">{{ openSourceIndex === index ? '收起' : '展开' }}</text>
         </view>
         <view
@@ -77,7 +80,9 @@
             <text
               v-else
               class="msg-icon"
-            >↻</text>
+            >
+              ↻
+            </text>
             <text class="msg-icon-label">重新回答</text>
           </view>
           <view
@@ -96,7 +101,9 @@
             <text
               v-else
               class="msg-icon"
-            >⧉</text>
+            >
+              ⧉
+            </text>
             <text class="msg-icon-label">复制</text>
           </view>
           <view
@@ -115,7 +122,9 @@
             <text
               v-else
               class="msg-icon"
-            >⟳</text>
+            >
+              ⟳
+            </text>
             <text class="msg-icon-label">重新生成</text>
           </view>
           <view
@@ -133,7 +142,9 @@
             <text
               v-else
               class="msg-icon"
-            >⤓</text>
+            >
+              ⤓
+            </text>
             <text class="msg-icon-label">存到知识库</text>
           </view>
         </view>
@@ -185,7 +196,7 @@
         class="mount-chip"
         @click="unmountNote"
       >
-        上下文：{{ mountedNoteName }}  ✕
+        上下文：{{ mountedNoteName }} ✕
       </text>
       <text
         v-else
@@ -197,7 +208,9 @@
       <text
         class="mount-help"
         @click="openGuide"
-      >怎么用</text>
+      >
+        怎么用
+      </text>
     </view>
 
     <!-- 使用引导弹窗 -->
@@ -220,11 +233,15 @@
         <text
           class="guide-btn ghost"
           @click="closeGuide"
-        >知道了</text>
+        >
+          知道了
+        </text>
         <text
           class="guide-btn primary"
           @click="goKnowledgeFromGuide"
-        >去知识库选文章</text>
+        >
+          去知识库选文章
+        </text>
       </view>
     </view>
 
@@ -260,7 +277,9 @@
         <text
           v-else-if="isLoading"
           class="send-stop-text"
-        >停止</text>
+        >
+          停止
+        </text>
         <image
           v-else
           class="send-icon"
@@ -284,11 +303,7 @@ import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useKnowledgeStore } from '@/stores/knowledge'
 import { toKbContent } from '@/utils/plainText'
 import { baseURL } from '@/utils/request'
-import {
-  addKnowledgeNode,
-  getKnowledgeBaseList,
-  getKnowledgeNodeListByKBId,
-} from '@/api/knowledge'
+import { addKnowledgeNode, getKnowledgeBaseList, getKnowledgeNodeListByKBId } from '@/api/knowledge'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增导入分享生命周期函数
 
 // 初始化状态库
@@ -374,7 +389,7 @@ const hasArticle = computed(() => !!knowledgeStore.currentArticle?.content)
 const articleTitle = computed(() => knowledgeStore.currentArticle?.name || '未命名文章')
 
 /** 已挂载的上下文笔记名（空表示没挂） */
-const mountedNoteName = computed(() => knowledgeStore.currentArticle?.name || "")
+const mountedNoteName = computed(() => knowledgeStore.currentArticle?.name || '')
 
 /** 取消挂载：把上下文清掉，之后的提问就不再带文章 */
 const unmountNote = () => {
@@ -393,7 +408,9 @@ const buildKbContext = (nodes: any[]) => {
   let used = 0
   let total = 0
   for (const n of nodes) {
-    const body = String(n?.content || '').trim().slice(0, KB_CONTEXT_LIMIT)
+    const body = String(n?.content || '')
+      .trim()
+      .slice(0, KB_CONTEXT_LIMIT)
     if (!body) continue
     total++
     const chunk = `【${n.name}】\n${body}`
@@ -454,7 +471,7 @@ const mountNote = async () => {
               knowledgeStore.currentArticle = {
                 ...node,
                 name: node.name,
-                content: node.content || "",
+                content: node.content || '',
               } as any
               uni.showToast({ title: `已挂载「${node.name}」`, icon: 'none' })
             },
@@ -467,7 +484,11 @@ const mountNote = async () => {
       fail: () => {},
     })
   } catch (e) {
-    uni.showToast({ title: `读取知识库失败：${String((e as any)?.errMsg || '请检查登录状态')}`, icon: 'none', duration: 2500 })
+    uni.showToast({
+      title: `读取知识库失败：${String((e as any)?.errMsg || '请检查登录状态')}`,
+      icon: 'none',
+      duration: 2500,
+    })
   }
 }
 
@@ -513,7 +534,9 @@ const extractQuotes = (text: string): string[] => {
  * 规范化：去空白 + 统一小写。与 skills 校验器（contract.cjs）同一口径。
  */
 const normalizeForMatch = (s: string) =>
-  String(s || '').toLowerCase().replace(/[\s\u3000]+/g, '')
+  String(s || '')
+    .toLowerCase()
+    .replace(/[\s\u3000]+/g, '')
 
 /**
  * 核对回答里的引用能否在当前文章原文中找到。
@@ -521,7 +544,7 @@ const normalizeForMatch = (s: string) =>
  */
 const verifyQuotes = (answer: string) => {
   const quotes = extractQuotes(answer)
-  const corpus = normalizeForMatch(knowledgeStore.currentArticle?.content || "")
+  const corpus = normalizeForMatch(knowledgeStore.currentArticle?.content || '')
   let ok = 0
   quotes.forEach((q) => {
     if (corpus.includes(normalizeForMatch(q))) ok++
@@ -606,8 +629,9 @@ const describeAiError = (raw: string) => {
 const localRetrieve = (question: string, topN = 3) => {
   const corpus = String(knowledgeStore.currentArticle?.content || '')
   if (!corpus) return ''
-  const terms = (String(question || '').match(/[\u4e00-\u9fa5]{2,}|[A-Za-z][A-Za-z0-9_+#.-]{1,}/g) || [])
-    .filter((t) => t.length >= 2)
+  const terms = (
+    String(question || '').match(/[\u4e00-\u9fa5]{2,}|[A-Za-z][A-Za-z0-9_+#.-]{1,}/g) || []
+  ).filter((t) => t.length >= 2)
   if (!terms.length) return ''
   const sentences = corpus
     .split(/[。！？；\n]+/)
@@ -616,7 +640,9 @@ const localRetrieve = (question: string, topN = 3) => {
   const scored = sentences
     .map((s) => {
       let score = 0
-      terms.forEach((t) => { if (s.includes(t)) score += t.length })
+      terms.forEach((t) => {
+        if (s.includes(t)) score += t.length
+      })
       return { s, score }
     })
     .filter((x) => x.score > 0)
@@ -646,8 +672,8 @@ const pollTaskResult = async (taskId: string) => {
     }
     const responseData = response.data as AnyObject
     const payload = (responseData.data || {}) as AnyObject
-    const outer = String(responseData.status || "").toUpperCase()
-    const inner = String(payload.status || "").toUpperCase()
+    const outer = String(responseData.status || '').toUpperCase()
+    const inner = String(payload.status || '').toUpperCase()
 
     // 失败要同时看内外层：后端任务失败时是 return 字典、Celery 状态仍是 SUCCESS，
     // 只看外层会把失败当成功，接着读到一个空的 answer（表现就是"不回答"）。
@@ -675,7 +701,9 @@ const pollTaskResult = async (taskId: string) => {
     clearInterval(pollTimer.value!)
     pollTimer.value = null
     console.error('轮询任务结果错误:', error)
-    const reason = describeAiError(String((error as any)?.message || (error as any)?.errMsg || error))
+    const reason = describeAiError(
+      String((error as any)?.message || (error as any)?.errMsg || error),
+    )
     const local = localRetrieve(lastUserMessage())
     messages.value.push({
       content: local
@@ -785,7 +813,10 @@ const escapeHtml = (s: string) =>
 /** 行内格式：行内代码、加粗、斜体 */
 const inlineMd = (text: string): string => {
   let t = escapeHtml(text)
-  t = t.replace(/`([^`]+)`/g, '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">$1</code>')
+  t = t.replace(
+    /`([^`]+)`/g,
+    '<code style="background:#eef2f7;padding:2rpx 8rpx;border-radius:6rpx;font-size:26rpx;">$1</code>',
+  )
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight:600;color:#111827;">$1</strong>')
   t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
   return t
@@ -822,7 +853,9 @@ const renderAnswer = (markdown: string): string => {
       if (/^\s*```/.test(line)) {
         closeList()
         if (!inCode) {
-          out.push('<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;white-space:pre;font-size:24rpx;line-height:1.6;margin:14rpx 0;">')
+          out.push(
+            '<pre style="background:#f6f8fa;padding:18rpx;border-radius:10rpx;overflow-x:auto;white-space:pre;font-size:24rpx;line-height:1.6;margin:14rpx 0;">',
+          )
           inCode = true
         } else {
           out.push('</pre>')
@@ -841,7 +874,9 @@ const renderAnswer = (markdown: string): string => {
       const heading = line.match(/^(#{1,4})\s+(.*)$/)
       if (heading) {
         closeList()
-        out.push(`<div style="font-size:${headingSize(heading[1].length)};font-weight:600;color:#111827;margin:18rpx 0 10rpx;">${inlineMd(heading[2])}</div>`)
+        out.push(
+          `<div style="font-size:${headingSize(heading[1].length)};font-weight:600;color:#111827;margin:18rpx 0 10rpx;">${inlineMd(heading[2])}</div>`,
+        )
         continue
       }
       const bullet = line.match(/^\s*[-*+]\s+(.*)$/)
@@ -850,7 +885,11 @@ const renderAnswer = (markdown: string): string => {
         const type: 'ul' | 'ol' = bullet ? 'ul' : 'ol'
         if (listType !== type) {
           closeList()
-          out.push(type === 'ul' ? '<ul style="padding-left:38rpx;margin:12rpx 0;">' : '<ol style="padding-left:38rpx;margin:12rpx 0;">')
+          out.push(
+            type === 'ul'
+              ? '<ul style="padding-left:38rpx;margin:12rpx 0;">'
+              : '<ol style="padding-left:38rpx;margin:12rpx 0;">',
+          )
           listType = type
         }
         const text = bullet ? bullet[1] : ordered ? ordered[2] : ''
@@ -953,8 +992,12 @@ const iconImgBroken = ref(false)
 
 /** 使用引导弹窗 */
 const guideVisible = ref(false)
-const openGuide = () => { guideVisible.value = true }
-const closeGuide = () => { guideVisible.value = false }
+const openGuide = () => {
+  guideVisible.value = true
+}
+const closeGuide = () => {
+  guideVisible.value = false
+}
 const goKnowledgeFromGuide = () => {
   closeGuide()
   goKnowledge()
@@ -963,10 +1006,10 @@ const goKnowledgeFromGuide = () => {
 // 页面挂载时执行
 onMounted(() => {
   // 从「就业政策」页带过来的提问：填入输入框，由用户确认后再发送
-  const pendingPrompt = uni.getStorageSync("aiPendingPrompt")
+  const pendingPrompt = uni.getStorageSync('aiPendingPrompt')
   if (pendingPrompt) {
     inputContent.value = String(pendingPrompt)
-    uni.removeStorageSync("aiPendingPrompt")
+    uni.removeStorageSync('aiPendingPrompt')
   }
   // 第一次进来还没选上下文时，先把用法弹出来
   if (!mountedNoteName.value) guideVisible.value = true
@@ -1035,15 +1078,15 @@ onShareTimeline(() => {
 }
 
 .message-item {
-    display: flex;
-    flex-direction: column; /* 正文 → 核对 → 按钮 竖直排列 */
-    align-items: flex-start;
-    margin-bottom: 30rpx;
-    max-width: 85%;
-    animation: fadeIn 0.3s ease forwards;
-    opacity: 0;
-    transform: translateY(10rpx);
-  }
+  display: flex;
+  flex-direction: column; /* 正文 → 核对 → 按钮 竖直排列 */
+  align-items: flex-start;
+  margin-bottom: 30rpx;
+  max-width: 85%;
+  animation: fadeIn 0.3s ease forwards;
+  opacity: 0;
+  transform: translateY(10rpx);
+}
 
 @keyframes fadeIn {
   to {
@@ -1053,24 +1096,24 @@ onShareTimeline(() => {
 }
 
 .user-message {
-    align-items: flex-end; /* 用户消息靠右 */
-    margin-left: auto;
-  }
+  align-items: flex-end; /* 用户消息靠右 */
+  margin-left: auto;
+}
 
 .ai-message {
   margin-right: auto;
 }
 
 .message-content {
-    white-space: pre-wrap;
-    padding: 20rpx 25rpx;
-    border-radius: 22rpx;
-    font-size: 30rpx;
-    line-height: 1.6;
-    word-wrap: break-word;
-    word-break: break-all;
-    max-width: 100%;
-  }
+  white-space: pre-wrap;
+  padding: 20rpx 25rpx;
+  border-radius: 22rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+  word-wrap: break-word;
+  word-break: break-all;
+  max-width: 100%;
+}
 
 .user-message .message-content {
   background-color: #007bff;
@@ -1159,7 +1202,7 @@ onShareTimeline(() => {
   line-height: 72rpx;
   font-size: 28rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #FF8A54 0%, #FF7239 100%);
+  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
   border-radius: 36rpx;
   border: none;
 }
@@ -1334,7 +1377,7 @@ onShareTimeline(() => {
 }
 
 .msg-verify {
-    font-size: 24rpx;
+  font-size: 24rpx;
   color: #16a34a;
   background: #f0fdf4;
   border-radius: 8rpx;
@@ -1347,12 +1390,12 @@ onShareTimeline(() => {
 }
 
 .msg-save {
-    font-size: 26rpx;
-    color: #ffffff;
-    background: #FF7239;
-    border-radius: 999rpx;
-    padding: 10rpx 22rpx;
-  }
+  font-size: 26rpx;
+  color: #ffffff;
+  background: #ff7239;
+  border-radius: 999rpx;
+  padding: 10rpx 22rpx;
+}
 
 /* 上下文挂载栏 */
 .mount-bar {
@@ -1372,7 +1415,7 @@ onShareTimeline(() => {
 .mount-chip {
   max-width: 100%;
   font-size: 22rpx;
-  color: #FF7239;
+  color: #ff7239;
   background: #fff7f2;
   border: 2rpx solid #ffd0bb;
   border-radius: 24rpx;
@@ -1382,182 +1425,182 @@ onShareTimeline(() => {
   text-overflow: ellipsis;
 }
 
-  /* 操作区按钮：胶囊样式，字号 26rpx 保证看得见 */
-  .msg-op {
-    font-size: 26rpx;
-    color: #475569;
-    background: #f1f5f9;
-    padding: 10rpx 22rpx;
-    border-radius: 999rpx;
-  }
-  .msg-op.retry {
-    color: #ffffff;
-    background: #2563eb;
-  }
-  /* 发送按钮的停止态 */
-  .send-btn.stopping {
-    background: #ef4444;
-  }
-  .send-stop-text {
-    font-size: 24rpx;
-    color: #ffffff;
-    line-height: 1;
-  }
+/* 操作区按钮：胶囊样式，字号 26rpx 保证看得见 */
+.msg-op {
+  font-size: 26rpx;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+}
+.msg-op.retry {
+  color: #ffffff;
+  background: #2563eb;
+}
+/* 发送按钮的停止态 */
+.send-btn.stopping {
+  background: #ef4444;
+}
+.send-stop-text {
+  font-size: 24rpx;
+  color: #ffffff;
+  line-height: 1;
+}
 
-  /* 溯源折叠与来源卡片 */
-  .msg-source {
-    display: flex;
-    align-items: center;
-    margin-top: 12rpx;
-  }
-  .msg-source-text {
-    font-size: 24rpx;
-    color: #64748b;
-  }
-  .msg-source-toggle {
-    margin-left: 12rpx;
-    font-size: 24rpx;
-    color: #2563eb;
-  }
-  .source-cards {
-    margin-top: 10rpx;
-  }
-  .source-card {
-    padding: 16rpx 20rpx;
-    background: #f8fafc;
-    border: 1rpx solid #e2e8f0;
-    border-radius: 12rpx;
-  }
-  .source-card-title {
-    display: block;
-    font-size: 26rpx;
-    color: #334155;
-  }
-  .source-card-sub {
-    display: block;
-    margin-top: 6rpx;
-    font-size: 22rpx;
-    color: #94a3b8;
-  }
+/* 溯源折叠与来源卡片 */
+.msg-source {
+  display: flex;
+  align-items: center;
+  margin-top: 12rpx;
+}
+.msg-source-text {
+  font-size: 24rpx;
+  color: #64748b;
+}
+.msg-source-toggle {
+  margin-left: 12rpx;
+  font-size: 24rpx;
+  color: #2563eb;
+}
+.source-cards {
+  margin-top: 10rpx;
+}
+.source-card {
+  padding: 16rpx 20rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 12rpx;
+}
+.source-card-title {
+  display: block;
+  font-size: 26rpx;
+  color: #334155;
+}
+.source-card-sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #94a3b8;
+}
 
-  /* 操作图标按钮：默认只显示图标，hover 时展开文字（开发者工具/桌面端） */
-  .msg-icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 56rpx;
-    height: 56rpx;
-    padding: 0 14rpx;
-    margin-right: 14rpx;
-    border-radius: 999rpx; /* 完整圆角，更圆润 */
-    background: #f1f5f9;
-  }
-  .msg-icon-btn.save {
-    background: #fff3ed;
-  }
-  .msg-icon {
-    font-size: 28rpx;
-    line-height: 1;
-    color: #475569;
-  }
-  .msg-icon-btn.save .msg-icon {
-    color: #FF7239;
-  }
-  .msg-icon-btn.retry .msg-icon {
-    color: #2563eb;
-  }
-  .msg-icon-label {
-    display: none; /* 默认不显示文字 */
-    margin-left: 8rpx;
-    font-size: 22rpx;
-    color: #475569;
-    white-space: nowrap;
-  }
-  .msg-icon-btn.save .msg-icon-label {
-    color: #FF7239;
-  }
-  .msg-icon-btn:hover .msg-icon-label {
-    display: inline; /* 鼠标悬停时显示文字 */
-  }
-  .msg-icon-btn-active {
-    background: #e2e8f0;
-  }
+/* 操作图标按钮：默认只显示图标，hover 时展开文字（开发者工具/桌面端） */
+.msg-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56rpx;
+  height: 56rpx;
+  padding: 0 14rpx;
+  margin-right: 14rpx;
+  border-radius: 999rpx; /* 完整圆角，更圆润 */
+  background: #f1f5f9;
+}
+.msg-icon-btn.save {
+  background: #fff3ed;
+}
+.msg-icon {
+  font-size: 28rpx;
+  line-height: 1;
+  color: #475569;
+}
+.msg-icon-btn.save .msg-icon {
+  color: #ff7239;
+}
+.msg-icon-btn.retry .msg-icon {
+  color: #2563eb;
+}
+.msg-icon-label {
+  display: none; /* 默认不显示文字 */
+  margin-left: 8rpx;
+  font-size: 22rpx;
+  color: #475569;
+  white-space: nowrap;
+}
+.msg-icon-btn.save .msg-icon-label {
+  color: #ff7239;
+}
+.msg-icon-btn:hover .msg-icon-label {
+  display: inline; /* 鼠标悬停时显示文字 */
+}
+.msg-icon-btn-active {
+  background: #e2e8f0;
+}
 
-  /* 图标图片尺寸：与字符图标视觉等大 */
-  .msg-icon-img {
-    width: 34rpx;
-    height: 34rpx;
-  }
+/* 图标图片尺寸：与字符图标视觉等大 */
+.msg-icon-img {
+  width: 34rpx;
+  height: 34rpx;
+}
 
-  /* 「怎么用」入口 */
-  .mount-help {
-    margin-left: auto;
-    padding: 6rpx 16rpx;
-    font-size: 22rpx;
-    color: #2563eb;
-    background: #eff6ff;
-    border-radius: 999rpx;
-  }
+/* 「怎么用」入口 */
+.mount-help {
+  margin-left: auto;
+  padding: 6rpx 16rpx;
+  font-size: 22rpx;
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 999rpx;
+}
 
-  /* 使用引导弹窗 */
-  .guide-mask {
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 900;
-  }
-  .guide-card {
-    position: fixed;
-    left: 8%;
-    right: 8%;
-    top: 22%;
-    z-index: 901;
-    background: #ffffff;
-    border-radius: 24rpx;
-    padding: 34rpx 30rpx 26rpx;
-    box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.18);
-  }
-  .guide-title {
-    display: block;
-    font-size: 32rpx;
-    font-weight: 600;
-    color: #111827;
-    margin-bottom: 14rpx;
-  }
-  .guide-text {
-    display: block;
-    font-size: 26rpx;
-    line-height: 1.6;
-    color: #475569;
-    margin-bottom: 16rpx;
-  }
-  .guide-step {
-    display: block;
-    font-size: 25rpx;
-    line-height: 1.7;
-    color: #334155;
-    margin-bottom: 10rpx;
-  }
-  .guide-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 26rpx;
-  }
-  .guide-btn {
-    margin-left: 16rpx;
-    padding: 14rpx 30rpx;
-    border-radius: 999rpx;
-    font-size: 26rpx;
-  }
-  .guide-btn.ghost {
-    color: #475569;
-    background: #f1f5f9;
-  }
-  .guide-btn.primary {
-    color: #ffffff;
-    background: #2563eb;
-  }
+/* 使用引导弹窗 */
+.guide-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 900;
+}
+.guide-card {
+  position: fixed;
+  left: 8%;
+  right: 8%;
+  top: 22%;
+  z-index: 901;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 34rpx 30rpx 26rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.18);
+}
+.guide-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 14rpx;
+}
+.guide-text {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #475569;
+  margin-bottom: 16rpx;
+}
+.guide-step {
+  display: block;
+  font-size: 25rpx;
+  line-height: 1.7;
+  color: #334155;
+  margin-bottom: 10rpx;
+}
+.guide-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 26rpx;
+}
+.guide-btn {
+  margin-left: 16rpx;
+  padding: 14rpx 30rpx;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+}
+.guide-btn.ghost {
+  color: #475569;
+  background: #f1f5f9;
+}
+.guide-btn.primary {
+  color: #ffffff;
+  background: #2563eb;
+}
 </style>

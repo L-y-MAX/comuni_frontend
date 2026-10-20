@@ -35,24 +35,24 @@
  *    小程序里没有 process 对象，不定义会直接报错；
  *    顺便让 echarts 内部那些开发期告警分支被摇掉。
  */
-import { build } from 'vite';
-import { minify } from 'terser';
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { build } from 'vite'
+import { minify } from 'terser'
+import path from 'node:path'
+import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, '..');
-const entry = path.join(here, 'echarts-entry.js');
-const outDir = path.join(root, 'src', 'pagesMember', 'abilityRadar', 'lib');
-const outFile = path.join(outDir, 'echarts.bundle.js');
+const here = path.dirname(fileURLToPath(import.meta.url))
+const root = path.resolve(here, '..')
+const entry = path.join(here, 'echarts-entry.js')
+const outDir = path.join(root, 'src', 'pagesMember', 'abilityRadar', 'lib')
+const outFile = path.join(outDir, 'echarts.bundle.js')
 
 if (!fs.existsSync(entry)) {
-  console.error(`找不到打包入口：${entry}`);
-  process.exit(1);
+  console.error(`找不到打包入口：${entry}`)
+  process.exit(1)
 }
 
-console.log('[1/3] 打包 echarts（vite lib 模式，ESM）...');
+console.log('[1/3] 打包 echarts（vite lib 模式，ESM）...')
 await build({
   root,
   // 关键：不要加载项目的 vite.config.ts。
@@ -74,31 +74,31 @@ await build({
       fileName: () => 'echarts.bundle.js',
     },
   },
-});
+})
 
 if (!fs.existsSync(outFile)) {
-  console.error(`打包结束但没找到产物：${outFile}`);
-  process.exit(1);
+  console.error(`打包结束但没找到产物：${outFile}`)
+  process.exit(1)
 }
-const rawSize = fs.statSync(outFile).size;
-console.log(`[2/3] 打包完成（未压缩 ${(rawSize / 1024).toFixed(0)} KB），开始 terser 压缩...`);
+const rawSize = fs.statSync(outFile).size
+console.log(`[2/3] 打包完成（未压缩 ${(rawSize / 1024).toFixed(0)} KB），开始 terser 压缩...`)
 
-const code = fs.readFileSync(outFile, 'utf8');
+const code = fs.readFileSync(outFile, 'utf8')
 const result = await minify(code, {
   // ESM 产物：必须显式开启 toplevel + module，terser 才会混淆顶层变量名
   module: true,
   mangle: { toplevel: true },
   compress: { drop_console: true, passes: 2 },
   format: { comments: false },
-});
+})
 
 if (!result.code) {
-  console.error('terser 没有产出内容，压缩失败');
-  process.exit(1);
+  console.error('terser 没有产出内容，压缩失败')
+  process.exit(1)
 }
-fs.writeFileSync(outFile, result.code, 'utf8');
+fs.writeFileSync(outFile, result.code, 'utf8')
 
-const size = fs.statSync(outFile).size;
-console.log(`[3/3] 完成：${path.relative(root, outFile)}（${(size / 1024).toFixed(0)} KB）`);
-console.log("      产物是 ESM 格式，导入方式：import echarts from './echarts.bundle.js'");
-console.log('      主包不再包含 echarts；分包页首次进入时才会下载这一份。');
+const size = fs.statSync(outFile).size
+console.log(`[3/3] 完成：${path.relative(root, outFile)}（${(size / 1024).toFixed(0)} KB）`)
+console.log("      产物是 ESM 格式，导入方式：import echarts from './echarts.bundle.js'")
+console.log('      主包不再包含 echarts；分包页首次进入时才会下载这一份。')
