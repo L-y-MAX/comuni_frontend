@@ -87,10 +87,11 @@ import {
  * 能力星球图（全屏版）
  *
  * 历史：本页原来用 ECharts（按需打包 + terser 压缩后约 470KB）绘制。
- * 整张图只有「十维多边形 + 十个顶点星球」两种图形，用 ECharts 属于大材小用，
+ * 整张图只有「十维雷达骨架 + 十个顶点星球」两种图形，用 ECharts 属于大材小用，
  * 还会触发开发者工具「静态资源超过 200KB」告警。
- * 现已改为原生 canvas 2d 手绘（lib/radarCanvas.ts，约 10KB），视觉参数保持不变：
- * 同心十边形网格、极淡橘色填充、三档渐变星球（≥80 暖橘 / 70~79 浅橙黄 / <70 浅灰）、
+ * 现已改为原生 canvas 2d 手绘（lib/radarCanvas.ts），并与「能力画像」页内联的纯 CSS 版
+ * 保持同一套视觉口径：4 层同心圆网格（#eeeeee）、0.08 橘色多边形填充、2px 橘色轮廓、
+ * 30~52rpx 三档渐变球体（≥80 暖橘 / 70~79 浅橙黄 / <70 浅灰）、24rpx 维度标签。
  * 无发光、点击查看得分与等级。
  */
 const profile = ref<StudentProfile | null>(null);
@@ -110,6 +111,8 @@ let ctx: CanvasRenderingContext2D | null = null;
 /** canvas 的 CSS 尺寸（px），与 ctx 内部的 CSS px 坐标系一致 */
 let canvasW = 0;
 let canvasH = 0;
+/** 1rpx 对应的 CSS px（windowWidth / 750），用于和内联版的气泡/标签尺寸对齐 */
+let rpxPx = 0.5;
 /** 画布在视口中的位置（px），触摸坐标换算兜底用 */
 let canvasLeft = 0;
 let canvasTop = 0;
@@ -159,8 +162,11 @@ const initCanvas = () => {
       const node = item.node as any;
       const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
         pixelRatio?: number;
+        windowWidth?: number;
       };
       const dpr = typeof win.pixelRatio === 'number' && win.pixelRatio > 0 ? win.pixelRatio : 2;
+      // 750rpx = 窗口宽度，换成 CSS px 后气泡/标签才能和内联版同尺寸
+      rpxPx = (typeof win.windowWidth === 'number' && win.windowWidth > 0 ? win.windowWidth : 375) / 750;
 
       canvasW = item.width;
       canvasH = item.height;
@@ -182,7 +188,7 @@ const initCanvas = () => {
 /** 按当前画像重绘整张图（画像为空时画一张全 0 的空多边形） */
 const redraw = () => {
   if (!ctx) return;
-  geometry = drawRadar(ctx, dimensions.value, canvasW, canvasH);
+  geometry = drawRadar(ctx, dimensions.value, canvasW, canvasH, rpxPx);
 };
 
 /**

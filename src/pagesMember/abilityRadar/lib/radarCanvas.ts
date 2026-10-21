@@ -3,67 +3,69 @@
  *
  * ## 为什么不用 ECharts
  *
- * 整张图只有两种图形：「十维多边形」与「十个顶点星球」。
+ * 整张图只有两种图形：「十维雷达骨架」与「十个顶点星球」。
  * ECharts 即使按需打包（radar + scatter + polar + canvas 渲染器）并经 terser 压缩，
  * 产物仍有约 470KB，占整个分包近一半体积，还会触发开发者工具「静态资源超过 200KB」告警。
  * 用小程序原生 canvas 2d 手绘，逻辑只有百来行、体积可忽略，并且渲染行为完全可控。
  *
- * ## 画面结构（与旧版视觉保持一致的参数）
+ * ## 视觉口径：与「能力画像」页内联的纯 CSS 雷达图完全一致
  *
- *   骨架：4 层同心十边形网格 + 10 条轴线，浅灰细线（#EEEEEE，0.5px）
- *   外轮廓：十维数据连成的多边形，极淡橘色填充 + 细橘色描边
- *   星球：每根轴按「分值/100」的位置画一颗圆球，直径由分值决定（最大 32px）
- *         三档渐变（≥80 暖橘 / 70~79 浅橙黄 / <70 浅灰），1px 同色系描边，无发光
- *   标签：维度中文名放在轴线外端 30px 处，按象限自适应对齐
+ *   容器：正方形（内联版用 padding-bottom:100% 撑方），雷达半径 = 边长 × 30%
+ *   网格：4 层同心圆（#eeeeee、1px），半径比例 0.25 / 0.5 / 0.75 / 1
+ *   轴线：圆心到外圈的浅灰细线
+ *   填充：数据多边形，rgba(255,151,113,0.08)
+ *   轮廓：数据多边形折线，#ff9771、2px、opacity 0.85
+ *   星球：直径 30~52rpx（随分值线性增加），三档径向渐变（≥80 暖橘 / 70~79 浅橙黄 / <70 浅灰），无描边、无发光
+ *   标签：维度中文名放在边长 40% 的同心圆上，24rpx、#333
  *
  * ## 交互
  *
  *   canvas 不能像 DOM 一样挂点击事件到图形上，所以采用「触摸命中检测」：
- *   记录每颗星球在画布上的坐标，触摸时找最近的一颗（28px 容差），
+ *   记录每颗星球在画布上的坐标，触摸时找最近的一颗（星球半径 + 8px 容差），
  *   命中则由页面弹出一张浮层卡片展示「维度｜分数 / 等级 / 一句话描述」。
  */
 
 import type { AbilityDimensionKey } from '@/types/jobProfile';
 
-// ====================== 视觉常量（与旧 ECharts 版一致） ======================
+// ====================== 视觉常量（与非全屏纯 CSS 版保持一致） ======================
 
-export const LINE_COLOR = '#EEEEEE';
-export const PRIMARY_COLOR = '#FF9771';
-/** 多边形填充：极淡，只做底，不抢星球的视觉 */
-export const AREA_COLOR = 'rgba(255, 151, 113, 0.04)';
-/** 网格线宽：细线弱化参考线 */
-const GRID_LINE_WIDTH = 0.5;
-/** 外轮廓线宽 */
-const OUTLINE_LINE_WIDTH = 1.5;
-/** 维度标签与外圈的间距（px），防止高分星球压住文字 */
-const AXIS_NAME_GAP = 30;
-/** 网格层数 */
+/** 网格/轴线颜色（内联版 .radar-ring / .radar-axis 的 #eeeeee） */
+export const LINE_COLOR = '#eeeeee';
+export const PRIMARY_COLOR = '#ff9771';
+/** 多边形填充（内联版 .radar-fill 的 rgba(255,151,113,0.08)） */
+export const AREA_COLOR = 'rgba(255, 151, 113, 0.08)';
+/** 网格/轴线宽（canvas 用 1px） */
+const GRID_LINE_WIDTH = 1;
+/** 轮廓线宽与透明度（内联版 .radar-edge：2rpx、opacity .85） */
+const OUTLINE_LINE_WIDTH = 2;
+const OUTLINE_ALPHA = 0.85;
+/** 雷达外圈半径占「正方形边长」的比例（内联版 RADAR_RADIUS_PERCENT = 30） */
+const RADIUS_PERCENT = 0.3;
+/** 维度标签半径占正方形边长的比例（内联版 LABEL_RADIUS_PERCENT = 40） */
+const LABEL_RADIUS_PERCENT = 0.4;
+/** 网格层数（内联版 GRID_RING_RATIOS：0.25 / 0.5 / 0.75 / 1） */
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1];
+/** 维度标签字号（内联版 24rpx） */
+const LABEL_FONT_RPX = 24;
+/** 取不到窗口宽度时的兜底（常见设计稿宽 375px） */
+const FALLBACK_RPX_PX = 0.5;
 
-/** 三档星球的径向渐变：[中心色, 边缘色] */
+/** 三档球体渐变：半径由分值决定，颜色只分三档（内联版 .bubble.tier-*） */
 export const PLANET_GRADIENTS = {
   /** 分值 ≥ 80：暖橘 */
-  high: ['#FF9771', '#FFD9C7'],
+  high: ['#ff9771', '#ffd9c7'],
   /** 70 ≤ 分值 < 80：浅橙黄 */
-  mid: ['#FFB347', '#FFD291'],
+  mid: ['#ffb347', '#ffe4c2'],
   /** 分值 < 70：浅灰 */
-  low: ['#E2E2E2', '#F1F1F1'],
+  low: ['#e2e2e2', '#f4f4f4'],
 } as const;
 
-/** 三档描边色：比同档中心色深一档，只让边缘清晰，不做发光 */
-export const PLANET_BORDERS = {
-  high: '#E8703F',
-  mid: '#DFA030',
-  low: '#B9BFC9',
-} as const;
+/** 球体直径区间（rpx，内联版 BUBBLE_SIZE_MIN/MAX = 30 / 52） */
+const BUBBLE_SIZE_MIN_RPX = 30;
+const BUBBLE_SIZE_MAX_RPX = 52;
 
-/** 星球直径上限（px），避免相邻两颗大星球糊在一起 */
-export const SYMBOL_SIZE_MAX = 32;
-/** 直径系数：100 分刚好顶到上限 */
-export const SYMBOL_SIZE_FACTOR = 0.32;
-
-/** 触摸命中容差（px） */
-const HIT_TOLERANCE = 28;
+/** 触摸命中容差（px），在球体半径基础上额外放宽，方便手指点中 */
+const HIT_TOLERANCE_EXTRA = 8;
 
 /**
  * 十个维度的展示顺序。
@@ -103,13 +105,23 @@ export const scoreToTier = (score: number): PlanetTier => {
   return 'low';
 };
 
-/** 分值 → 星球直径（px）：min(分值 × 0.32, 32) */
-export const scoreToSymbolSize = (score: number): number => {
-  const safe = Math.max(0, Math.min(100, score));
-  return Math.min(safe * SYMBOL_SIZE_FACTOR, SYMBOL_SIZE_MAX);
+/**
+ * 分值 → 顶点半径比例（0~1，相对雷达半径）
+ *
+ * 与内联版一致：下限 0.3（低分球不至于挤在圆心）、上限 0.86（满分球不会压到标签）。
+ */
+export const scoreToRadiusRatio = (score: number): number => {
+  const r = Math.max(0, Math.min(1, score / 100));
+  return 0.3 + 0.56 * r;
 };
 
-/** 分值 → 等级标签（与旧版 tooltip 一致） */
+/** 分值 → 球体直径（rpx）：30~52rpx 线性映射 */
+export const scoreToBubbleSizeRpx = (score: number): number => {
+  const r = Math.max(0, Math.min(1, score / 100));
+  return BUBBLE_SIZE_MIN_RPX + (BUBBLE_SIZE_MAX_RPX - BUBBLE_SIZE_MIN_RPX) * r;
+};
+
+/** 分值 → 等级标签（与内联版 tooltip 一致） */
 export const scoreToGrade = (score: number): string => {
   if (score >= 85) return '优秀';
   if (score >= 75) return '良好';
@@ -117,7 +129,7 @@ export const scoreToGrade = (score: number): string => {
   return '待提升';
 };
 
-/** 分值 → 一句话描述（与旧版 tooltip 一致） */
+/** 分值 → 一句话描述（与内联版 tooltip 一致） */
 export const scoreToDesc = (label: string, score: number): string => {
   if (score >= 85) return `你的${label}表现突出，是求职核心竞争力`;
   if (score >= 75) return `你的${label}表现良好，继续保持即可`;
@@ -132,59 +144,62 @@ export interface RadarPoint {
   label: string;
   /** 归一化 0~100 */
   score: number;
-  /** 星球圆心坐标（CSS px） */
+  /** 球体圆心坐标（CSS px） */
   x: number;
   y: number;
-  /** 星球半径（CSS px） */
+  /** 球体半径（CSS px） */
   radius: number;
 }
 
 export interface RadarGeometry {
   cx: number;
   cy: number;
+  /** 正方形边长（CSS px） */
+  side: number;
   /** 外圈半径（CSS px） */
   radius: number;
   points: RadarPoint[];
 }
 
+/** 每根轴的角度（第一维在正上方，其余逆时针排列，与内联版角度约定一致） */
+const axisAngle = (index: number): number =>
+  -Math.PI / 2 - index * ((Math.PI * 2) / DIMENSION_ORDER.length);
+
 /**
  * 计算雷达几何：中心、外圈半径与十颗星球的坐标。
  *
- * 角度口径：第一维在正上方，其余维度**逆时针**排列（与旧 ECharts radar 的
- * startAngle=90、默认逆时针一致），保证换实现后画面方向不变。
+ * @param rpxPx 1rpx 对应的 CSS px（由页面从 windowWidth / 750 算出）
  */
 export const computeRadarGeometry = (
   dimensions: RadarDimensionInput[],
   width: number,
-  height: number
+  height: number,
+  rpxPx: number = FALLBACK_RPX_PX
 ): RadarGeometry => {
   const cx = width / 2;
   const cy = height / 2;
-  // 旧版 radius: '58%' 指「短边一半的 58%」
-  const radius = (Math.min(width, height) / 2) * 0.58;
-  const step = (Math.PI * 2) / DIMENSION_ORDER.length;
+  // 内联版容器是正方形，这里取短边作为正方形边长，保证比例一致
+  const side = Math.min(width, height);
+  const radius = side * RADIUS_PERCENT;
 
   const points: RadarPoint[] = DIMENSION_ORDER.map((key, index) => {
     const hit = dimensions.find((d) => d.key === key);
     const score = typeof hit?.score === 'number' ? Math.max(0, Math.min(100, hit.score)) : 0;
-    const angle = -Math.PI / 2 - index * step;
-    const ratio = score / 100;
+    const angle = axisAngle(index);
+    const radiusPx = radius * scoreToRadiusRatio(score);
+    const diameterPx = scoreToBubbleSizeRpx(score) * rpxPx;
     return {
       key,
       label: hit?.label ?? key,
       score,
-      x: cx + Math.cos(angle) * radius * ratio,
-      y: cy + Math.sin(angle) * radius * ratio,
-      radius: scoreToSymbolSize(score) / 2,
+      x: cx + Math.cos(angle) * radiusPx,
+      y: cy + Math.sin(angle) * radiusPx,
+      radius: diameterPx / 2,
     };
   });
 
-  return { cx, cy, radius, points };
+  return { cx, cy, side, radius, points };
 };
-
-/** 每根轴的角度（与 computeRadarGeometry 同一口径） */
-const axisAngle = (index: number): number =>
-  -Math.PI / 2 - index * ((Math.PI * 2) / DIMENSION_ORDER.length);
 
 // ====================== 绘制 ======================
 
@@ -197,32 +212,26 @@ export const drawRadar = (
   ctx: CanvasRenderingContext2D,
   dimensions: RadarDimensionInput[],
   width: number,
-  height: number
+  height: number,
+  rpxPx: number = FALLBACK_RPX_PX
 ): RadarGeometry => {
-  const geometry = computeRadarGeometry(dimensions, width, height);
-  const { cx, cy, radius, points } = geometry;
+  const geometry = computeRadarGeometry(dimensions, width, height, rpxPx);
+  const { cx, cy, side, radius, points } = geometry;
   const count = DIMENSION_ORDER.length;
 
   ctx.clearRect(0, 0, width, height);
   ctx.save();
 
-  // ---------- 1. 同心十边形网格 ----------
+  // ---------- 1. 同心圆网格（内联版是圆形，不是十边形） ----------
   ctx.strokeStyle = LINE_COLOR;
   ctx.lineWidth = GRID_LINE_WIDTH;
   GRID_LEVELS.forEach((level) => {
     ctx.beginPath();
-    for (let i = 0; i < count; i += 1) {
-      const angle = axisAngle(i);
-      const x = cx + Math.cos(angle) * radius * level;
-      const y = cy + Math.sin(angle) * radius * level;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
+    ctx.arc(cx, cy, radius * level, 0, Math.PI * 2);
     ctx.stroke();
   });
 
-  // ---------- 2. 轴线 ----------
+  // ---------- 2. 坐标轴线：圆心 → 外圈 ----------
   ctx.beginPath();
   for (let i = 0; i < count; i += 1) {
     const angle = axisAngle(i);
@@ -231,7 +240,7 @@ export const drawRadar = (
   }
   ctx.stroke();
 
-  // ---------- 3. 数据多边形 ----------
+  // ---------- 3. 数据多边形填充 ----------
   ctx.beginPath();
   points.forEach((p, i) => {
     if (i === 0) ctx.moveTo(p.x, p.y);
@@ -240,25 +249,36 @@ export const drawRadar = (
   ctx.closePath();
   ctx.fillStyle = AREA_COLOR;
   ctx.fill();
+
+  // ---------- 4. 数据多边形轮廓（橘色细线，opacity 0.85） ----------
+  ctx.save();
+  ctx.globalAlpha = OUTLINE_ALPHA;
   ctx.strokeStyle = PRIMARY_COLOR;
   ctx.lineWidth = OUTLINE_LINE_WIDTH;
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.closePath();
   ctx.stroke();
+  ctx.restore();
 
-  // ---------- 4. 维度标签 ----------
+  // ---------- 5. 维度标签（外圈之外的同心圆上，24rpx、#333） ----------
+  const labelRadius = side * LABEL_RADIUS_PERCENT;
+  const labelFontPx = Math.max(10, LABEL_FONT_RPX * rpxPx);
   ctx.fillStyle = '#333333';
-  ctx.font = '10px sans-serif';
+  ctx.font = `${labelFontPx}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   points.forEach((p, i) => {
     const angle = axisAngle(i);
-    const lx = cx + Math.cos(angle) * (radius + AXIS_NAME_GAP);
-    const ly = cy + Math.sin(angle) * (radius + AXIS_NAME_GAP);
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    ctx.textAlign = cos > 0.3 ? 'left' : cos < -0.3 ? 'right' : 'center';
-    ctx.textBaseline = sin > 0.3 ? 'top' : sin < -0.3 ? 'bottom' : 'middle';
+    const lx = cx + Math.cos(angle) * labelRadius;
+    const ly = cy + Math.sin(angle) * labelRadius;
     ctx.fillText(p.label, lx, ly);
   });
 
-  // ---------- 5. 星球（径向渐变 + 细描边，无发光） ----------
+  // ---------- 6. 星球（径向渐变、无描边、无发光） ----------
   points.forEach((p) => {
     const tier = scoreToTier(p.score);
     const [center, edge] = PLANET_GRADIENTS[tier];
@@ -270,9 +290,6 @@ export const drawRadar = (
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
-    ctx.strokeStyle = PLANET_BORDERS[tier];
-    ctx.lineWidth = 1;
-    ctx.stroke();
   });
 
   ctx.restore();
@@ -282,7 +299,7 @@ export const drawRadar = (
 // ====================== 触摸命中检测 ======================
 
 /**
- * 找出触摸点最近的星球（容差内），用于点击查看得分。
+ * 找出触摸点最近的星球（球体半径 + 8px 容差内），用于点击查看得分。
  *
  * @param geometry drawRadar 的返回值
  * @param x 触摸点横坐标（相对 canvas，CSS px）
@@ -296,16 +313,16 @@ export const hitTest = (
   if (!geometry || !geometry.points.length) return null;
 
   let best: RadarPoint | null = null;
-  let bestDistance = HIT_TOLERANCE;
+  let bestDistance = Number.POSITIVE_INFINITY;
 
   geometry.points.forEach((p) => {
     const distance = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
-    if (distance < bestDistance) {
+    if (distance <= p.radius + HIT_TOLERANCE_EXTRA && distance < bestDistance) {
       bestDistance = distance;
       best = p;
     }
   });
 
-  // 相邻星球之间可能挨得很近，取「最近且小于容差」的一颗
+  // 相邻星球可能挨得很近，取「最近且落在容差内」的一颗
   return best;
 };
