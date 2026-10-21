@@ -32,19 +32,19 @@ export const RESOURCE_THEMES: ResourceThemeMeta[] = [
     key: 'policy',
     label: '就业政策',
     desc: '国家、山东省与聊城市的毕业生就业创业政策文件',
-    icon: 'https://youupro.xyz/notes/static/resources/policy.png',
+    icon: '/static/resources/policy.png',
   },
   {
     key: 'campus',
     label: '校招企业名单',
     desc: '校招渠道、双选会与已核实的来校招聘企业',
-    icon: 'https://youupro.xyz/notes/static/resources/campus.png',
+    icon: '/static/resources/campus.png',
   },
   {
     key: 'guide',
     label: '简历与面试指导',
     desc: '平台整理的求职实务方法，可与能力画像联动使用',
-    icon: 'https://youupro.xyz/notes/static/resources/guide.png',
+    icon: '/static/resources/guide.png',
   },
 ]
 
