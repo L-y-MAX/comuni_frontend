@@ -372,7 +372,7 @@
           </view>
 
           <!-- 雷达星球视图：这里是纯 CSS 的静态预览（零依赖、不占体积）；
-               可交互的 ECharts 全屏版在分包页 pagesMember/abilityRadar，见下方按钮 -->
+               可交互的全屏版（原生 canvas 自绘）在分包页 pagesMember/abilityRadar，见下方按钮 -->
           <view v-if="abilityView === 'planet'">
             <view
               class="radar-chart radar-square planet-fade"
@@ -454,7 +454,7 @@
               </view>
             </view>
 
-            <!-- 全屏查看：ECharts 版放在分包里，主包体积不受影响 -->
+            <!-- 全屏查看：canvas 自绘版放在分包里，主包体积不受影响 -->
             <button
               class="full-radar-btn"
               @tap="openFullRadar"
@@ -1181,7 +1181,7 @@ const radar = computed(() =>
  *
  * 为什么放到分包页而不是嵌在本页：
  *   1. canvas 是原生组件，放进 scroll-view 不会跟着滚动，会出现「图表固定不动」；
- *   2. ECharts 按需打包仍有约 500KB，本页在主包里，嵌进来会把主包从 0.49MB
+ *   2. 分包页用原生 canvas 自绘（约 10KB），主包体积不受影响
  *      顶到 0.97MB；放进分包后主包不受影响，只有点进来时才下载。
  */
 const openFullRadar = () => {

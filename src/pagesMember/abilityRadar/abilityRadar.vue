@@ -10,11 +10,29 @@
       图表本体：整页只放这一张图，**不套 scroll-view**。
       原因：微信的 canvas 是原生组件，放在 scroll-view 里不会跟着内容滚动，
       会出现「滑动页面图表固定不动」的现象，所以这里单独开一个分包页承载它。
+
+      实现方式：原生 canvas 2d 手绘（不依赖 ECharts）。
+      整张图只有「十维多边形 + 十个顶点星球」，手绘逻辑见 lib/radarCanvas.ts。
     -->
-    <UniEcharts
-      custom-style="width: 100%; height: 700rpx;"
-      canvas-type="2d"
-    />
+    <view class="canvas-wrap">
+      <canvas
+        id="radarCanvas"
+        type="2d"
+        class="radar-canvas"
+        @touchstart="onCanvasTouch"
+      />
+      <!-- 点击星球后的浮层：维度｜分数 / 等级 / 一句话描述 -->
+      <view
+        v-if="tip"
+        class="radar-tip"
+        :style="{ left: tip.left + 'px', top: tip.top + 'px' }"
+        @touchstart.stop="clearTip"
+      >
+        <text class="tip-title">{{ tip.label }}｜{{ tip.score }}分</text>
+        <text class="tip-grade">【{{ tip.grade }}】</text>
+        <text class="tip-desc">{{ tip.desc }}</text>
+      </view>
+    </view>
 
     <!-- 配色图例：和星球的三档配色一一对应 -->
     <view class="radar-legend">
@@ -53,62 +71,173 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import UniEcharts from 'uni-echarts'
-import { provideEcharts, provideEchartsOption } from 'uni-echarts/shared'
-import echarts from './lib/echartsSetup'
-import { buildAbilityRadarOption, type RadarDimensionInput } from './lib/radarOption'
-import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile'
+import { computed, getCurrentInstance, nextTick, ref } from 'vue';
+import { onLoad, onReady } from '@dcloudio/uni-app';
+import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile';
+import {
+  drawRadar,
+  hitTest,
+  scoreToDesc,
+  scoreToGrade,
+  type RadarDimensionInput,
+  type RadarGeometry,
+} from './lib/radarCanvas';
 
 /**
  * 能力星球图（全屏版）
  *
- * 为什么单独做一个分包页，而不是直接嵌在能力画像页里：
- *   1. canvas 是原生组件，放进 scroll-view 会「固定不动」，整页只放图表最稳；
- *   2. ECharts 按需打包后仍有约 500KB，能力画像页在主包里，
- *      嵌进去会把主包从 0.49MB 顶到 0.97MB；放进分包后主包不受影响，
- *      只有真正点进来时才下载这一份代码。
+ * 历史：本页原来用 ECharts（按需打包 + terser 压缩后约 470KB）绘制。
+ * 整张图只有「十维多边形 + 十个顶点星球」两种图形，用 ECharts 属于大材小用，
+ * 还会触发开发者工具「静态资源超过 200KB」告警。
+ * 现已改为原生 canvas 2d 手绘（lib/radarCanvas.ts，约 10KB），视觉参数保持不变：
+ * 同心十边形网格、极淡橘色填充、三档渐变星球（≥80 暖橘 / 70~79 浅橙黄 / <70 浅灰）、
+ * 无发光、点击查看得分与等级。
  */
-const profile = ref<StudentProfile | null>(null)
+const profile = ref<StudentProfile | null>(null);
+
+/** 点击星球后的浮层数据；null 表示不显示 */
+const tip = ref<{
+  left: number;
+  top: number;
+  label: string;
+  score: number;
+  grade: string;
+  desc: string;
+} | null>(null);
+
+const instance = getCurrentInstance();
+let ctx: CanvasRenderingContext2D | null = null;
+/** canvas 的 CSS 尺寸（px），与 ctx 内部的 CSS px 坐标系一致 */
+let canvasW = 0;
+let canvasH = 0;
+/** 画布在视口中的位置（px），触摸坐标换算兜底用 */
+let canvasLeft = 0;
+let canvasTop = 0;
+/** 绘制时算出的星球坐标，触摸时用于命中检测 */
+let geometry: RadarGeometry | null = null;
 
 onLoad(() => {
   // 画像由能力画像页生成后存在本地缓存里，这里直接读，无需再请求接口
   try {
-    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY)
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const raw = uni.getStorageSync(STUDENT_PROFILE_STORAGE_KEY);
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
     if (parsed && Array.isArray(parsed.dimensions)) {
-      profile.value = parsed as StudentProfile
+      profile.value = parsed as StudentProfile;
     }
   } catch (e) {
-    console.warn('读取能力画像失败：', e)
+    console.warn('读取能力画像失败：', e);
   }
-})
+});
 
-/** 传给 option 构造器的十维数据（顺序无所谓，构造器内部按 key 重排） */
+/** 传给绘制引擎的十维数据（顺序无所谓，内部按 key 重排） */
 const dimensions = computed<RadarDimensionInput[]>(() =>
   (profile.value?.dimensions ?? []).map((d) => ({
     key: d.key,
     label: d.label,
     score: d.score,
-  })),
-)
+  }))
+);
 
-const hasProfile = computed(() => dimensions.value.length > 0)
+const hasProfile = computed(() => dimensions.value.length > 0);
 
-/** ECharts option；画像后到（onLoad 之后才读到）时会自动重算并刷新图表 */
-const radarOption = computed(() => buildAbilityRadarOption(dimensions.value))
+onReady(() => {
+  nextTick(initCanvas);
+});
 
-// uni-echarts 通过 provide/inject 拿 echarts 与 option：
-// ⚠️ option 必须走注入，不能写成 <UniEcharts :option="..."> ——
-//    小程序端组件 props 会被 setData 序列化，option 里的函数
-//    （symbolSize 缩放、tooltip.formatter 文案）会全部丢失。
-provideEcharts(echarts)
-provideEchartsOption(radarOption)
+/** 取 canvas 节点，按设备像素比缩放后首绘 */
+const initCanvas = () => {
+  const query = uni.createSelectorQuery().in(instance?.proxy as any);
+  query
+    .select('#radarCanvas')
+    .fields({ node: true, size: true, rect: true })
+    .exec((res: any[]) => {
+      const item = res?.[0];
+      if (!item || !item.node) {
+        console.warn('[能力星球] 未取到 canvas 节点，图表未渲染');
+        return;
+      }
+      const node = item.node as any;
+      const win = (uni.getWindowInfo?.() ?? uni.getSystemInfoSync?.() ?? {}) as {
+        pixelRatio?: number;
+      };
+      const dpr = typeof win.pixelRatio === 'number' && win.pixelRatio > 0 ? win.pixelRatio : 2;
+
+      canvasW = item.width;
+      canvasH = item.height;
+      // 画布在视口中的位置：部分基础库的 touch 事件只给 clientX/clientY，
+      // 需要减去画布位置才能换算成画布内坐标，这里一并取回做兜底。
+      canvasLeft = typeof item.left === 'number' ? item.left : 0;
+      canvasTop = typeof item.top === 'number' ? item.top : 0;
+      node.width = Math.floor(canvasW * dpr);
+      node.height = Math.floor(canvasH * dpr);
+
+      const context = node.getContext('2d') as CanvasRenderingContext2D;
+      // 按 dpr 缩放后，绘制代码统一用 CSS px
+      context.scale(dpr, dpr);
+      ctx = context;
+      redraw();
+    });
+};
+
+/** 按当前画像重绘整张图（画像为空时画一张全 0 的空多边形） */
+const redraw = () => {
+  if (!ctx) return;
+  geometry = drawRadar(ctx, dimensions.value, canvasW, canvasH);
+};
+
+/**
+ * 触摸命中：canvas 无法给图形单独挂事件，这里用「最近星球 + 容差」判定。
+ * 命中则弹出浮层；触摸空白处收起浮层。
+ */
+const onCanvasTouch = (e: any) => {
+  const touch = e?.touches?.[0] ?? e?.changedTouches?.[0];
+  if (!touch) return;
+
+  // 优先用小程序给出的相对画布坐标；拿不到时用 clientX/Y 减去画布位置换算
+  const x =
+    typeof touch.x === 'number'
+      ? touch.x
+      : typeof touch.clientX === 'number'
+        ? touch.clientX - canvasLeft
+        : NaN;
+  const y =
+    typeof touch.y === 'number'
+      ? touch.y
+      : typeof touch.clientY === 'number'
+        ? touch.clientY - canvasTop
+        : NaN;
+  if (Number.isNaN(x) || Number.isNaN(y)) return;
+
+  const hit = hitTest(geometry, x, y);
+  if (!hit) {
+    tip.value = null;
+    return;
+  }
+
+  // 浮层水平居中在星球上方，并贴边裁剪，避免超出画布
+  const halfWidth = 120;
+  const left = Math.min(
+    Math.max(hit.x, halfWidth),
+    Math.max(canvasW - halfWidth, halfWidth)
+  );
+
+  tip.value = {
+    left,
+    top: hit.y - 8,
+    label: hit.label,
+    score: hit.score,
+    grade: scoreToGrade(hit.score),
+    desc: scoreToDesc(hit.label, hit.score),
+  };
+};
+
+const clearTip = () => {
+  tip.value = null;
+};
 
 const goProfile = () => {
-  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
-}
+  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' });
+};
 </script>
 
 <style scoped lang="scss">
@@ -135,6 +264,55 @@ const goProfile = () => {
   margin-top: 6rpx;
   font-size: 22rpx;
   color: #888888;
+}
+
+/* 画布容器：浮层相对它定位 */
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.radar-canvas {
+  display: block;
+  width: 100%;
+  height: 700rpx;
+}
+
+/* 点击星球后的浮层卡片 */
+.radar-tip {
+  position: absolute;
+  z-index: 10;
+  min-width: 260rpx;
+  max-width: 560rpx;
+  padding: 16rpx 24rpx;
+  background: #fff7f2;
+  border: 1rpx solid #ff9771;
+  border-radius: 16rpx;
+  box-shadow: 0 6rpx 20rpx rgba(255, 129, 76, 0.16);
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.tip-title {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.tip-grade {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #ff7239;
+}
+
+.tip-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #666666;
 }
 
 /* 图例：与星球三档配色一致 */
