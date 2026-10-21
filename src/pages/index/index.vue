@@ -35,7 +35,7 @@
         <image
           v-if="!isLoading && !searchIconError"
           class="search-icon"
-          src="/static/home/search.png"
+          src="https://youupro.xyz/ly/static/home/search.png"
           mode="aspectFit"
           @error="searchIconError = true"
         />
@@ -74,7 +74,7 @@
         <image
           v-if="!jobsIconError"
           class="resource-entry-icon-img"
-          src="/static/home/jobs.png"
+          src="https://youupro.xyz/ly/static/home/jobs.png"
           mode="aspectFit"
           @error="jobsIconError = true"
         />
@@ -97,7 +97,7 @@
         <image
           v-if="!policyIconError"
           class="resource-entry-icon-img"
-          src="/static/home/policy.png"
+          src="https://youupro.xyz/ly/static/home/policy.png"
           mode="aspectFit"
           @error="policyIconError = true"
         />
@@ -120,7 +120,7 @@
         <image
           v-if="!jobProfileIconError"
           class="resource-entry-icon-img"
-          src="/static/home/jobprofile.png"
+          src="https://youupro.xyz/ly/static/home/jobprofile.png"
           mode="aspectFit"
           @error="jobProfileIconError = true"
         />
@@ -143,7 +143,7 @@
         <image
           v-if="!knowledgeIconError"
           class="resource-entry-icon-img"
-          src="/static/home/knowledge.png"
+          src="https://youupro.xyz/ly/static/home/knowledge.png"
           mode="aspectFit"
           @error="knowledgeIconError = true"
         />

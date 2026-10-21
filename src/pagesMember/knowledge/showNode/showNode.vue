@@ -56,7 +56,7 @@
           >
             <view class="filled"></view>
             <image
-              src="/static/icons/copy.png"
+              src="https://youupro.xyz/ly/static/icons/copy.png"
               class="icon-img"
               mode="aspectFit"
             ></image>

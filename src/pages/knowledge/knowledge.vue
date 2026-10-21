@@ -56,7 +56,7 @@
           <view class="guide-head-left">
             <image
               class="guide-icon"
-              src="/static/home/knowledge.png"
+              src="https://youupro.xyz/ly/static/home/knowledge.png"
               mode="aspectFit"
             />
             <text class="guide-title">使用指引</text>
@@ -191,7 +191,7 @@
                 >
                   <image
                     class="kb-more-icon"
-                    src="/static/icons/three.png"
+                    src="https://youupro.xyz/ly/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -286,7 +286,7 @@
                 >
                   <image
                     class="kb-more-icon"
-                    src="/static/icons/three.png"
+                    src="https://youupro.xyz/ly/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -404,7 +404,7 @@
                 >
                   <image
                     class="kb-more-icon"
-                    src="/static/icons/three.png"
+                    src="https://youupro.xyz/ly/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -499,7 +499,7 @@
           >
             <image
               class="kb-more-icon"
-              src="/static/icons/three.png"
+              src="https://youupro.xyz/ly/static/icons/three.png"
               mode="aspectFit"
             />
           </view>

@@ -60,7 +60,7 @@
           <image
             v-if="!searchIconError"
             class="pick-search-icon pick-search-icon-img"
-            src="/static/home/search.png"
+            src="https://youupro.xyz/ly/static/home/search.png"
             mode="aspectFit"
             @error="searchIconError = true"
           />

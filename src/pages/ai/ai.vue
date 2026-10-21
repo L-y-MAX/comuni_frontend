@@ -73,7 +73,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/regen.png"
+              src="https://youupro.xyz/ly/static/icons/regen.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -94,7 +94,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/copy.png"
+              src="https://youupro.xyz/ly/static/icons/copy.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -115,7 +115,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/regen.png"
+              src="https://youupro.xyz/ly/static/icons/regen.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -135,7 +135,7 @@
             <image
               v-if="!iconImgBroken"
               class="msg-icon-img"
-              src="/static/icons/save.png"
+              src="https://youupro.xyz/ly/static/icons/save.png"
               mode="aspectFit"
               @error="iconImgBroken = true"
             />
@@ -271,7 +271,7 @@
         <image
           v-if="isLoading && !iconImgBroken"
           class="send-icon"
-          src="/static/icons/stop.png"
+          src="https://youupro.xyz/ly/static/icons/stop.png"
           mode="aspectFit"
         />
         <text
@@ -283,7 +283,7 @@
         <image
           v-else
           class="send-icon"
-          src="/static/icons/send.png"
+          src="https://youupro.xyz/ly/static/icons/send.png"
           mode="aspectFit"
         />
       </button>
