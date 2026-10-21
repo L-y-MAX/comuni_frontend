@@ -197,7 +197,7 @@ export const pollJobProfileTask = (
   taskId: string,
   options: PollOptions = {},
 ): Promise<JobProfile> => {
-  const { intervalMs = 1000, timeoutMs = 30000, onProgress, shouldStop } = options
+  const { intervalMs = 1000, timeoutMs = 90000, onProgress, shouldStop } = options
 
   return new Promise<JobProfile>((resolve, reject) => {
     const startedAt = Date.now()
@@ -222,7 +222,9 @@ export const pollJobProfileTask = (
       // 超时保护
       if (Date.now() - startedAt > timeoutMs) {
         cleanup()
-        reject(new Error('DeepSeek解析超时，已切换本地规则解析'))
+        reject(
+          new Error('解析超时：可能是后端任务队列（Celery Worker）未启动，已切换本地规则解析'),
+        )
         return
       }
 
