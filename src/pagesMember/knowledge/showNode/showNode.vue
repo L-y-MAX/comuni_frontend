@@ -14,7 +14,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/aichat.png"
+              src="https://youupro.xyz/notes/static/icons/aichat.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -35,7 +35,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/comment.png"
+              src="https://youupro.xyz/notes/static/icons/comment.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -56,7 +56,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/copy.png"
+              src="https://youupro.xyz/notes/static/icons/copy.png"
               class="icon-img"
               mode="aspectFit"
             ></image>
@@ -77,7 +77,7 @@
           >
             <view class="filled"></view>
             <image
-              src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/compile.png"
+              src="https://youupro.xyz/notes/static/icons/compile.png"
               class="icon-img"
               mode="aspectFit"
             ></image>

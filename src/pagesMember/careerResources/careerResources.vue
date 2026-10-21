@@ -86,7 +86,7 @@
       <image
         v-if="!searchIconError"
         class="search-icon search-icon-img"
-        src="https://youupro.xyz/ly/static/home/search.png"
+        src="https://youupro.xyz/notes/static/home/search.png"
         mode="aspectFit"
         @error="searchIconError = true"
       />

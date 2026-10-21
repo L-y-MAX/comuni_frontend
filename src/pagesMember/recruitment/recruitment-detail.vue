@@ -545,7 +545,7 @@ onShareAppMessage(() => {
     title: shareTitle,
     path: sharePath,
     imageUrl:
-      'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png', // 可选：分享卡片图片
+      'https://youupro.xyz/notes/static/icons/recruit-detail-share.png', // 可选：分享卡片图片
     desc: '查看详细的企业招聘信息，包含薪资、岗位要求等内容', // 可选：分享描述
   }
 })
@@ -564,7 +564,7 @@ onShareTimeline(() => {
     title: timelineTitle,
     path: sharePath,
     imageUrl:
-      'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/recruit-detail-share.png', // 可选：朋友圈分享图片
+      'https://youupro.xyz/notes/static/icons/recruit-detail-share.png', // 可选：朋友圈分享图片
   }
 })
 </script>

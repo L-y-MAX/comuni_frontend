@@ -56,7 +56,7 @@
           <view class="guide-head-left">
             <image
               class="guide-icon"
-              src="https://youupro.xyz/ly/static/home/knowledge.png"
+              src="https://youupro.xyz/notes/static/home/knowledge.png"
               mode="aspectFit"
             />
             <text class="guide-title">使用指引</text>
@@ -117,8 +117,8 @@
                     class="fold-icon"
                     :src="
                       isFollowKbExpanded
-                        ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-default.png'
-                        : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-selected.png'
+                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
                     "
                     mode="aspectFit"
                   />
@@ -191,7 +191,7 @@
                 >
                   <image
                     class="kb-more-icon"
-                    src="https://youupro.xyz/ly/static/icons/three.png"
+                    src="https://youupro.xyz/notes/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -212,8 +212,8 @@
                     class="fold-icon"
                     :src="
                       isShareKbExpanded
-                        ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-default.png'
-                        : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-selected.png'
+                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
                     "
                     mode="aspectFit"
                   />
@@ -286,7 +286,7 @@
                 >
                   <image
                     class="kb-more-icon"
-                    src="https://youupro.xyz/ly/static/icons/three.png"
+                    src="https://youupro.xyz/notes/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -321,8 +321,8 @@
                     class="fold-icon"
                     :src="
                       isKbListExpanded
-                        ? 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-default.png'
-                        : 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/fold-selected.png'
+                        ? 'https://youupro.xyz/notes/static/icons/fold-default.png'
+                        : 'https://youupro.xyz/notes/static/icons/fold-selected.png'
                     "
                     mode="aspectFit"
                   />
@@ -404,7 +404,7 @@
                 >
                   <image
                     class="kb-more-icon"
-                    src="https://youupro.xyz/ly/static/icons/three.png"
+                    src="https://youupro.xyz/notes/static/icons/three.png"
                     mode="aspectFit"
                   />
                 </view>
@@ -499,7 +499,7 @@
           >
             <image
               class="kb-more-icon"
-              src="https://youupro.xyz/ly/static/icons/three.png"
+              src="https://youupro.xyz/notes/static/icons/three.png"
               mode="aspectFit"
             />
           </view>
@@ -982,7 +982,7 @@ onShareAppMessage(() => {
   return {
     title: shareTitle,
     path: sharePath,
-    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-icon.png', // 可替换为实际分享图片地址
+    imageUrl: 'https://youupro.xyz/notes/static/icons/share-icon.png', // 可替换为实际分享图片地址
   }
 })
 
@@ -995,7 +995,7 @@ onShareTimeline(() => {
   return {
     title: shareTitle,
     query: `tab=${currentTab}&kbId=${currentKbId || ''}`,
-    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-icon.png', // 可替换为实际分享图片地址
+    imageUrl: 'https://youupro.xyz/notes/static/icons/share-icon.png', // 可替换为实际分享图片地址
   }
 })
 

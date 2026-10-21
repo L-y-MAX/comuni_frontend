@@ -631,7 +631,7 @@ onShareAppMessage(() => {
   return {
     title: '招聘信息列表', // 分享标题
     path: sharePath, // 分享页面路径
-    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-recruitment.png', // 可选：分享图片（需替换为实际图片路径）
+    imageUrl: 'https://youupro.xyz/notes/static/icons/share-recruitment.png', // 可选：分享图片（需替换为实际图片路径）
   }
 })
 
@@ -639,7 +639,7 @@ onShareAppMessage(() => {
 onShareTimeline(() => {
   return {
     title: '最新招聘信息，快来看看！', // 朋友圈分享标题
-    imageUrl: 'https://youupro.xyz/noteshttps://youupro.xyz/ly/static/icons/share-recruitment.png', // 可选：朋友圈分享图片（需替换为实际图片路径）
+    imageUrl: 'https://youupro.xyz/notes/static/icons/share-recruitment.png', // 可选：朋友圈分享图片（需替换为实际图片路径）
   }
 })
 </script>
