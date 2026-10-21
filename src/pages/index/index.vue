@@ -9,7 +9,7 @@
     </view>
     <view class="brand-text">
       <image
-        src="https://youupro.xyz/noteshttps://youupro.xyz/ly/static/logo.png"
+        src="https://youupro.xyz/notes/static/logo.png"
         class="brand-logo-img"
         mode="widthFix"
       ></image>
