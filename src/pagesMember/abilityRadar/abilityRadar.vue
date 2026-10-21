@@ -21,17 +21,11 @@
         class="radar-canvas"
         @touchstart="onCanvasTouch"
       />
-      <!-- 点击星球后的浮层：维度｜分数 / 等级 / 一句话描述 -->
-      <view
-        v-if="tip"
-        class="radar-tip"
-        :style="{ left: tip.left + 'px', top: tip.top + 'px' }"
-        @touchstart.stop="clearTip"
-      >
-        <text class="tip-title">{{ tip.label }}｜{{ tip.score }}分</text>
-        <text class="tip-grade">【{{ tip.grade }}】</text>
-        <text class="tip-desc">{{ tip.desc }}</text>
-      </view>
+      <!--
+        分数提示画在 canvas 内部（见 lib/radarCanvas.ts 的 drawTooltip）。
+        原因：微信 canvas 是原生组件，普通 view 叠在它上面在部分环境会被盖住，
+        z-index 无法保证图层顺序；画进同一个 canvas 后，绘制顺序天然是「雷达在下、分数在上」。
+      -->
     </view>
 
     <!-- 配色图例：和星球的三档配色一一对应 -->
@@ -76,11 +70,14 @@ import { onLoad, onReady } from '@dcloudio/uni-app';
 import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile';
 import {
   drawRadar,
+  drawTooltip,
   hitTest,
   scoreToDesc,
   scoreToGrade,
   type RadarDimensionInput,
   type RadarGeometry,
+  type RadarPoint,
+  type RadarTipContent,
 } from './lib/radarCanvas';
 
 /**
@@ -96,15 +93,9 @@ import {
  */
 const profile = ref<StudentProfile | null>(null);
 
-/** 点击星球后的浮层数据；null 表示不显示 */
-const tip = ref<{
-  left: number;
-  top: number;
-  label: string;
-  score: number;
-  grade: string;
-  desc: string;
-} | null>(null);
+/** 当前被点击的星球与提示内容；null 表示不显示（画在 canvas 内，不需要响应式） */
+let tipPoint: RadarPoint | null = null;
+let tipContent: RadarTipContent | null = null;
 
 const instance = getCurrentInstance();
 let ctx: CanvasRenderingContext2D | null = null;
@@ -188,7 +179,11 @@ const initCanvas = () => {
 /** 按当前画像重绘整张图（画像为空时画一张全 0 的空多边形） */
 const redraw = () => {
   if (!ctx) return;
+  // 绘制顺序决定层级：雷达骨架/星球在下，分数提示最后画、位于最上层
   geometry = drawRadar(ctx, dimensions.value, canvasW, canvasH, rpxPx);
+  if (tipPoint && tipContent) {
+    drawTooltip(ctx, tipContent, tipPoint, canvasW, canvasH);
+  }
 };
 
 /**
@@ -216,29 +211,22 @@ const onCanvasTouch = (e: any) => {
 
   const hit = hitTest(geometry, x, y);
   if (!hit) {
-    tip.value = null;
+    // 触摸空白处：收起提示并重绘
+    tipPoint = null;
+    tipContent = null;
+    redraw();
     return;
   }
 
-  // 浮层水平居中在星球上方，并贴边裁剪，避免超出画布
-  const halfWidth = 120;
-  const left = Math.min(
-    Math.max(hit.x, halfWidth),
-    Math.max(canvasW - halfWidth, halfWidth)
-  );
-
-  tip.value = {
-    left,
-    top: hit.y - 8,
+  // 命中星球：记录提示内容并重绘（提示会画在雷达图之上）
+  tipPoint = hit;
+  tipContent = {
     label: hit.label,
     score: hit.score,
     grade: scoreToGrade(hit.score),
     desc: scoreToDesc(hit.label, hit.score),
   };
-};
-
-const clearTip = () => {
-  tip.value = null;
+  redraw();
 };
 
 const goProfile = () => {
@@ -282,43 +270,6 @@ const goProfile = () => {
   display: block;
   width: 100%;
   height: 700rpx;
-}
-
-/* 点击星球后的浮层卡片 */
-.radar-tip {
-  position: absolute;
-  z-index: 10;
-  min-width: 260rpx;
-  max-width: 560rpx;
-  padding: 16rpx 24rpx;
-  background: #fff7f2;
-  border: 1rpx solid #ff9771;
-  border-radius: 16rpx;
-  box-shadow: 0 6rpx 20rpx rgba(255, 129, 76, 0.16);
-  transform: translate(-50%, -100%);
-  pointer-events: none;
-}
-
-.tip-title {
-  display: block;
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #333333;
-}
-
-.tip-grade {
-  display: block;
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  color: #ff7239;
-}
-
-.tip-desc {
-  display: block;
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  line-height: 1.5;
-  color: #666666;
 }
 
 /* 图例：与星球三档配色一致 */

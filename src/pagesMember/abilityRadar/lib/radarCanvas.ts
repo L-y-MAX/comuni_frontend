@@ -326,3 +326,163 @@ export const hitTest = (
   // 相邻星球可能挨得很近，取「最近且落在容差内」的一颗
   return best;
 };
+
+// ====================== 分数提示浮层（画在 canvas 最上层） ======================
+
+/**
+ * 点击星球后的浮层内容。
+ *
+ * 为什么不用 DOM/cover-view 叠在 canvas 上：
+ * 微信的 canvas 是原生组件，在部分基础库/真机上会盖住同页的普通 view，
+ * z-index 无法让它排到 canvas 下方。要让「分数层在雷达图之上」，
+ * 最稳的做法就是把它画进同一个 canvas —— 绘制顺序天然决定层级：
+ * 先画雷达骨架/星球，最后画提示浮层。
+ */
+export interface RadarTipContent {
+  label: string;
+  score: number;
+  grade: string;
+  desc: string;
+}
+
+const TIP_PAD_X = 10;
+const TIP_PAD_Y = 8;
+const TIP_LINE_GAP = 4;
+const TIP_DESC_MAX_WIDTH = 200;
+const TIP_RADIUS = 8;
+const TIP_ARROW = 6;
+const TIP_TITLE_FONT = 12;
+const TIP_SUB_FONT = 11;
+const TIP_DESC_FONT = 10.5;
+
+/** 圆角矩形路径（小程序 canvas 不保证有 roundRect，手工用 arcTo 画） */
+const roundRectPath = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) => {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+};
+
+/** 按字符宽度折行（中文逐字测量） */
+const wrapText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] => {
+  const lines: string[] = [];
+  let line = '';
+  for (const ch of text) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+};
+
+/**
+ * 在 canvas 上绘制分数提示浮层（位于雷达图之上）。
+ *
+ * @param tip 浮层文字内容
+ * @param point 被点击的星球（用于定位与箭头指向）
+ */
+export const drawTooltip = (
+  ctx: CanvasRenderingContext2D,
+  tip: RadarTipContent,
+  point: RadarPoint,
+  width: number,
+  height: number
+) => {
+  const title = `${tip.label}｜${tip.score}分`;
+  const grade = `【${tip.grade}】`;
+
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  ctx.font = `bold ${TIP_TITLE_FONT}px sans-serif`;
+  const titleWidth = ctx.measureText(title).width;
+  ctx.font = `${TIP_SUB_FONT}px sans-serif`;
+  const gradeWidth = ctx.measureText(grade).width;
+  ctx.font = `${TIP_DESC_FONT}px sans-serif`;
+  const descLines = wrapText(ctx, tip.desc, TIP_DESC_MAX_WIDTH);
+  const descWidth = descLines.reduce((max, line) => Math.max(max, ctx.measureText(line).width), 0);
+
+  const boxWidth = Math.min(
+    Math.max(width - 8, 60),
+    Math.max(titleWidth, gradeWidth, descWidth) + TIP_PAD_X * 2
+  );
+  const contentHeight =
+    TIP_TITLE_FONT + TIP_LINE_GAP + TIP_SUB_FONT + TIP_LINE_GAP + TIP_DESC_FONT * descLines.length +
+    (descLines.length - 1) * 3;
+  const boxHeight = contentHeight + TIP_PAD_Y * 2;
+
+  // 水平居中在星球上方，并贴边裁剪
+  const left = Math.min(Math.max(point.x - boxWidth / 2, 4), Math.max(width - boxWidth - 4, 4));
+  // 优先显示在星球上方；上方放不下就改到下方
+  let top = point.y - point.radius - 8 - boxHeight;
+  let above = true;
+  if (top < 4) {
+    top = point.y + point.radius + 8;
+    above = false;
+  }
+
+  // 背板
+  roundRectPath(ctx, left, top, boxWidth, boxHeight, TIP_RADIUS);
+  ctx.fillStyle = '#fff7f2';
+  ctx.fill();
+  ctx.strokeStyle = '#ff9771';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 指向星球的小三角
+  const arrowX = Math.min(Math.max(point.x, left + 12), left + boxWidth - 12);
+  ctx.beginPath();
+  if (above) {
+    ctx.moveTo(arrowX - TIP_ARROW, top + boxHeight);
+    ctx.lineTo(arrowX + TIP_ARROW, top + boxHeight);
+    ctx.lineTo(arrowX, top + boxHeight + TIP_ARROW);
+  } else {
+    ctx.moveTo(arrowX - TIP_ARROW, top);
+    ctx.lineTo(arrowX + TIP_ARROW, top);
+    ctx.lineTo(arrowX, top - TIP_ARROW);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#fff7f2';
+  ctx.fill();
+
+  // 文字：维度｜分数 / 等级 / 一句话描述
+  let y = top + TIP_PAD_Y;
+  ctx.font = `bold ${TIP_TITLE_FONT}px sans-serif`;
+  ctx.fillStyle = '#333333';
+  ctx.fillText(title, left + TIP_PAD_X, y);
+  y += TIP_TITLE_FONT + TIP_LINE_GAP;
+
+  ctx.font = `${TIP_SUB_FONT}px sans-serif`;
+  ctx.fillStyle = '#ff7239';
+  ctx.fillText(grade, left + TIP_PAD_X, y);
+  y += TIP_SUB_FONT + TIP_LINE_GAP;
+
+  ctx.font = `${TIP_DESC_FONT}px sans-serif`;
+  ctx.fillStyle = '#666666';
+  descLines.forEach((line, i) => {
+    ctx.fillText(line, left + TIP_PAD_X, y + i * (TIP_DESC_FONT + 3));
+  });
+
+  ctx.restore();
+};
