@@ -1077,6 +1077,23 @@ const renderMarkdown = async (content: string): Promise<string> => {
   // 最后把 highlight.js 的类名翻译成内联颜色
   html = inlineHljsTokens(html)
 
+  // ---- rich-text 兼容适配 ----
+  // 微信 <rich-text> 不认 <pre> 标签（代码块会丢内容/错乱），统一转成 <div>，
+  // 并用 white-space:pre-wrap 保留换行与缩进。
+  html = html
+    .replace(
+      /<pre style="([^"]*)">/g,
+      '<div style="$1;white-space:pre-wrap;word-break:break-all;">',
+    )
+    .replace(
+      /<pre>/g,
+      `<div style="${MD_STYLE.pre};white-space:pre-wrap;word-break:break-all;">`,
+    )
+    .replace(/<\/pre>/g, '</div>')
+    // 清理 rich-text 不支持的标签（任务列表复选框、mark、figure、details 等）
+    .replace(/<input[^>]*>/gi, '')
+    .replace(/<\/?(mark|figure|figcaption|details|summary)[^>]*>/gi, '')
+
   return html
 }
 
