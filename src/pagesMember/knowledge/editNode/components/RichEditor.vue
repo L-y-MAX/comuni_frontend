@@ -130,9 +130,12 @@ const emit = defineEmits<{
   (e: 'change'): void
 }>()
 
+// 微信 editor 的 format('fontSize') 只接受固定合法值：
+// 12px / 14px / 16px / 18px / 20px / 22px / 24px。
+// 原「标准」用了 17px（非法值）会被静默忽略，表现为"点了字号没反应"。
 const SIZES = [
   { label: '小字', value: '14px' },
-  { label: '标准', value: '17px' },
+  { label: '标准', value: '16px' },
   { label: '大字', value: '20px' },
   { label: '特大', value: '24px' },
 ]
