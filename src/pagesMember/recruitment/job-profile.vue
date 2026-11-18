@@ -752,7 +752,7 @@ onShareTimeline(() => ({
 }
 
 .state-tip {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 20rpx;
 }
@@ -815,7 +815,7 @@ onShareTimeline(() => ({
 }
 
 .meta-tag {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
   background: #f1f5f9;
   border-radius: 8rpx;
@@ -869,12 +869,12 @@ onShareTimeline(() => ({
 }
 
 .source-confidence {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
 }
 
 .source-note {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin-top: 12rpx;
@@ -889,7 +889,7 @@ onShareTimeline(() => ({
 }
 
 .section-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 6rpx;
 }
@@ -923,7 +923,7 @@ onShareTimeline(() => ({
 }
 
 .focus-tag {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #fff;
   background: #ff4500;
   border-radius: 20rpx;
@@ -962,7 +962,7 @@ onShareTimeline(() => ({
 }
 
 .dim-weight {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-left: 12rpx;
 }
@@ -985,7 +985,7 @@ onShareTimeline(() => ({
 }
 
 .dim-arrow {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #cbd5e1;
   margin-left: 12rpx;
   transition: transform 0.3s ease;
@@ -1018,7 +1018,7 @@ onShareTimeline(() => ({
 }
 
 .chip {
-  font-size: 22rpx;
+  font-size: 24rpx;
   border-radius: 8rpx;
   padding: 4rpx 14rpx;
   background: #f1f5f9;
@@ -1032,7 +1032,7 @@ onShareTimeline(() => ({
 }
 
 .empty-note {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.6;
   display: block;
@@ -1048,7 +1048,7 @@ onShareTimeline(() => ({
 }
 
 .evidence-title {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
   font-weight: 600;
   display: block;
@@ -1056,7 +1056,7 @@ onShareTimeline(() => ({
 }
 
 .evidence-line {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #475569;
   line-height: 1.7;
   display: block;
@@ -1092,7 +1092,7 @@ onShareTimeline(() => ({
 }
 
 .promotion-note {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.6;
   margin-top: 18rpx;
@@ -1101,7 +1101,7 @@ onShareTimeline(() => ({
 
 // ========== 人岗匹配入口 ==========
 .match-entry {
-  background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%);
+  background: #f0fdf4;
   border-color: #bbf7d0;
 }
 
@@ -1113,7 +1113,7 @@ onShareTimeline(() => ({
 }
 
 .match-entry-desc {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin: 10rpx 0 20rpx;
@@ -1186,7 +1186,7 @@ onShareTimeline(() => ({
 
 .pick-loading {
   display: block;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #ff4500;
   margin-bottom: 16rpx;
 }
@@ -1219,12 +1219,12 @@ onShareTimeline(() => ({
 }
 
 .pick-item-meta {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
 .pick-item-badge {
-  font-size: 20rpx;
+  font-size: 24rpx;
   padding: 4rpx 14rpx;
   border-radius: 8rpx;
   flex-shrink: 0;
@@ -1293,14 +1293,14 @@ onShareTimeline(() => ({
 }
 
 .pick-search-clear-icon {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1;
 }
 
 .pick-hit {
   display: block;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-bottom: 14rpx;
 }
@@ -1320,7 +1320,7 @@ onShareTimeline(() => ({
 
 .pick-empty-desc {
   display: block;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.7;
 }

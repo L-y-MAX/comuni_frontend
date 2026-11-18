@@ -628,13 +628,7 @@ onShareTimeline(() => {
   height: 100%;
   top: 0;
   transition: transform 0.4s ease-in-out;
-  background: linear-gradient(
-    to right,
-    transparent 1%,
-    rgba(255, 69, 0, 0.15) 40%,
-    rgba(255, 69, 0, 0.15) 60%,
-    transparent 100%
-  );
+  background: transparent;
 }
 
 // 点击时光效滑动
@@ -709,7 +703,7 @@ onShareTimeline(() => {
   border: 2rpx solid #e03e00;
   background-color: #ff7239;
   color: #ffffff;
-  font-size: 22rpx;
+  font-size: 28rpx;
   cursor: pointer;
   border-radius: 16rpx;
   transition: all 0.4s ease;
@@ -733,7 +727,7 @@ onShareTimeline(() => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
+    background: rgba(255, 255, 255, 0.25);
     transform: scale(0);
     transition: transform 0.5s ease;
     pointer-events: none;
@@ -751,7 +745,7 @@ onShareTimeline(() => {
 
   // 文字样式
   .refresh-text {
-    font-size: 22rpx;
+    font-size: 24rpx;
     font-weight: bold;
   }
 }
@@ -864,7 +858,7 @@ onShareTimeline(() => {
   background: #ff7239;
   color: #fff;
   border-radius: 6rpx;
-  font-size: 24rpx;
+  font-size: 28rpx;
   height: auto;
   line-height: 1.2;
   border: none;

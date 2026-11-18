@@ -838,7 +838,7 @@ onShareAppMessage(() => ({
 
 // ========== 抬头 ==========
 .header-card {
-  background: linear-gradient(135deg, #fff5f1 0%, #fff 100%);
+  background: #fff5f1;
   border-color: #ffd9c7;
 }
 
@@ -857,12 +857,12 @@ onShareAppMessage(() => ({
 }
 
 .meta-item {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
 }
 
 .meta-dot {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #cbd5e1;
   margin: 0 10rpx;
 }
@@ -887,13 +887,13 @@ onShareAppMessage(() => ({
 }
 
 .hs-label {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 4rpx;
 }
 
 .header-time {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 20rpx;
   display: block;
@@ -906,7 +906,7 @@ onShareAppMessage(() => ({
 }
 
 .source-note {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #92400e;
   line-height: 1.6;
   display: block;
@@ -931,7 +931,7 @@ onShareAppMessage(() => ({
   border-radius: 10rpx;
   background: #ff4500;
   color: #fff;
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 700;
   margin-right: 14rpx;
   flex-shrink: 0;
@@ -959,7 +959,7 @@ onShareAppMessage(() => ({
 }
 
 .sub-note {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.6;
   display: block;
@@ -985,7 +985,7 @@ onShareAppMessage(() => ({
 }
 
 .cat-label {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #6b7280;
   margin-top: 4rpx;
 }
@@ -1014,7 +1014,7 @@ onShareAppMessage(() => ({
 
 .gap-label {
   width: 130rpx;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #4b5563;
   flex-shrink: 0;
 }
@@ -1048,7 +1048,7 @@ onShareAppMessage(() => ({
 .gap-percent {
   width: 68rpx;
   text-align: right;
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #4b5563;
   flex-shrink: 0;
@@ -1057,7 +1057,7 @@ onShareAppMessage(() => ({
 .gap-status {
   width: 118rpx;
   text-align: right;
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #dc2626;
   flex-shrink: 0;
 
@@ -1078,7 +1078,7 @@ onShareAppMessage(() => ({
 }
 
 .chip {
-  font-size: 21rpx;
+  font-size: 24rpx;
   border-radius: 8rpx;
   padding: 4rpx 12rpx;
   background: #f1f5f9;
@@ -1116,7 +1116,7 @@ onShareAppMessage(() => ({
   border-radius: 50%;
   background: #f1f5f9;
   color: #64748b;
-  font-size: 20rpx;
+  font-size: 24rpx;
   font-weight: 700;
   margin-right: 14rpx;
   flex-shrink: 0;
@@ -1134,7 +1134,7 @@ onShareAppMessage(() => ({
 }
 
 .rank-ent {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 2rpx;
   display: block;
@@ -1162,13 +1162,13 @@ onShareAppMessage(() => ({
 }
 
 .goal-label {
-  font-size: 23rpx;
+  font-size: 24rpx;
   font-weight: 700;
   color: #ff4500;
 }
 
 .goal-edit {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   border: 1rpx solid #e5e7eb;
   border-radius: 16rpx;
@@ -1196,7 +1196,7 @@ onShareAppMessage(() => ({
 }
 
 .vertical-node {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #1f2937;
   background: #f1f5f9;
   border-radius: 10rpx;
@@ -1211,7 +1211,7 @@ onShareAppMessage(() => ({
 }
 
 .vertical-arrow {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ff4500;
   line-height: 1.5;
 }
@@ -1238,20 +1238,20 @@ onShareAppMessage(() => ({
 }
 
 .lateral-sim {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #16a34a;
   font-weight: 600;
 }
 
 .lateral-industry {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 4rpx;
   display: block;
 }
 
 .lateral-reason {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #4b5563;
   line-height: 1.65;
   margin-top: 8rpx;
@@ -1278,7 +1278,7 @@ onShareAppMessage(() => ({
 }
 
 .phase-count {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -1307,7 +1307,7 @@ onShareAppMessage(() => ({
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #fff;
 
   &.checked {
@@ -1335,7 +1335,7 @@ onShareAppMessage(() => ({
 }
 
 .task-tag {
-  font-size: 19rpx;
+  font-size: 24rpx;
   border-radius: 6rpx;
   padding: 2rpx 10rpx;
 
@@ -1361,7 +1361,7 @@ onShareAppMessage(() => ({
 }
 
 .task-detail {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.7;
   display: block;
@@ -1395,7 +1395,7 @@ onShareAppMessage(() => ({
 }
 
 .milestone-focus {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin: 6rpx 0 10rpx;
@@ -1415,7 +1415,7 @@ onShareAppMessage(() => ({
 }
 
 .action-note {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin: 10rpx 0 20rpx;
@@ -1462,7 +1462,7 @@ onShareAppMessage(() => ({
   padding: 0;
   background: transparent;
   color: #9ca3af;
-  font-size: 24rpx;
+  font-size: 28rpx;
   line-height: 60rpx;
 
   &::after {
@@ -1475,7 +1475,7 @@ onShareAppMessage(() => ({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #eff6ff 0%, #fff 100%);
+  background: #eff6ff;
   border-color: #bfdbfe;
 }
 
@@ -1492,7 +1492,7 @@ onShareAppMessage(() => ({
 }
 
 .history-banner-desc {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.5;
   margin-top: 6rpx;
@@ -1506,7 +1506,7 @@ onShareAppMessage(() => ({
   height: 62rpx;
   line-height: 62rpx;
   border-radius: 14rpx;
-  font-size: 24rpx;
+  font-size: 28rpx;
   font-weight: 600;
   background: #1d4ed8;
   color: #fff;
@@ -1542,7 +1542,7 @@ onShareAppMessage(() => ({
 }
 
 .page-footer-source .source-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   font-style: italic;
   line-height: 1.5;
@@ -1596,7 +1596,7 @@ onShareAppMessage(() => ({
   margin-top: 20rpx;
 }
 .goal-dialog-count {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 .goal-dialog-btns {

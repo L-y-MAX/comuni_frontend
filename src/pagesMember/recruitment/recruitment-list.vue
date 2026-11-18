@@ -720,13 +720,7 @@ $effect2-gradient2: linear-gradient(
   height: 100%;
   top: 0;
   transition: transform 0.4s ease-in-out;
-  background: linear-gradient(
-    to right,
-    transparent 1%,
-    rgba(255, 69, 0, 0.15) 40%,
-    rgba(255, 69, 0, 0.15) 60%,
-    transparent 100%
-  );
+  background: transparent;
 }
 
 // 点击时光效滑动
@@ -858,7 +852,7 @@ $effect2-gradient2: linear-gradient(
 }
 
 .select-arrow {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #ff7a4d; // 更淡的橙红色
 }
 
@@ -890,7 +884,7 @@ $effect2-gradient2: linear-gradient(
 }
 
 .dimension-arrow {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #ff7a4d;
   margin-right: 10rpx;
   transition: transform 0.3s ease;
@@ -908,7 +902,7 @@ $effect2-gradient2: linear-gradient(
 }
 
 .dimension-count {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ff7a4d;
   margin-left: 10rpx;
 }
@@ -955,14 +949,14 @@ $effect2-gradient2: linear-gradient(
   padding: 8rpx 20rpx;
   background: #f5f5f5;
   border-radius: 30rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #333;
   border: 1px solid #eee;
   transition: all 0.2s;
 }
 
 .tag-item.active {
-  background: linear-gradient(135deg, #ff8a54, #ff7239);
+  background: #ff8a54;
   color: #fff;
   border-color: #ff7a4d;
 }
@@ -1079,12 +1073,12 @@ $effect2-gradient2: linear-gradient(
 
   &::before {
     left: -10rpx;
-    background: $effect2-gradient1; // 淡橙红渐变1
+    background: #fff7f2; // 淡橙红底1
   }
 
   &::after {
     right: -10rpx;
-    background: $effect2-gradient2; // 淡橙红渐变2
+    background: #fff3ec; // 淡橙红底2
   }
 
   // 点击时展开渐变背景
@@ -1226,7 +1220,7 @@ $effect2-gradient2: linear-gradient(
   // 占位符样式
   &::placeholder {
     color: #999;
-    font-size: 22rpx;
+    font-size: 24rpx;
   }
 }
 
@@ -1241,7 +1235,7 @@ $effect2-gradient2: linear-gradient(
   color: #ffffff;
   border: none;
   border-radius: 8rpx;
-  font-size: 24rpx;
+  font-size: 28rpx;
   font-weight: 500;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
@@ -1260,7 +1254,7 @@ $effect2-gradient2: linear-gradient(
 // 数据来源说明样式
 .data-source {
   text-align: center;
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #999;
   margin-top: 10rpx;
   margin-bottom: 30rpx;

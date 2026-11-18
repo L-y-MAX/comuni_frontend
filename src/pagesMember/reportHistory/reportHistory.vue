@@ -326,7 +326,7 @@ const goAbilityProfile = () => {
 }
 
 .section-sub {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -363,7 +363,7 @@ const goAbilityProfile = () => {
 .overview-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #fff5f1 0%, #fff 100%);
+  background: #fff5f1;
   border-color: #ffd9c7;
 }
 
@@ -388,7 +388,7 @@ const goAbilityProfile = () => {
 }
 
 .overview-label {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 6rpx;
 }
@@ -412,7 +412,7 @@ const goAbilityProfile = () => {
 }
 
 .trend-value {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #6b7280;
   margin-bottom: 6rpx;
 }
@@ -434,7 +434,7 @@ const goAbilityProfile = () => {
 }
 
 .trend-date {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 8rpx;
 }
@@ -463,7 +463,7 @@ const goAbilityProfile = () => {
 }
 
 .entry-badge {
-  font-size: 18rpx;
+  font-size: 24rpx;
   border-radius: 6rpx;
   padding: 2rpx 10rpx;
   margin-left: 10rpx;
@@ -508,7 +508,7 @@ const goAbilityProfile = () => {
 }
 
 .metric-label {
-  font-size: 19rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 2rpx;
 }
@@ -521,7 +521,7 @@ const goAbilityProfile = () => {
 }
 
 .entry-job {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #4b5563;
 }
 
@@ -532,7 +532,7 @@ const goAbilityProfile = () => {
 }
 
 .entry-trend {
-  font-size: 23rpx;
+  font-size: 24rpx;
   font-weight: 700;
 }
 
@@ -546,7 +546,7 @@ const goAbilityProfile = () => {
 }
 
 .entry-action {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #64748b;
 
   &.danger {
@@ -593,7 +593,7 @@ const goAbilityProfile = () => {
 }
 
 .page-footer-source .source-text {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   font-style: italic;
   line-height: 1.5;

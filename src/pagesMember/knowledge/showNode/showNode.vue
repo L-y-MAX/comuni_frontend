@@ -1336,7 +1336,7 @@ page {
 }
 
 .md-h6 {
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #666;
   margin: 15rpx 0 8rpx;
@@ -1474,7 +1474,7 @@ page {
           }
 
           .comment-time {
-            font-size: 22rpx;
+            font-size: 24rpx;
             color: #999;
           }
         }
@@ -1494,14 +1494,14 @@ page {
           flex-wrap: wrap;
 
           .reply-btn {
-            font-size: 24rpx;
+            font-size: 28rpx;
             color: #007aff;
             display: flex;
             align-items: center;
           }
 
           .delete-btn {
-            font-size: 24rpx;
+            font-size: 28rpx;
             color: #ff4444;
             padding: 6rpx 12rpx;
             border-radius: 12rpx;
@@ -1509,7 +1509,7 @@ page {
           }
 
           .expand-btn {
-            font-size: 24rpx;
+            font-size: 28rpx;
             color: #999;
             padding: 6rpx 12rpx;
             border-radius: 12rpx;
@@ -1582,7 +1582,7 @@ page {
 
       .no-more-answers {
         padding: 10rpx 0;
-        font-size: 22rpx;
+        font-size: 24rpx;
         color: #ccc;
         text-align: center;
       }
@@ -1617,7 +1617,7 @@ page {
             }
 
             .answer-time {
-              font-size: 20rpx;
+              font-size: 24rpx;
               color: #999;
             }
           }
@@ -1636,12 +1636,12 @@ page {
             align-items: center;
 
             .reply-btn {
-              font-size: 22rpx;
+              font-size: 28rpx;
               color: #007aff;
             }
 
             .delete-btn {
-              font-size: 22rpx;
+              font-size: 28rpx;
               color: #ff4444;
               padding: 4rpx 10rpx;
               border-radius: 10rpx;

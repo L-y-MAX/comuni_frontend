@@ -344,14 +344,14 @@ onLoad(() => {
 .fav-unfav {
   flex: none;
   margin-left: 16rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #94a3b8;
 }
 
 .fav-card-meta {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -372,7 +372,7 @@ onLoad(() => {
 .fav-btn {
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: 28rpx;
   margin-right: 14rpx;
 }
 

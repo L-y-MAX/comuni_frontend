@@ -751,7 +751,7 @@
           <text class="summary-text">{{ profile.summary }}</text>
         </view>
 
-        <!-- 人岗匹配 / 生涯报告入口（恢复为原有结构） -->
+        <!-- 人岗匹配 / 生涯报告入口 -->
         <view class="match-entry card-style">
           <text class="match-entry-title">接下来做什么？</text>
           <text class="match-entry-desc">
@@ -772,22 +772,20 @@
               生涯发展报告
             </button>
           </view>
-        </view>
-
-        <!-- 结果区操作 -->
-        <view class="action-row">
-          <button
-            class="ghost-btn"
-            @click="scrollToForm"
-          >
-            返回修改
-          </button>
-          <button
-            class="primary-btn"
-            @click="generate({ forceLocal: true })"
-          >
-            本地规则重算
-          </button>
+          <view class="action-row action-row--second">
+            <button
+              class="ghost-btn"
+              @click="scrollToForm"
+            >
+              返回修改
+            </button>
+            <button
+              class="ghost-btn"
+              @click="generate({ forceLocal: true })"
+            >
+              本地规则重算
+            </button>
+          </view>
         </view>
       </block>
 
@@ -1536,7 +1534,7 @@ onShareTimeline(() => ({
 }
 
 .section-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -1557,7 +1555,7 @@ onShareTimeline(() => ({
 }
 
 .planet-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #888888;
 }
 
@@ -1611,7 +1609,7 @@ onShareTimeline(() => ({
 
 // ========== 顶部说明 ==========
 .intro-card {
-  background: linear-gradient(135deg, #fff5f1 0%, #fff 100%);
+  background: #fff5f1;
   border-color: #ffd9c7;
 }
 
@@ -1632,7 +1630,7 @@ onShareTimeline(() => ({
 
 // ========== 表单 ==========
 .sample-btn {
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: #ff4500;
   border: 2rpx solid #ff7239;
   border-radius: 24rpx;
@@ -1654,7 +1652,7 @@ onShareTimeline(() => ({
 }
 
 .group-arrow {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #cbd5e1;
   transition: transform 0.3s ease;
 
@@ -1828,7 +1826,7 @@ onShareTimeline(() => ({
 }
 
 .score-label {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   margin-top: 8rpx;
 }
@@ -1875,12 +1873,12 @@ onShareTimeline(() => ({
 }
 
 .source-confidence {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
 }
 
 .source-note {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin-top: 12rpx;
@@ -1910,7 +1908,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+  background: #ff8a54;
   border-radius: 40rpx;
   border: none;
 }
@@ -1979,15 +1977,15 @@ onShareTimeline(() => ({
 }
 
 .bubble.tier-high {
-  background: radial-gradient(circle at 50% 50%, #ff9771 0%, #ffd9c7 100%);
+  background: #ff9771;
 }
 
 .bubble.tier-mid {
-  background: radial-gradient(circle at 50% 50%, #ffb347 0%, #ffe4c2 100%);
+  background: #ffb347;
 }
 
 .bubble.tier-low {
-  background: radial-gradient(circle at 50% 50%, #e2e2e2 0%, #f4f4f4 100%);
+  background: #e2e2e2;
 }
 
 // hover / 点击：轻微放大 1.1 倍，300ms 平滑，无闪光无爆炸
@@ -2065,7 +2063,7 @@ onShareTimeline(() => ({
   display: block;
   margin-top: 12rpx;
   text-align: right;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ff9771;
   text-decoration: underline;
 }
@@ -2143,7 +2141,7 @@ onShareTimeline(() => ({
 }
 
 .dim-hint {
-  font-size: 19rpx;
+  font-size: 24rpx;
   color: #94a3b8;
   background: #f1f5f9;
   border-radius: 6rpx;
@@ -2169,7 +2167,7 @@ onShareTimeline(() => ({
 }
 
 .dim-arrow {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #cbd5e1;
   margin-left: 12rpx;
   transition: transform 0.3s ease;
@@ -2202,7 +2200,7 @@ onShareTimeline(() => ({
 }
 
 .chip {
-  font-size: 22rpx;
+  font-size: 24rpx;
   border-radius: 8rpx;
   padding: 4rpx 14rpx;
   background: #f1f5f9;
@@ -2221,7 +2219,7 @@ onShareTimeline(() => ({
 }
 
 .empty-note {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.6;
   display: block;
@@ -2250,7 +2248,7 @@ onShareTimeline(() => ({
 }
 
 .detail-conf {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
 
   &.low {
@@ -2267,7 +2265,7 @@ onShareTimeline(() => ({
 }
 
 .detail-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #6b7280;
   display: block;
@@ -2275,14 +2273,14 @@ onShareTimeline(() => ({
 }
 
 .detail-value {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #1f2937;
   line-height: 1.7;
   display: block;
 }
 
 .detail-note {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.6;
   display: block;
@@ -2297,7 +2295,7 @@ onShareTimeline(() => ({
 }
 
 .kw-chip {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   background: #ffffff;
   border: 2rpx solid #e5e7eb;
@@ -2312,7 +2310,7 @@ onShareTimeline(() => ({
 }
 
 .evidence-line {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #475569;
   line-height: 1.7;
   display: block;
@@ -2349,7 +2347,7 @@ onShareTimeline(() => ({
   justify-content: center;
 
   &.unlocked {
-    background: linear-gradient(135deg, #fff1eb 0%, #ffd9c7 100%);
+    background: #fff1eb;
     border-color: #ff7239;
     box-shadow: 0 0 20rpx rgba(255, 114, 57, 0.34);
   }
@@ -2361,14 +2359,14 @@ onShareTimeline(() => ({
 }
 
 .badge-name-en {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 2rpx;
   text-align: center;
 }
 
 .badge-name {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #1f2937;
   margin-top: 10rpx;
   font-weight: 600;
@@ -2376,7 +2374,7 @@ onShareTimeline(() => ({
 }
 
 .badge-cond {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-top: 2rpx;
   text-align: center;
@@ -2406,7 +2404,7 @@ onShareTimeline(() => ({
 }
 
 .advice-tag {
-  font-size: 22rpx;
+  font-size: 24rpx;
   border-radius: 20rpx;
   padding: 4rpx 18rpx;
 
@@ -2431,7 +2429,7 @@ onShareTimeline(() => ({
 }
 
 .missing-title {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #9a3412;
   display: block;
 }
@@ -2445,25 +2443,51 @@ onShareTimeline(() => ({
   display: block;
 }
 
-// ========== 人岗匹配入口（原有结构，已恢复） ==========
+// ========== 人岗匹配入口 ==========
 .match-entry {
-  background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%);
-  border-color: #bbf7d0;
+  background: #ffffff;
 }
 
 .match-entry-title {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #15803d;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
   display: block;
 }
 
 .match-entry-desc {
-  font-size: 23rpx;
+  font-size: 26rpx;
   color: #6b7280;
-  line-height: 1.6;
-  margin: 10rpx 0 20rpx;
+  line-height: 1.65;
+  margin: 10rpx 0 4rpx;
   display: block;
+}
+
+.text-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24rpx;
+}
+
+.action-row + .action-row {
+  margin-top: 16rpx;
+}
+
+.text-action {
+  font-size: 28rpx;
+  color: #6b7280;
+  padding: 8rpx 4rpx;
+}
+
+.text-action:active {
+  color: #ff6a33;
+}
+
+.text-action-dot {
+  margin: 0 16rpx;
+  font-size: 24rpx;
+  color: #d1d5db;
 }
 // ========== 底部 ==========
 .page-footer-source {
@@ -2472,7 +2496,7 @@ onShareTimeline(() => ({
 }
 
 .page-footer-source .source-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   font-style: italic;
   line-height: 1.5;
@@ -2515,7 +2539,7 @@ onShareTimeline(() => ({
 }
 
 .side-trigger-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ff7239;
   margin-top: 6rpx;
 }
@@ -2576,7 +2600,7 @@ onShareTimeline(() => ({
 }
 
 .drawer-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -2599,7 +2623,7 @@ onShareTimeline(() => ({
 
 .drawer-group-title {
   display: block;
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #9ca3af;
   letter-spacing: 2rpx;
@@ -2643,7 +2667,7 @@ onShareTimeline(() => ({
 }
 
 .drawer-item-desc {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.5;
 }
@@ -2656,7 +2680,7 @@ onShareTimeline(() => ({
 
   .drawer-item.current & {
     color: #ff7239;
-    font-size: 20rpx;
+    font-size: 24rpx;
   }
 }
 
@@ -2667,7 +2691,7 @@ onShareTimeline(() => ({
 }
 
 .drawer-foot-text {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   line-height: 1.7;
 }
@@ -2757,7 +2781,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+  background: #ff8a54;
   border-radius: 16rpx;
   border: none;
 

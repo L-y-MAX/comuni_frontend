@@ -508,7 +508,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 // 个人资料页面
 .profile-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, $bg-secondary-light 0%, $bg-tertiary-light 100%);
+  background: $bg-secondary-light;
 }
 
 // 内容滚动区域
@@ -572,7 +572,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   right: -8rpx;
   bottom: -8rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+  background: rgba(79, 70, 229, 0.2);
   animation: pulse 3s ease-in-out infinite;
   pointer-events: none;
 }
@@ -794,7 +794,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .primary-btn {
-  background: $primary-gradient;
+  background: #ff6a33;
   color: white;
 
   &.effect-btn-1 {
@@ -897,5 +897,46 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   .action-buttons {
     padding: 0 20rpx 40rpx;
   }
+}
+/* ===== 统一按钮配色：主题橙 + 中性灰，去掉紫色描边与拟物阴影 ===== */
+.effect-btn-1,
+.effect-btn-2 {
+  box-shadow: none;
+  border: none;
+}
+
+.effect-btn-1::before,
+.effect-btn-2::before,
+.effect-btn-2::after {
+  display: none;
+}
+
+.primary-btn.effect-btn-1 {
+  background: #ff6a33;
+  color: #ffffff;
+}
+
+.secondary-btn.effect-btn-1 {
+  background: #ffffff;
+  color: #ff6a33;
+  border: 2rpx solid #ff6a33;
+}
+
+.save-btn {
+  background: #ff6a33 !important;
+  border: none !important;
+}
+
+.save-btn .btn-text {
+  color: #ffffff;
+}
+
+.cancel-btn {
+  background: #ffffff !important;
+  border: 2rpx solid #e3e5e9 !important;
+}
+
+.cancel-btn .btn-text {
+  color: #5b616b;
 }
 </style>

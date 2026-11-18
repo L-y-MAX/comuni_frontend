@@ -77,7 +77,7 @@
               <uni-icons
                 :type="showPassword ? 'eye-filled' : 'eye-slash-filled'"
                 size="19"
-                :color="showPassword ? '#4c3fe0' : '#9ca3af'"
+                :color="showPassword ? '#ff6a33' : '#9ca3af'"
               />
             </view>
           </view>
@@ -465,8 +465,8 @@ onMounted(() => {
 
 <style scoped lang="scss">
 // 主题变量
-$primary-color: #3b82f6;
-$secondary-color: #60a5fa;
+$primary-color: #ff6a33;
+$secondary-color: #ee5a22;
 $accent-color: #93c5fd;
 $error-color: #ef4444;
 $success-color: #10b981;
@@ -497,7 +497,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 40rpx 24rpx;
   transition: $transition;
   // 仅保留浅色模式背景
-  background: linear-gradient(135deg, $bg-secondary-light 0%, $bg-tertiary-light 100%);
+  background: $bg-secondary-light;
 }
 
 // 主容器
@@ -653,14 +653,14 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .login-button {
   width: $btn-width; // 固定宽度，和微信按钮一致
   height: $btn-height; // 固定高度
-  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+  background: $primary-color;
   border: none;
   border-radius: $btn-radius; // 全圆角
   font-size: 32rpx;
   font-weight: 1000;
   color: white !important; // 强制白色文字
   transition: $transition;
-  box-shadow: 0 8rpx 24rpx rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8rpx 24rpx rgba(255, 106, 51, 0.18);
   margin-top: 16rpx;
   display: flex; // 子元素居中
   align-items: center;
@@ -668,11 +668,14 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:active:not(:disabled) {
     transform: translateY(2rpx);
-    box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4rpx 16rpx rgba(255, 106, 51, 0.24);
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 1;
+    background: #ffe3d7;
+    color: #ff8a5c !important;
+    box-shadow: none;
     cursor: not-allowed;
   }
 

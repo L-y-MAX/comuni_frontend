@@ -453,12 +453,12 @@ page {
           margin-top: 5rpx;
 
           .creator {
-            font-size: 22rpx;
+            font-size: 24rpx;
             color: #666;
           }
 
           .create-time {
-            font-size: 22rpx;
+            font-size: 24rpx;
             color: #999;
           }
         }

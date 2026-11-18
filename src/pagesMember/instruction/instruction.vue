@@ -563,7 +563,7 @@ page {
 }
 
 .md-h6 {
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #666;
   margin: 15rpx 0 8rpx;

@@ -391,7 +391,7 @@ onPullDownRefresh(() => {
   text-align: center;
   background-color: #3b82f6;
   color: #fff;
-  font-size: 20rpx;
+  font-size: 24rpx;
   border-radius: 12rpx;
   margin-left: 8rpx;
 }

@@ -182,7 +182,7 @@
         {
           "path": "editNode",
           "style": {
-            "navigationBarTitleText": "编辑模式"
+            "navigationBarTitleText": "编辑文章"
           }
         }
       ]

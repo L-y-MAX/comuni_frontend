@@ -1314,7 +1314,11 @@ const openNodeActions = (item: any) => {
 
 /** 从文章列表返回知识库列表 */
 const backToKbList = () => {
-  tabState[activeTab.value].selectedKbId = ''
+  // tabState 是 ref：脚本里必须用 .value，否则取到 undefined
+  const currentTab = activeTab.value
+  tabState.value[currentTab].selectedKbId = ''
+  tabState.value[currentTab].nodeList = []
+  uni.setStorageSync(`selectedKbId_${currentTab}`, '')
 }
 </script>
 
@@ -1395,7 +1399,7 @@ $border-radius-small: 12rpx;
 
   &.active {
     color: $white;
-    background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+    background: #ff8a54;
   }
 }
 
@@ -1443,12 +1447,7 @@ $border-radius-small: 12rpx;
     left: 0;
     right: 0;
     height: 1rpx;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(0, 122, 255, 0.1) 50%,
-      transparent 100%
-    );
+    background: transparent;
   }
 }
 
@@ -1462,7 +1461,7 @@ $border-radius-small: 12rpx;
 .node-subheader {
   padding-bottom: 12rpx;
   margin-bottom: 16rpx;
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.02) 0%, rgba(88, 86, 214, 0.02) 100%);
+  background: rgba(0, 122, 255, 0.02);
   padding: 12rpx 16rpx;
   border-radius: $border-radius-medium;
   // flex布局，让文字左对齐，按钮右对齐
@@ -1687,9 +1686,9 @@ $border-radius-small: 12rpx;
 }
 
 .kb-public {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: $success-color;
-  background: linear-gradient(135deg, rgba(85, 85, 85, 0.1) 0%, rgba(85, 85, 85, 0.05) 100%);
+  background: rgba(85, 85, 85, 0.1);
   padding: 4rpx 12rpx;
   border-radius: 16rpx;
   font-weight: 600;
@@ -1700,9 +1699,9 @@ $border-radius-small: 12rpx;
 }
 
 .kb-private {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: $accent-color;
-  background: linear-gradient(135deg, rgba(153, 153, 153, 0.1) 0%, rgba(153, 153, 153, 0.05) 100%);
+  background: rgba(153, 153, 153, 0.1);
   padding: 4rpx 12rpx;
   border-radius: 16rpx;
   font-weight: 600;
@@ -1720,7 +1719,7 @@ $border-radius-small: 12rpx;
 .follow-kb-btn,
 .unfollow-kb-btn {
   color: $secondary-color;
-  font-size: 24rpx;
+  font-size: 28rpx;
   padding: 6rpx 10rpx;
   border-radius: 20rpx;
   font-weight: 600;
@@ -1753,7 +1752,7 @@ $border-radius-small: 12rpx;
 
 .delete-kb-btn {
   color: $secondary-color;
-  font-size: 24rpx;
+  font-size: 28rpx;
   padding: 6rpx 10rpx;
   border-radius: 20rpx;
   font-weight: 600;
@@ -1822,7 +1821,7 @@ $border-radius-small: 12rpx;
 .edit-btn {
   background: white;
   color: $primary-color;
-  font-size: 24rpx;
+  font-size: 28rpx;
   padding: 6rpx 10rpx;
   border-radius: 20rpx;
   font-weight: 600;
@@ -1959,7 +1958,7 @@ $border-radius-small: 12rpx;
   border-radius: 50%;
   background: $secondary-color;
   color: #ffffff;
-  font-size: 22rpx;
+  font-size: 24rpx;
   margin-right: 12rpx;
 }
 
@@ -2057,7 +2056,7 @@ $border-radius-small: 12rpx;
   }
 
   .node-name {
-    font-size: 22rpx;
+    font-size: 24rpx;
   }
 
   // 响应式调整名称行
@@ -2083,7 +2082,7 @@ $border-radius-small: 12rpx;
 }
 
 .kb-overview-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
 }
 
@@ -2119,7 +2118,7 @@ $border-radius-small: 12rpx;
 
   &.active {
     color: $white;
-    background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+    background: #ff8a54;
     box-shadow: $shadow-light;
   }
 }
@@ -2198,7 +2197,7 @@ $border-radius-small: 12rpx;
   font-size: 24rpx;
   font-weight: 600;
   color: $white;
-  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+  background: #ff8a54;
   border-radius: 30rpx;
   border: none !important;
   box-shadow: none !important;
@@ -2210,7 +2209,7 @@ $border-radius-small: 12rpx;
 
 .node-topbar-count {
   display: block;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
   margin-bottom: 16rpx;
   padding-left: 8rpx;
@@ -2225,7 +2224,7 @@ $border-radius-small: 12rpx;
 }
 
 .node-meta {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
   margin-top: 6rpx;
 }
@@ -2293,7 +2292,7 @@ $border-radius-small: 12rpx;
   height: 30rpx;
   line-height: 30rpx;
   border-radius: 15rpx;
-  font-size: 20rpx;
+  font-size: 24rpx;
   font-weight: 500;
   color: $text-secondary;
   background: rgba(31, 41, 55, 0.06);
@@ -2314,7 +2313,7 @@ $border-radius-small: 12rpx;
 
 .guide-dismiss {
   margin-left: 16rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
 }
 
@@ -2322,7 +2321,7 @@ $border-radius-small: 12rpx;
 .kb-stat {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
 }
 
@@ -2332,7 +2331,7 @@ $border-radius-small: 12rpx;
   margin-left: 8rpx;
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   line-height: 1.2;
   color: $brand;
   background: $brand-soft;
@@ -2358,13 +2357,13 @@ $border-radius-small: 12rpx;
 }
 
 .sort-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-secondary;
 }
 
 .sort-arrow {
   margin-left: 6rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
 }
 
@@ -2377,7 +2376,7 @@ $border-radius-small: 12rpx;
   padding: 0 20rpx;
   margin: 0;
   border-radius: 30rpx;
-  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+  background: #ff8a54;
   border: none !important;
   box-shadow: none !important;
 
@@ -2395,7 +2394,7 @@ $border-radius-small: 12rpx;
 }
 
 .add-kb-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: $white;
   line-height: 1;
@@ -2412,7 +2411,7 @@ $border-radius-small: 12rpx;
 .empty-sub {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-tertiary;
 }
 
@@ -2425,7 +2424,46 @@ $border-radius-small: 12rpx;
   background: $brand-soft;
   border: 1rpx solid $brand-line;
   color: $brand;
-  font-size: 24rpx;
+  font-size: 28rpx;
   font-weight: 600;
+}
+/* ===== 小范围收敛：去掉计数小角标、彩色标签与重投影 ===== */
+.tab-badge {
+  display: none;
+}
+
+.kb-section,
+.node-list,
+.guide-card {
+  box-shadow: none;
+}
+
+.kb-public,
+.kb-private {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: #9aa0a8;
+  font-weight: 400;
+}
+
+.guide-icon {
+  display: none;
+}
+
+.guide-num {
+  width: 32rpx;
+  padding: 0;
+  background: transparent;
+  color: #9aa0a8;
+  font-weight: 500;
+}
+
+.guide-tip {
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 24rpx;
+  color: #9aa0a8;
 }
 </style>

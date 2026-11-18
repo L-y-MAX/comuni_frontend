@@ -74,7 +74,7 @@ $shadow-light: 0 4rpx 24rpx rgba(255, 69, 0, 0.08);
 
 // 会员横幅
 .vip-banner {
-  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+  background: $primary-color;
   padding: 60rpx 24rpx;
   text-align: center;
 

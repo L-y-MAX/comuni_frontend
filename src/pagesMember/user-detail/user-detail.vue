@@ -572,7 +572,7 @@ $effect2-gradient2: linear-gradient(135deg, rgba(60, 9, 108, 0.1), rgba(60, 9, 1
   right: -4rpx;
   bottom: -4rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+  background: rgba(255, 255, 255, 0.8);
   z-index: -1; // 头像内部的底层
 }
 

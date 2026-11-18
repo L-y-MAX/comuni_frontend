@@ -1,95 +1,82 @@
 <template>
-  <!-- 根容器：确保页面结构完整 -->
-  <view class="node-detail-page">
-    <!-- 页面主区域：移除scroll-view，改用普通view承载表单 -->
-    <view class="content-container">
-      <!-- 表单容器：统一校验逻辑 -->
-      <!-- 关键修改：添加 ref="formRef" + id="formRef"，兼容小程序 -->
-      <uni-forms
-        ref="formRef"
-        id="formRef"
-        :model="formData"
-        :rules="formRules"
-        class="form-container"
+  <view class="page">
+    <view class="compose">
+      <input
+        v-model="formData.name"
+        class="title-input"
+        placeholder="文章标题"
+        placeholder-style="color:#b6bac1"
+        :maxlength="60"
+      />
+
+      <view class="meta">
+        <text>{{ contentLength }} 字</text>
+      </view>
+    </view>
+
+    <view class="switch">
+      <view
+        class="switch-item"
+        :class="{ on: tab === 'edit' }"
+        @click="tab = 'edit'"
       >
-        <!-- 文章名称输入项：新增保存按钮同行显示 -->
-        <uni-forms-item
-          label="文章名称"
-          required
-          name="name"
-          class="form-item name-item"
-        >
-          <view class="name-input-wrapper">
-            <input
-              v-model="formData.name"
-              placeholder="请输入文章名称"
-              class="name-input"
-              :focused="nameInputFocused"
-              @focus="nameInputFocused = true"
-              @blur="nameInputFocused = false"
-            />
-            <!-- 保存按钮：添加点击日志 -->
-            <button
-              class="save-btn"
-              @click="handleBtnClick"
-              :disabled="isSubmitDisabled"
-            >
-              {{ type === 'edit' ? '保存' : '新增文章' }}
-            </button>
-          </view>
-        </uni-forms-item>
+        编辑
+      </view>
+      <view
+        class="switch-item"
+        :class="{ on: tab === 'preview' }"
+        @click="switchPreview"
+      >
+        预览
+      </view>
+    </view>
 
-        <!-- 文章内容编辑项：预览+编辑双独立滚动 -->
-        <uni-forms-item
-          label="内容"
-          name="content"
-          class="form-item content-item"
-        >
-          <!-- 预览区标题 -->
-          <view class="content-section-title">实时预览</view>
-          <!-- 预览区容器：固定高度+溢出隐藏 -->
-          <view class="preview-wrapper">
-            <scroll-view
-              class="preview-scroll"
-              scroll-y
-              scroll-with-animation
-            >
-              <view class="detail-content">
-                <view
-                  class="markdown-body"
-                  v-html="renderedContent"
-                ></view>
-              </view>
-            </scroll-view>
-          </view>
+    <!-- 用 v-if 而不是 v-show：原生 editor 被隐藏后再显示会出现工具栏被盖住的问题 -->
+    <view
+      v-if="tab === 'edit'"
+      class="pane"
+    >
+      <RichEditor
+        v-model:html="formData.content"
+        :maxlength="maxInputLength"
+        placeholder="从这里开始写正文"
+        @change="handleContentInputSync"
+      />
+    </view>
 
-          <!-- 编辑区标题 -->
-          <view class="content-section-title">编辑内容</view>
-          <!-- 编辑区容器：核心隔离滚动 -->
-          <view class="editor-wrapper">
-            <scroll-view
-              class="editor-scroll"
-              scroll-y
-              scroll-with-animation
-              scroll-boundary="inside"
-            >
-              <RichEditor
-                v-model:html="formData.content"
-                :maxlength="maxInputLength"
-                placeholder="在这里写正文：选中文字后点上方按钮即可加粗、调字号"
-                @change="handleContentInputSync"
-              />
-            </scroll-view>
-          </view>
-        </uni-forms-item>
-      </uni-forms>
+    <scroll-view
+      v-else
+      class="pane pane--preview"
+      scroll-y
+    >
+      <view
+        v-if="renderedContent"
+        class="markdown-body"
+        v-html="renderedContent"
+      />
+      <view
+        v-else
+        class="preview-empty"
+      >
+        还没有可预览的内容
+      </view>
+    </scroll-view>
+
+    <view class="save-bar">
+      <button
+        class="save-btn"
+        :disabled="submitting"
+        @click="handleBtnClick"
+      >
+        {{ submitting ? '保存中…' : type === 'edit' ? '保存' : '发布' }}
+      </button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { onLoad, onReady, onBackPress } from '@dcloudio/uni-app'
-import { computed, reactive, ref, getCurrentInstance, nextTick } from 'vue'
+import { onLoad, onBackPress } from '@dcloudio/uni-app'
+import { computed, reactive, ref } from 'vue'
 import { marked } from 'marked'
 // 知识库正文按纯文本使用：开启 breaks，让普通换行也能分段（否则会被合并成一行）
 marked.setOptions({ breaks: true })
@@ -134,12 +121,6 @@ import type { KnowledgeNode } from '@/types/knowledge'
 import { getKnowledgeNodeDetail, addKnowledgeNode, updateKnowledgeNode } from '@/api/knowledge'
 import RichEditor from './components/RichEditor.vue'
 import { looksLikeHtml, textToHtml } from '@/utils/plainText'
-
-// ========== 声明 UniFormsInstance 类型（解决 TS 报错） ==========
-declare type UniFormsInstance = {
-  validate: (names?: string | string[]) => Promise<void>
-  validateField: (fields: string | string[]) => Promise<void>
-}
 
 // ========== 类型定义 ==========
 interface TocItem {
@@ -195,21 +176,18 @@ const initialFormData = ref<{ name: string; content: string }>({
 const type = ref<string>('edit')
 const kbId = ref<string>('')
 
-const nameInputFocused = ref<boolean>(false)
-const contentInputFocused = ref<boolean>(false)
-
 const renderedContent = ref<string>('')
-
-// 关键修改1：初始化formRef，并通过getCurrentInstance兼容小程序
-const formRef = ref<UniFormsInstance | null>(null)
-const instance = getCurrentInstance()
+const tab = ref<'edit' | 'preview'>('edit')
+const submitting = ref(false)
 
 // ========== 计算属性 ==========
-// 提交按钮禁用逻辑：添加日志
-const isSubmitDisabled = computed(() => {
-  const disabled = !formData.name.trim() || !formData.content.trim()
-  return disabled
-})
+// 正文去标签后的字数，同时用于判断是否真的写了内容
+const contentLength = computed(() =>
+  formData.content
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, '').length
+)
 
 // 输入字数限制配置 最多字数 50w
 const maxInputLength = ref(500000) // 设定最大输入字数，可自行调整
@@ -222,27 +200,7 @@ const hasFormChanged = computed(() => {
   )
 })
 
-// ========== 表单校验规则 ==========
-const formRules = ref({
-  name: {
-    required: true,
-    errorMessage: '文章名称不能为空',
-  },
-  content: {
-    required: true,
-    errorMessage: '文章内容不能为空',
-  },
-})
-
 // ========== 核心方法 ==========
-/**
- * 编辑框聚焦逻辑
- */
-const handleContentFocus = () => {
-  contentInputFocused.value = true
-  // 原来这里会调 stopPageScroll() 把页面强制拉回顶部。
-  // 页面本身已不再锁滚动，再拉回顶部只会让用户正在编辑的区域跑出屏幕。
-}
 
 /**
  * 提取Markdown标题生成目录
@@ -279,30 +237,30 @@ const extractToc = (content: string): TocItem[] => {
  * 唯一可靠的做法是把样式写进节点的 style 属性。
  */
 const MD_STYLE: Record<string, string> = {
-  h1: 'font-size:44rpx;font-weight:700;color:#1f2937;line-height:1.4;margin:32rpx 0 16rpx;padding-bottom:12rpx;border-bottom:2rpx solid #eceff3;',
-  h2: 'font-size:38rpx;font-weight:700;color:#1f2937;line-height:1.4;margin:28rpx 0 14rpx;padding-bottom:10rpx;border-bottom:2rpx solid #eceff3;',
-  h3: 'font-size:34rpx;font-weight:600;color:#1f2937;line-height:1.45;margin:24rpx 0 12rpx;',
-  h4: 'font-size:32rpx;font-weight:600;color:#374151;line-height:1.45;margin:20rpx 0 10rpx;',
-  h5: 'font-size:30rpx;font-weight:600;color:#374151;line-height:1.45;margin:18rpx 0 10rpx;',
-  h6: 'font-size:28rpx;font-weight:600;color:#6b7280;line-height:1.45;margin:16rpx 0 8rpx;',
-  p: 'font-size:30rpx;line-height:1.8;color:#374151;margin:16rpx 0;',
-  ul: 'padding-left:40rpx;margin:16rpx 0;font-size:30rpx;line-height:1.8;color:#374151;',
-  ol: 'padding-left:40rpx;margin:16rpx 0;font-size:30rpx;line-height:1.8;color:#374151;',
-  li: 'font-size:30rpx;line-height:1.8;color:#374151;margin:6rpx 0;',
+  h1: 'font-size:40rpx;font-weight:600;color:#17191c;line-height:1.4;margin:36rpx 0 16rpx;',
+  h2: 'font-size:34rpx;font-weight:600;color:#17191c;line-height:1.4;margin:32rpx 0 14rpx;',
+  h3: 'font-size:30rpx;font-weight:600;color:#17191c;line-height:1.45;margin:28rpx 0 12rpx;',
+  h4: 'font-size:30rpx;font-weight:600;color:#17191c;line-height:1.45;margin:24rpx 0 10rpx;',
+  h5: 'font-size:28rpx;font-weight:600;color:#17191c;line-height:1.45;margin:20rpx 0 10rpx;',
+  h6: 'font-size:26rpx;font-weight:600;color:#5b616b;line-height:1.45;margin:18rpx 0 8rpx;',
+  p: 'font-size:30rpx;line-height:1.8;color:#33373d;margin:16rpx 0;',
+  ul: 'padding-left:40rpx;margin:16rpx 0;font-size:30rpx;line-height:1.8;color:#33373d;',
+  ol: 'padding-left:40rpx;margin:16rpx 0;font-size:30rpx;line-height:1.8;color:#33373d;',
+  li: 'font-size:30rpx;line-height:1.8;color:#33373d;margin:6rpx 0;',
   blockquote:
-    'margin:16rpx 0;padding:12rpx 20rpx;border-left:6rpx solid #ff4500;background:#fff7f4;color:#6b7280;font-size:28rpx;line-height:1.7;',
-  hr: 'height:2rpx;background:#eceff3;border:none;margin:28rpx 0;',
-  a: 'color:#ff4500;text-decoration:underline;',
-  strong: 'font-weight:700;color:#111827;',
-  em: 'font-style:italic;color:#4b5563;',
-  table: 'width:100%;border-collapse:collapse;margin:16rpx 0;font-size:28rpx;',
-  th: 'border:2rpx solid #e5e7eb;padding:10rpx 14rpx;background:#f9fafb;font-weight:600;text-align:left;',
-  td: 'border:2rpx solid #e5e7eb;padding:10rpx 14rpx;',
+    'margin:20rpx 0;padding:4rpx 0 4rpx 22rpx;border-left:6rpx solid #e3e5e9;color:#5b616b;font-size:28rpx;line-height:1.75;',
+  hr: 'height:1rpx;background:#ececf0;border:none;margin:32rpx 0;',
+  a: 'color:#ff6a33;text-decoration:none;',
+  strong: 'font-weight:600;color:#17191c;',
+  em: 'font-style:italic;color:#5b616b;',
+  table: 'width:100%;border-collapse:collapse;margin:16rpx 0;font-size:26rpx;',
+  th: 'border:1rpx solid #e8eaee;padding:12rpx 14rpx;background:#fafbfc;font-weight:500;text-align:left;',
+  td: 'border:1rpx solid #e8eaee;padding:12rpx 14rpx;',
   img: 'max-width:100%;height:auto;border-radius:8rpx;',
-  pre: 'padding:20rpx;background:#f6f8fa;border:2rpx solid #e5e7eb;border-radius:8rpx;margin:16rpx 0;white-space:pre-wrap;word-break:break-all;',
+  pre: 'padding:24rpx;background:#f7f8fa;border-radius:12rpx;margin:20rpx 0;white-space:pre-wrap;word-break:break-all;',
   preCode:
-    'font-family:Consolas,Monaco,monospace;font-size:26rpx;background:transparent;color:#24292e;padding:0;',
-  code: 'font-family:Consolas,Monaco,monospace;font-size:26rpx;background:#f2f4f7;color:#c7254e;padding:2rpx 8rpx;border-radius:4rpx;',
+    'font-family:Consolas,Menlo,monospace;font-size:26rpx;background:transparent;color:#24292e;padding:0;',
+  code: 'font-family:Consolas,Menlo,monospace;font-size:26rpx;background:#f2f3f5;color:#c7254e;padding:2rpx 8rpx;border-radius:4rpx;',
 }
 
 /**
@@ -473,10 +431,10 @@ const fetchNodeDetail = async (id: string) => {
     formData.description = res.description
     formData.knowledge_base_id = res.knowledge_base_id
 
-    // 记录编辑模式的初始值
+    // 记录编辑模式的初始值（用转换后的 HTML，避免纯文本被转成 HTML 后误判为“有修改”）
     initialFormData.value = {
       name: res.name,
-      content: res.content,
+      content: formData.content,
     }
 
     renderedContent.value = await renderMarkdown(formData.content)
@@ -486,124 +444,101 @@ const fetchNodeDetail = async (id: string) => {
   }
 }
 
-/**
- * 手动校验表单（兼容uni-forms的校验逻辑）
- */
-const validateForm = async (): Promise<boolean> => {
-  try {
-    // 方案1：使用formRef.validate（优先）
-    if (formRef.value) {
-      await formRef.value.validate(['name', 'content'])
-      return true
-    }
-
-    // 方案2：手动校验（兜底）
-    if (!formData.name.trim()) {
-      uni.showToast({ title: '文章名称不能为空', icon: 'none' })
-      return false
-    }
-    if (!formData.content.trim()) {
-      uni.showToast({ title: '文章内容不能为空', icon: 'none' })
-      return false
-    }
-    return true
-  } catch (error: any) {
-    console.error('表单校验失败：', error)
-    uni.showToast({ title: error.errorMessage || '表单校验失败', icon: 'none' })
+/** 校验：标题和正文都不能为空 */
+const validateForm = (): boolean => {
+  if (!formData.name.trim()) {
+    uni.showToast({ title: '请填写文章标题', icon: 'none' })
     return false
   }
+  if (!contentLength.value) {
+    uni.showToast({ title: '正文还是空的', icon: 'none' })
+    return false
+  }
+  return true
 }
 
-/**
- * 按钮点击入口（新增日志）
- */
-const handleBtnClick = async () => {
-  // 先校验表单
-  const isValid = await validateForm()
-  if (!isValid) {
-    return
-  }
+const switchPreview = () => {
+  tab.value = 'preview'
+  renderMarkdownAsync()
+}
 
-  // 执行提交逻辑
+/** 按钮入口 */
+const handleBtnClick = async () => {
+  if (!validateForm()) return
   await submit()
 }
 
-/**
- * 提交表单（直接使用接口文件的add/update方法）
- */
-const submit = async (isFromBack?: boolean) => {
-  // 正文由富文本编辑器产出 HTML，这里只做空值收敛（展示端 marked 会透传 HTML）
+/** 提交（编辑 / 新增） */
+const submit = async () => {
+  if (submitting.value) return
+
   formData.content = String(formData.content || '').trim()
+  submitting.value = true
+  let saved = false
 
   try {
     if (type.value === 'edit') {
-      // 编辑模式：调用updateKnowledgeNode（内置creator/knowledge_base处理）
-      const res = await updateKnowledgeNode(formData.id, {
+      await updateKnowledgeNode(formData.id, {
         name: formData.name,
         content: formData.content,
         description: formData.description,
         knowledge_base_id: formData.knowledge_base_id,
       })
-      uni.showToast({ title: '修改成功', icon: 'success' })
+      uni.showToast({ title: '已保存', icon: 'success' })
     } else {
-      // 新增模式：调用addKnowledgeNode（内置creator/knowledge_base处理）
-      const res = await addKnowledgeNode({
+      await addKnowledgeNode({
         name: formData.name,
         content: formData.content,
         description: formData.description,
         knowledge_base_id: formData.knowledge_base_id,
       })
-      uni.showToast({ title: '新增成功', icon: 'success' })
+      uni.showToast({ title: '已发布', icon: 'success' })
     }
 
-    // 更新初始值（避免返回时重复提示）
+    saved = true
     initialFormData.value = {
       name: formData.name,
       content: formData.content,
     }
 
-    // 如果是返回时的保存操作，保存成功后执行返回
-    if (isFromBack) {
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 1500)
-    }
+    setTimeout(() => {
+      uni.navigateBack({
+        success: () => {
+          // 回到知识库页后刷新文章列表，否则标题/内容还是旧的
+          const pages = getCurrentPages()
+          const prevPage = pages[pages.length - 2]
+          if (prevPage?.$vm?.selectKb && formData.knowledge_base_id) {
+            prevPage.$vm.selectKb(formData.knowledge_base_id, true, true)
+          }
+        },
+      })
+    }, 700)
   } catch (error: any) {
-    // 接口文件已内置loading和错误提示，此处仅兜底
-    const errorMsg = error.message || '操作失败，请重试'
     console.error('提交文章失败：', error)
-    uni.showToast({ title: errorMsg, icon: 'none' })
+    uni.showToast({
+      title: error?.message || '操作失败，请重试',
+      icon: 'none',
+    })
+  } finally {
+    if (!saved) submitting.value = false
   }
 }
 
-/**
- * 拦截返回事件：有修改则提示是否保存
- */
+/** 有未保存修改时，返回前确认一次 */
 onBackPress((options) => {
-  // 只拦截小程序原生返回（非navigateBack调用）
   if (options.from !== 'backbutton') return false
-
-  // 无修改则直接返回
   if (!hasFormChanged.value) return false
 
-  // 有修改则弹出确认框
   uni.showModal({
-    title: '提示',
-    content: '您有未保存的修改，是否保存后返回？',
-    confirmText: '是',
-    cancelText: '否',
+    title: '放弃未保存的修改？',
+    content: '离开后这次改动不会保留。',
+    confirmText: '放弃',
+    cancelText: '继续编辑',
     success: (res) => {
-      if (res.confirm) {
-        // 点击“是”：保存后返回
-        handleBtnClick() // 改用handleBtnClick，统一校验逻辑
-      } else if (res.cancel) {
-        // 点击“否”：直接返回（放弃修改）
-        uni.navigateBack()
-      }
+      if (res.confirm) uni.navigateBack()
     },
   })
 
-  // 返回true表示拦截默认返回行为
   return true
 })
 
@@ -612,7 +547,6 @@ onLoad((options: any) => {
   type.value = options.type || 'edit'
   kbId.value = options.kbId || ''
 
-  // 初始化初始值（新增模式）
   initialFormData.value = {
     name: '',
     content: '',
@@ -627,388 +561,117 @@ onLoad((options: any) => {
     formData.knowledge_base_id = kbId.value
   }
 })
-
-onReady(async () => {
-  // 关键修改2：在onReady后通过nextTick延迟获取formRef
-  await nextTick()
-
-  // 兼容小程序：通过getCurrentInstance获取组件实例
-  if (instance && instance.refs) {
-    formRef.value = instance.refs.formRef as UniFormsInstance
-  }
-
-  await renderMarkdownAsync()
-})
 </script>
 
 <style scoped lang="scss">
-// 基础样式：规范嵌套+兼容小程序
-page {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-  // 注意：这里不能写 height:100% + overflow:hidden。
-  // 那会让内容超过一屏时既被裁掉、又完全滚不动（小屏手机上编辑区直接看不到）。
-}
-
-.node-detail-page {
+.page {
   min-height: 100vh;
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+}
+
+.compose {
+  padding: 32rpx 32rpx 24rpx;
+  background-color: #ffffff;
+}
+
+.title-input {
+  width: 100%;
+  height: 76rpx;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #17191c;
+  line-height: 1.35;
+}
+
+.meta {
   display: flex;
-  flex-direction: column;
-  background-color: #f5f5f5;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  box-sizing: border-box;
+  align-items: center;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  padding: 0 32rpx;
+  background-color: #ffffff;
+  border-bottom: 1rpx solid #ececf0;
+}
+
+.switch-item {
   position: relative;
+  margin-right: 48rpx;
+  padding: 20rpx 0 22rpx;
+  font-size: 28rpx;
+  color: #5b616b;
 }
 
-// 主内容容器：仅做布局承载，不锁死高度
-.content-container {
-  flex: 1;
-  padding: 15px;
-  padding-right: env(safe-area-inset-right) !important;
-  padding-left: env(safe-area-inset-left) !important;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
+.switch-item.on {
+  color: #17191c;
+  font-weight: 600;
 }
 
-// 表单容器
-.form-container {
-  background-color: #fff;
-  padding: 20px 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  width: 100%;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 2;
-  // height 交给内容：内容多高就多高，超出屏幕的部分由页面滚动来展示
+.switch-item.on::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background-color: #17191c;
 }
 
-.form-item {
-  width: 100%;
-  box-sizing: border-box;
-  margin-bottom: 20px;
+.pane {
+  background-color: #ffffff;
 }
 
-// 文章名称输入样式：适配同行保存按钮
-.name-item {
-  .uni-forms-item__label {
-    font-size: 15px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 10px;
-    display: block;
-  }
-
-  .name-input-wrapper {
-    display: flex;
-    align-items: center;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 0 12px;
-    border: 1px solid #e9ecef;
-    transition: all 0.3s ease;
-    gap: 8px;
-
-    .name-input {
-      flex: 1; // 输入框占满剩余空间
-      height: 48px;
-      padding: 0 8px;
-      border: none;
-      background: transparent;
-      font-size: 15px;
-      color: #2c3e50;
-      outline: none;
-      box-sizing: border-box;
-      max-width: none;
-
-      &::placeholder {
-        color: #adb5bd;
-        font-size: 14px;
-      }
-
-      &:focus {
-        background-color: #fff;
-      }
-    }
-
-    .name-input-icon {
-      font-size: 18px;
-      margin-right: 4px;
-      color: #e03c00;
-      flex-shrink: 0;
-    }
-
-    // 保存按钮样式：适配行内显示
-    .save-btn {
-      flex-shrink: 0; // 固定宽度不收缩
-      width: 100px;
-      height: 36px;
-      line-height: 36px;
-      // 与全站按钮统一：主色渐变 + 胶囊圆角 + 600 字重
-      border-radius: 18px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
-      color: #fff;
-      padding: 0;
-      margin: 0;
-
-      &:active {
-        opacity: 0.92;
-      }
-
-      // 禁用态：浅灰底 + 灰字，比原来的 #ccc 更清楚
-      &[disabled] {
-        background: #f1f5f9;
-        color: #9ca3af;
-        cursor: not-allowed;
-      }
-    }
-  }
-}
-
-// 内容编辑区样式（双独立滚动）
-.content-item {
-  & > view {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .content-section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #495057;
-    margin: 15px 0 10px;
-    display: flex;
-    align-items: center;
-
-    &::before {
-      content: '';
-      display: inline-block;
-      width: 4px;
-      height: 14px;
-      background-color: #e03c00;
-      margin-right: 6px;
-      border-radius: 2px;
-    }
-  }
-
-  // 预览区样式
-  .preview-wrapper {
-    width: 100%;
-    height: 250px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    border: 1px solid #dee2e6;
-    overflow: hidden !important;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 3;
-  }
-
-  .preview-scroll {
-    width: 100%;
-    height: 100%;
-    background-color: #f8f9fa;
-    padding: 15px;
-    box-sizing: border-box;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-    z-index: 4;
-
-    // 预览区滚动条（仅内部生效，不影响全局）
-    &::-webkit-scrollbar {
-      width: 6px;
-      margin-right: 2px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: #e9ecef;
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #adb5bd;
-      border-radius: 3px;
-
-      &:hover {
-        background: #868e96;
-      }
-    }
-  }
-
-  // 编辑区样式
-  .editor-wrapper {
-    width: 100%;
-    height: 400px; // 适度加高，适配无限制输入
-    border-radius: 10px;
-    border: 1px solid #dee2e6;
-    overflow: hidden !important;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 3;
-    touch-action: pan-y;
-  }
-
-  .editor-scroll {
-    width: 100%;
-    height: 100%;
-    background-color: #fff;
-    box-sizing: border-box;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-    z-index: 4;
-    touch-action: pan-y;
-
-    // 编辑区滚动条（仅内部生效，不影响全局）
-    &::-webkit-scrollbar {
-      width: 6px;
-      margin-right: 2px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: #f8f9fa;
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #e03c00;
-      border-radius: 3px;
-
-      &:hover {
-        background: #b33000;
-      }
-    }
-
-    // 编辑框样式：彻底移除字数限制
-    .content-textarea {
-      width: 100%;
-      height: 100% !important;
-      padding: 15px;
-      border: none;
-      background-color: transparent;
-      font-size: 15px;
-      line-height: 1.6;
-      resize: none !important;
-      box-sizing: border-box;
-      outline: none;
-      color: #2c3e50;
-      overflow: hidden !important;
-      max-height: none !important;
-
-      &::placeholder {
-        color: #adb5bd;
-        font-size: 14px;
-      }
-
-      &:focus {
-        box-shadow: 0 0 0 3px rgba(224, 60, 0, 0.1);
-      }
-    }
-  }
-}
-
-// Markdown渲染样式
-.detail-content {
-  font-size: 14px;
-  color: #333;
-  line-height: 1.6;
-  margin-bottom: 0;
+.pane--preview {
+  height: 900rpx;
+  padding: 8rpx 32rpx 40rpx;
 }
 
 .markdown-body {
   width: 100%;
-  box-sizing: border-box;
-  line-height: 1.8;
-  font-size: 14px;
-  color: #333;
 }
 
-.md-h1 {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 20px 0 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
+.preview-empty {
+  padding: 160rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: #9aa0a8;
 }
 
-.md-h2 {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 18px 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #eee;
+.save-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background-color: #ffffff;
+  border-top: 1rpx solid #ececf0;
 }
 
-.md-h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 16px 0 6px;
+.save-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #ff6a33;
+  border: none;
+  border-radius: 12rpx;
 }
 
-.md-h4 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 14px 0 6px;
+.save-btn:active {
+  background-color: #ee5a22;
 }
 
-.md-h5 {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 12px 0 4px;
-}
-
-.md-h6 {
-  font-size: 14px;
-  font-weight: 600;
-  color: #666;
-  margin: 12px 0 4px;
-}
-
-.md-p {
-  margin: 10px 0;
-  text-align: justify;
-}
-
-.md-ul {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-.md-ol {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-.md-em {
-  font-style: italic;
-  color: #666;
-}
-
-.md-pre {
-  margin: 15px 0;
-  overflow-x: auto;
-}
-
-.md-code {
-  padding: 2px 4px;
-  border-radius: 4px;
-  background-color: #f5f5f5;
-  color: #e53935;
-}
-
-// 代码高亮样式穿透（规范写法）
-::v-deep .markdown-body .hljs {
-  padding: 0;
-  background: transparent;
-  line-height: 1.5;
-  font-size: 13px;
-  font-family: Consolas, Monaco, monospace;
+.save-btn[disabled] {
+  color: #9aa0a8;
+  background-color: #eceef1;
 }
 </style>

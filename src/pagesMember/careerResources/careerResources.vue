@@ -736,7 +736,7 @@ $bg: #f7f8fa;
   margin-top: 20rpx;
   padding: 20rpx 24rpx;
   border-radius: 20rpx;
-  background: linear-gradient(135deg, #f7a97c 0%, #ef8250 100%);
+  background: #f7a97c;
   box-shadow: 0 6rpx 18rpx rgba(239, 125, 74, 0.16);
 }
 
@@ -750,7 +750,7 @@ $bg: #f7f8fa;
 
 .hero-desc {
   display: block;
-  font-size: 23rpx;
+  font-size: 24rpx;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.94);
 }
@@ -760,7 +760,7 @@ $bg: #f7f8fa;
   margin-top: 12rpx;
   padding-top: 12rpx;
   border-top: 1rpx solid rgba(255, 255, 255, 0.32);
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -806,7 +806,7 @@ $bg: #f7f8fa;
 }
 
 .theme-label {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: $text-2;
   font-weight: 500;
   text-align: center;
@@ -816,7 +816,7 @@ $bg: #f7f8fa;
 /* 分类辅助说明 */
 .theme-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-3;
   line-height: 1.6;
   padding: 16rpx 8rpx 0;
@@ -873,7 +873,7 @@ $bg: #f7f8fa;
 }
 
 .search-clear-icon {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1;
 }
@@ -910,7 +910,7 @@ $bg: #f7f8fa;
 
 .tag-chip {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-2;
   background: $line;
   border-radius: 22rpx;
@@ -943,7 +943,7 @@ $bg: #f7f8fa;
 }
 
 .section-hint {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-3;
 }
 
@@ -970,12 +970,12 @@ $bg: #f7f8fa;
 
 .filter-text {
   flex: 1;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: $primary;
 }
 
 .filter-reset {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: $text-2;
   padding-left: 20rpx;
   text-decoration: underline;
@@ -1008,7 +1008,7 @@ $bg: #f7f8fa;
 
 .res-kind {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: 24rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   background: $line;
@@ -1037,7 +1037,7 @@ $bg: #f7f8fa;
 
 .res-meta {
   display: block;
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: $text-3;
   margin-bottom: 12rpx;
 }
@@ -1060,7 +1060,7 @@ $bg: #f7f8fa;
 
 .res-advice-label {
   display: block;
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: $primary;
   margin-bottom: 6rpx;
@@ -1068,7 +1068,7 @@ $bg: #f7f8fa;
 
 .res-advice-text {
   display: block;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: $text-2;
   line-height: 1.7;
 }
@@ -1082,7 +1082,7 @@ $bg: #f7f8fa;
 
 .res-tag-mini {
   flex-shrink: 0;
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: $text-2;
   background: $line;
   border-radius: 20rpx;
@@ -1122,7 +1122,7 @@ $bg: #f7f8fa;
 
 .copy-hint {
   display: block;
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: $text-3;
   margin-top: 12rpx;
   line-height: 1.6;
@@ -1194,7 +1194,7 @@ $bg: #f7f8fa;
 
 .disclaimer-item {
   display: block;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: $text-3;
   line-height: 1.8;
   margin-bottom: 8rpx;
@@ -1203,7 +1203,7 @@ $bg: #f7f8fa;
 /* 「使用指引」折叠：展开链接 + 折叠正文块 */
 .res-advice-toggle {
   margin-left: 12rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ff7239;
 }
 .res-advice-body {
@@ -1224,7 +1224,7 @@ $bg: #f7f8fa;
   margin-right: 14rpx;
 }
 .ai-btn-text {
-  font-size: 22rpx;
+  font-size: 28rpx;
   color: #2563eb;
 }
 
@@ -1250,7 +1250,7 @@ $bg: #f7f8fa;
 .hero-help {
   display: inline-block;
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #fff2ea;
   text-decoration: underline;
 }

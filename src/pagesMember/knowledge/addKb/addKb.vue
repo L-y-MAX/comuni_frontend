@@ -421,4 +421,29 @@ const submit = async () => {
     transform: scale(0.98);
   }
 }
+/* ===== 小范围收敛：去掉输入框内小图标、过期提示与胶囊按钮 ===== */
+.input-icon,
+.textarea-icon {
+  display: none;
+}
+
+.form-textarea {
+  padding-left: 0;
+}
+
+.field-hint.tip {
+  display: none;
+}
+
+.field-hint {
+  font-size: 24rpx;
+}
+
+.perm-card {
+  border-radius: 12rpx;
+}
+
+.submit-btn {
+  border-radius: 12rpx;
+}
 </style>

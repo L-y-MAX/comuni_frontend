@@ -78,7 +78,7 @@ const copyContactEmail = () => {
   align-items: center;
   padding: 50rpx 30rpx;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #eef1f5 100%);
+  background: #f5f7fa;
 }
 
 .register-card {
@@ -127,7 +127,7 @@ const copyContactEmail = () => {
   line-height: 80rpx;
   font-size: 30rpx;
   border-radius: 40rpx;
-  background: linear-gradient(90deg, #8ea1e1 0%, #7b93d4 100%);
+  background: #ff6a33;
   color: #fff;
   margin-bottom: 30rpx;
 }
@@ -140,7 +140,7 @@ const copyContactEmail = () => {
   .login-link,
   .forgot-link {
     font-size: 26rpx;
-    color: #8ea1e1;
+    color: #ff6a33;
     text-decoration: none;
   }
 }

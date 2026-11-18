@@ -380,7 +380,7 @@ $border-radius-small: 16rpx;
 // 顶部区域设计 - 写实风渐变背景
 .top-section {
   position: relative;
-  background: linear-gradient(135deg, #e0e7ff 0%, #d1fec7 100%);
+  background: #e0e7ff;
   padding: 60rpx 24rpx 120rpx;
   border-radius: 0 0 $border-radius-large $border-radius-large;
   margin-bottom: 4rpx;
@@ -566,12 +566,7 @@ $border-radius-small: 16rpx;
     left: -100%; // 初始在左侧外部
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(167, 139, 250, 0.08) 50%,
-      transparent 100%
-    );
+    background: transparent;
     transition: left 0.5s ease; // 控制滑动动画时长和缓动效果
     pointer-events: none; // 避免遮罩层影响点击事件
   }
@@ -632,7 +627,7 @@ $border-radius-small: 16rpx;
     left: 0;
     right: 0;
     height: 4rpx;
-    background: linear-gradient(90deg, $primary-color 0%, $secondary-color 100%);
+    background: $primary-color;
     transform: scaleX(0);
     transition: transform 0.3s ease;
   }
@@ -648,18 +643,18 @@ $border-radius-small: 16rpx;
 }
 
 .vip-menu-card {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%);
+  background: rgba(59, 130, 246, 0.05);
   border-color: rgba(59, 130, 246, 0.2);
 
   &::before {
-    background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+    background: #fbbf24;
   }
 }
 
 .menu-card-icon {
   width: 80rpx;
   height: 80rpx;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
+  background: rgba(59, 130, 246, 0.1);
   border-radius: $border-radius-medium;
   display: flex;
   align-items: center;
@@ -796,12 +791,7 @@ $border-radius-small: 16rpx;
     left: -100%; // 初始在左侧外部
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(239, 68, 68, 0.1) 50%,
-      transparent 100%
-    );
+    background: transparent;
     transition: left 0.5s ease; // 控制滑动动画时长和缓动效果
   }
 
@@ -936,5 +926,44 @@ $border-radius-small: 16rpx;
   .forms-section {
     margin: -40rpx 0 32rpx 0;
   }
+}
+/* ===== 小范围收敛：减阴影、统一主色 ===== */
+.top-section {
+  background: #fff7f2;
+}
+
+.user-avatar-section,
+.form-card,
+.upgrade-card,
+.logout-button,
+.split-login-button {
+  box-shadow: none;
+  border: 1rpx solid #f0f1f3;
+}
+
+.form-item.active {
+  background: #fafbfc;
+  box-shadow: none;
+  transform: none;
+}
+
+.user-name {
+  font-weight: 600;
+}
+
+.upgrade-button,
+.account-login-part {
+  background: #ff6a33;
+  border-color: #ff6a33;
+}
+
+.upgrade-button:active,
+.account-login-part:active {
+  background: #ee5a22;
+}
+
+.logout-text {
+  color: #e5484d;
+  font-weight: 500;
 }
 </style>

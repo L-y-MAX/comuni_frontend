@@ -268,18 +268,13 @@
         @click="onMainButton"
         :disabled="!isLoading && (!inputContent.trim() || inputContent.length > maxInputLength)"
       >
-        <image
-          v-if="isLoading && !iconImgBroken"
-          class="send-icon"
-          src="https://youupro.xyz/ly/static/icons/stop.png"
-          mode="aspectFit"
-        />
-        <text
-          v-else-if="isLoading"
-          class="send-stop-text"
+        <view
+          v-if="isLoading"
+          class="stop-bars"
         >
-          停止
-        </text>
+          <view class="stop-bar" />
+          <view class="stop-bar" />
+        </view>
         <image
           v-else
           class="send-icon"
@@ -1171,7 +1166,7 @@ onShareTimeline(() => {
   margin: 10rpx 20rpx 30rpx;
   padding: 24rpx;
   border-radius: 20rpx;
-  background: linear-gradient(135deg, rgba(255, 90, 48, 0.06) 0%, rgba(255, 90, 48, 0.02) 100%);
+  background: rgba(255, 90, 48, 0.06);
   border: 2rpx solid rgba(255, 90, 48, 0.18);
 }
 
@@ -1202,7 +1197,7 @@ onShareTimeline(() => {
   line-height: 72rpx;
   font-size: 28rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+  background: #ff8a54;
   border-radius: 36rpx;
   border: none;
 }
@@ -1405,7 +1400,7 @@ onShareTimeline(() => {
 }
 
 .mount-btn {
-  font-size: 22rpx;
+  font-size: 28rpx;
   color: #6b7280;
   border: 2rpx solid #e5e7eb;
   border-radius: 24rpx;
@@ -1414,7 +1409,7 @@ onShareTimeline(() => {
 
 .mount-chip {
   max-width: 100%;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ff7239;
   background: #fff7f2;
   border: 2rpx solid #ffd0bb;
@@ -1437,13 +1432,26 @@ onShareTimeline(() => {
   color: #ffffff;
   background: #2563eb;
 }
-/* 发送按钮的停止态 */
+/* 发送按钮的停止态：白底红边 + 红色暂停图标 */
 .send-btn.stopping {
+  background: #ffffff;
+  border-color: #ef4444;
+}
+.stop-bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stop-bar {
+  width: 8rpx;
+  height: 28rpx;
+  margin: 0 4rpx;
   background: #ef4444;
+  border-radius: 2rpx;
 }
 .send-stop-text {
   font-size: 24rpx;
-  color: #ffffff;
+  color: #ef4444;
   line-height: 1;
 }
 
@@ -1479,7 +1487,7 @@ onShareTimeline(() => {
 .source-card-sub {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #94a3b8;
 }
 
@@ -1512,7 +1520,7 @@ onShareTimeline(() => {
 .msg-icon-label {
   display: none; /* 默认不显示文字 */
   margin-left: 8rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #475569;
   white-space: nowrap;
 }
@@ -1536,7 +1544,7 @@ onShareTimeline(() => {
 .mount-help {
   margin-left: auto;
   padding: 6rpx 16rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #2563eb;
   background: #eff6ff;
   border-radius: 999rpx;
@@ -1593,14 +1601,14 @@ onShareTimeline(() => {
   margin-left: 16rpx;
   padding: 14rpx 30rpx;
   border-radius: 999rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
 }
 .guide-btn.ghost {
-  color: #475569;
-  background: #f1f5f9;
+  color: #5b616b;
+  background: #f2f3f5;
 }
 .guide-btn.primary {
   color: #ffffff;
-  background: #2563eb;
+  background: #ff6a33;
 }
 </style>

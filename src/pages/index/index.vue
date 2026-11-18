@@ -743,7 +743,7 @@ onMounted(() => {
   width: 90%;
   max-width: 680rpx;
   height: 80rpx;
-  background: linear-gradient(90deg, #ff4500, #ff6347);
+  background: #ff4500;
   border-radius: 40rpx;
   padding: 2rpx; /* 控制橙线粗细 */
   box-sizing: border-box;
@@ -899,7 +899,7 @@ onMounted(() => {
   border: 1px solid #ff7239;
   border-radius: 8rpx;
   padding: 6rpx 12rpx;
-  font-size: 22rpx;
+  font-size: 28rpx;
   height: auto;
   line-height: 1.2;
   flex-shrink: 0;
@@ -954,7 +954,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #999;
   flex-wrap: wrap;
   gap: 8rpx;
@@ -966,7 +966,7 @@ onMounted(() => {
   color: #fff;
   border-radius: 8rpx;
   padding: 6rpx 12rpx;
-  font-size: 22rpx;
+  font-size: 28rpx;
   height: auto;
   line-height: 1.2;
   border: none;
@@ -986,7 +986,7 @@ onMounted(() => {
 // 新增时间文本样式
 .card-footer {
   .card-time {
-    font-size: 22rpx;
+    font-size: 24rpx;
     color: #999;
     margin: 0 8rpx;
   }
@@ -1005,7 +1005,7 @@ onMounted(() => {
 // 新增时间样式
 .card-footer .card-time {
   margin: 0 8rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #999;
 }
 
@@ -1291,7 +1291,7 @@ onMounted(() => {
 }
 
 .resource-entry-desc {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -1350,7 +1350,7 @@ onMounted(() => {
 }
 
 .local-count {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -1386,7 +1386,7 @@ onMounted(() => {
 
 .local-card-kind {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: 24rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   background: #f1f5f9;
@@ -1415,7 +1415,7 @@ onMounted(() => {
 
 .local-card-meta {
   display: block;
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-bottom: 12rpx;
 }
@@ -1434,7 +1434,7 @@ onMounted(() => {
 }
 
 .local-tag {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #6b7280;
   background: #f1f5f9;
   border-radius: 20rpx;
@@ -1466,7 +1466,7 @@ onMounted(() => {
 
 .site-login-text {
   display: block;
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.7;
   margin-bottom: 16rpx;
@@ -1489,5 +1489,74 @@ onMounted(() => {
   font-size: 25rpx;
   font-weight: 600;
   color: #ffffff;
+}
+/* ===== 小范围收敛：去掉渐变描边、彩色小标签与重投影 ===== */
+.search-input-wrapper {
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  padding: 2rpx;
+}
+
+.resource-entry {
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.04);
+}
+
+.resource-entry-desc {
+  font-size: 26rpx;
+  color: #9aa0a8;
+}
+
+.resource-entry-icon-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.local-card-kind,
+.local-card-kind.gov-doc,
+.local-card-kind.official-platform,
+.local-card-kind.media,
+.local-card-kind.own {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: #9aa0a8;
+  font-size: 24rpx;
+}
+
+.local-tag {
+  background: transparent;
+  padding: 0;
+  margin-right: 16rpx;
+  color: #9aa0a8;
+  font-size: 24rpx;
+}
+
+.add-btn.add-btn,
+.view-btn {
+  padding: 8rpx 16rpx;
+  font-size: 28rpx;
+  border-radius: 8rpx;
+}
+
+.site-login-btn {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.site-login-btn-text {
+  color: #ff6a33;
+  font-size: 28rpx;
+}
+
+.section-title {
+  border-left: none;
+  padding-left: 0;
+  font-weight: 600;
+}
+
+.result-card {
+  box-shadow: none;
+  border: none;
 }
 </style>

@@ -256,7 +256,7 @@ const goProfile = () => {
 .radar-sub {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #888888;
 }
 
@@ -294,22 +294,22 @@ const goProfile = () => {
 }
 
 .legend-dot.tier-high {
-  background: radial-gradient(circle at 50% 50%, #ff9771 0%, #ffd9c7 100%);
+  background: #ff9771;
   border: 1rpx solid #e8703f;
 }
 
 .legend-dot.tier-mid {
-  background: radial-gradient(circle at 50% 50%, #ffb347 0%, #ffd291 100%);
+  background: #ffb347;
   border: 1rpx solid #dfa030;
 }
 
 .legend-dot.tier-low {
-  background: radial-gradient(circle at 50% 50%, #e2e2e2 0%, #f1f1f1 100%);
+  background: #e2e2e2;
   border: 1rpx solid #b9bfc9;
 }
 
 .legend-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #666666;
 }
 
@@ -319,7 +319,7 @@ const goProfile = () => {
 }
 
 .hint-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #999999;
 }
 
@@ -344,7 +344,7 @@ const goProfile = () => {
   line-height: 76rpx;
   font-size: 28rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff8a54 0%, #ff7239 100%);
+  background: #ff8a54;
   border-radius: 38rpx;
   border: none;
 }

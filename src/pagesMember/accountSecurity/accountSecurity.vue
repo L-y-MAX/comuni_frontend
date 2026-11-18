@@ -263,7 +263,7 @@ onLoad(() => {
 .err {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #ef4444;
 }
 
@@ -272,7 +272,7 @@ onLoad(() => {
   height: 92rpx;
   line-height: 92rpx;
   border-radius: 46rpx;
-  background: linear-gradient(135deg, #ff9a6b, #ff7a45);
+  background: #ff9a6b;
   color: #ffffff;
   font-size: 30rpx;
   font-weight: 600;

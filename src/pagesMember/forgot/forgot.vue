@@ -157,7 +157,7 @@ const copyContactEmail = () => {
   font-size: 30rpx;
   font-weight: 500;
   color: #fff;
-  background: linear-gradient(135deg, #9fa8da 0%, #7986cb 100%);
+  background: #ff6a33;
   border-radius: 50rpx;
   margin-top: 50rpx;
   border: none;
@@ -172,7 +172,7 @@ const copyContactEmail = () => {
 }
 
 .link {
-  color: #6b85d8;
+  color: #ff6a33;
   margin-left: 10rpx;
   text-decoration: underline;
 }

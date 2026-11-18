@@ -572,7 +572,7 @@ onShareAppMessage(() => ({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #fff5f1 0%, #fff 100%);
+  background: #fff5f1;
   border-color: #ffd9c7;
 }
 
@@ -584,7 +584,7 @@ onShareAppMessage(() => ({
 }
 
 .me-sub {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   margin-top: 8rpx;
   display: block;
@@ -604,7 +604,7 @@ onShareAppMessage(() => ({
 }
 
 .me-score-label {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -627,7 +627,7 @@ onShareAppMessage(() => ({
 }
 
 .source-note {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin-top: 10rpx;
@@ -635,7 +635,7 @@ onShareAppMessage(() => ({
 }
 
 .source-warn {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #b45309;
   line-height: 1.6;
   margin-top: 10rpx;
@@ -673,7 +673,7 @@ onShareAppMessage(() => ({
 }
 
 .result-industry {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #6b7280;
   background: #f1f5f9;
   border-radius: 6rpx;
@@ -700,7 +700,7 @@ onShareAppMessage(() => ({
 }
 
 .result-level {
-  font-size: 21rpx;
+  font-size: 24rpx;
   font-weight: 600;
   margin-top: 4rpx;
 }
@@ -739,13 +739,13 @@ onShareAppMessage(() => ({
 }
 
 .cat-label {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #6b7280;
   margin-top: 4rpx;
 }
 
 .cat-weight {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #cbd5e1;
   margin-top: 2rpx;
 }
@@ -768,7 +768,7 @@ onShareAppMessage(() => ({
 }
 
 .result-insufficient-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   line-height: 1.6;
   color: #b45309;
 }
@@ -790,7 +790,7 @@ onShareAppMessage(() => ({
 }
 
 .expand-arrow {
-  font-size: 18rpx;
+  font-size: 24rpx;
   color: #ff4500;
   margin-left: 10rpx;
   transition: transform 0.3s ease;
@@ -845,7 +845,7 @@ onShareAppMessage(() => ({
 }
 
 .legend-text {
-  font-size: 19rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   margin-left: 6rpx;
 }
@@ -873,7 +873,7 @@ onShareAppMessage(() => ({
 }
 
 .cmp-status {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #dc2626;
 
   &.ok {
@@ -911,7 +911,7 @@ onShareAppMessage(() => ({
 }
 
 .cmp-num {
-  font-size: 19rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
@@ -923,7 +923,7 @@ onShareAppMessage(() => ({
 }
 
 .chip {
-  font-size: 22rpx;
+  font-size: 24rpx;
   border-radius: 8rpx;
   padding: 4rpx 14rpx;
   background: #f1f5f9;
@@ -937,7 +937,7 @@ onShareAppMessage(() => ({
 }
 
 .gap-line {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #4b5563;
   line-height: 1.7;
   display: block;
@@ -958,7 +958,7 @@ onShareAppMessage(() => ({
   border-radius: 50%;
   background: #fff1eb;
   color: #ff4500;
-  font-size: 20rpx;
+  font-size: 24rpx;
   font-weight: 700;
   flex-shrink: 0;
   margin-right: 14rpx;
@@ -978,13 +978,13 @@ onShareAppMessage(() => ({
 }
 
 .meta-line {
-  font-size: 21rpx;
+  font-size: 24rpx;
   color: #9ca3af;
 }
 
 // ========== 生涯报告入口 ==========
 .report-entry {
-  background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%);
+  background: #f0f9ff;
   border-color: #bae6fd;
 }
 
@@ -996,7 +996,7 @@ onShareAppMessage(() => ({
 }
 
 .report-entry-desc {
-  font-size: 23rpx;
+  font-size: 24rpx;
   color: #6b7280;
   line-height: 1.6;
   margin: 10rpx 0 20rpx;
@@ -1028,7 +1028,7 @@ onShareAppMessage(() => ({
 }
 
 .page-footer-source .source-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #9ca3af;
   font-style: italic;
   line-height: 1.5;

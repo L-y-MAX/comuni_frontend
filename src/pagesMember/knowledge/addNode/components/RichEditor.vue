@@ -1,6 +1,6 @@
 <template>
   <view class="rich-editor">
-    <!-- 工具栏：先选中文字，再点按钮；不需要记住任何 Markdown 语法 -->
+    <!-- 工具栏：先选中文字，再点上面的工具 -->
     <scroll-view
       v-if="!fallback"
       class="re-toolbar"
@@ -9,17 +9,17 @@
     >
       <view class="re-tools">
         <text
-          class="re-btn bold"
+          class="re-btn re-btn--bold"
           :class="{ on: active.bold }"
           @click="fmt('bold')"
         >B</text>
         <text
-          class="re-btn italic"
+          class="re-btn re-btn--italic"
           :class="{ on: active.italic }"
           @click="fmt('italic')"
         >I</text>
         <text
-          class="re-btn underline"
+          class="re-btn re-btn--underline"
           :class="{ on: active.underline }"
           @click="fmt('underline')"
         >U</text>
@@ -27,19 +27,23 @@
         <view class="re-sep" />
 
         <text
+          class="re-btn"
+          :class="{ on: active.header }"
+          @click="toggleHeader"
+        >标题</text>
+        <text
           v-for="s in SIZES"
           :key="s.value"
-          class="re-btn size"
+          class="re-btn"
           :class="{ on: active.fontSize === s.value }"
           @click="setSize(s.value)"
         >{{ s.label }}</text>
 
         <view class="re-sep" />
 
-        <text class="re-btn" @click="fmt('header', 'H2')">标题</text>
-        <text class="re-btn" @click="fmt('list', 'bullet')">· 列表</text>
+        <text class="re-btn" @click="fmt('list', 'bullet')">列表</text>
         <text class="re-btn" @click="undo">撤销</text>
-        <text class="re-btn" @click="clearFormat">清格式</text>
+        <text class="re-btn" @click="clearFormat">清除格式</text>
       </view>
     </scroll-view>
 
@@ -90,7 +94,7 @@ const props = withDefaults(
   }>(),
   {
     html: '',
-    placeholder: '在这里写正文：选中文字后点上方按钮即可加粗、调字号',
+    placeholder: '从这里开始写正文',
     maxlength: 500000,
   }
 )
@@ -104,9 +108,9 @@ const emit = defineEmits<{
 // 12px / 14px / 16px / 18px / 20px / 22px / 24px。
 // 原「标准」用了 17px（非法值）会被静默忽略，表现为"点了字号没反应"。
 const SIZES = [
-  { label: '小字', value: '14px' },
-  { label: '标准', value: '16px' },
-  { label: '大字', value: '20px' },
+  { label: '小', value: '14px' },
+  { label: '正文', value: '16px' },
+  { label: '大', value: '20px' },
   { label: '特大', value: '24px' },
 ]
 
@@ -242,6 +246,7 @@ const onStatusChange = (e: any) => {
     bold: !!d.bold,
     italic: !!d.italic,
     underline: !!d.underline,
+    header: !!d.header,
     fontSize: typeof d.fontSize === 'string' ? d.fontSize : '',
   }
 }
@@ -253,10 +258,11 @@ const needCtx = (): any => {
   return null
 }
 
-const fmt = (name: string, value?: string) => needCtx()?.format(name, value)
+const fmt = (name: string, value?: any) => needCtx()?.format(name, value)
 const setSize = (value: string) => fmt('fontSize', value)
 const undo = () => needCtx()?.undo()
 const clearFormat = () => needCtx()?.removeFormat()
+const toggleHeader = () => fmt('header', active.value.header ? false : 'H2')
 
 /**
  * 外部赋值（填充示例、加载已有文章）要同步进编辑器；
@@ -287,106 +293,87 @@ defineExpose({
 <style scoped lang="scss">
 .rich-editor {
   width: 100%;
-  border: 1rpx solid #e5e7eb;
-  border-radius: 12rpx;
   background: #ffffff;
-  overflow: hidden;
 }
 
 .re-toolbar {
   width: 100%;
-  background: #f8fafc;
-  border-bottom: 1rpx solid #e5e7eb;
   white-space: nowrap;
+  background: #ffffff;
+  border-bottom: 1rpx solid #f2f3f5;
 }
 
 .re-tools {
   display: flex;
   align-items: center;
-  padding: 12rpx 14rpx;
+  padding: 8rpx 20rpx;
 }
 
 .re-btn {
   flex: none;
-  min-width: 64rpx;
-  height: 60rpx;
-  line-height: 60rpx;
-  text-align: center;
+  height: 64rpx;
+  line-height: 64rpx;
   padding: 0 16rpx;
-  margin-right: 10rpx;
-  border-radius: 10rpx;
-  font-size: 26rpx;
-  color: #334155;
-  background: #ffffff;
-  border: 1rpx solid #e2e8f0;
+  font-size: 28rpx;
+  color: #5b616b;
 }
 
 .re-btn.on {
-  color: #ffffff;
-  background: #2563eb;
-  border-color: #2563eb;
+  color: #ff6a33;
+  font-weight: 600;
 }
 
-.re-btn.bold {
+.re-btn--bold {
   font-weight: 700;
 }
 
-.re-btn.italic {
+.re-btn--italic {
   font-style: italic;
 }
 
-.re-btn.underline {
+.re-btn--underline {
   text-decoration: underline;
-}
-
-.re-btn.size {
-  font-size: 24rpx;
 }
 
 .re-sep {
   flex: none;
   width: 1rpx;
-  height: 36rpx;
-  background: #e2e8f0;
-  margin: 0 12rpx 0 2rpx;
+  height: 26rpx;
+  background: #e8eaee;
+  margin: 0 12rpx;
 }
 
-/* 小程序 editor 需要明确高度，否则不显示内容区 */
+/* 小程序 editor 必须给明确高度，否则内容区不显示 */
 .re-body {
   width: 100%;
-  height: 560rpx;
+  height: 620rpx;
   box-sizing: border-box;
-  padding: 20rpx 22rpx;
+  padding: 28rpx 32rpx;
   font-size: 30rpx;
-  line-height: 1.7;
-  color: #333333;
+  line-height: 1.8;
+  color: #33373d;
 }
 
-/* 降级模式 */
+/* 降级模式：拿不到编辑器上下文时至少还能写 */
 .re-fallback {
-  padding: 16rpx 18rpx;
+  padding: 24rpx 32rpx 32rpx;
 }
 
 .re-fallback-tip {
   display: block;
-  font-size: 22rpx;
-  color: #b45309;
-  background: #fffbeb;
-  border: 1rpx solid #fde68a;
-  border-radius: 8rpx;
-  padding: 10rpx 14rpx;
-  margin-bottom: 12rpx;
-  line-height: 1.5;
+  margin-bottom: 16rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+  line-height: 1.6;
 }
 
 .re-fallback-input {
   width: 100%;
-  height: 480rpx;
-  box-sizing: border-box;
-  padding: 18rpx 20rpx;
+  height: 520rpx;
+  padding: 0;
   font-size: 30rpx;
-  line-height: 1.7;
-  color: #333333;
+  line-height: 1.8;
+  color: #33373d;
   background: #ffffff;
 }
 </style>
