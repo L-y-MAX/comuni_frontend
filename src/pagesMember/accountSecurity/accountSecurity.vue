@@ -2,7 +2,6 @@
   <view class="page">
     <view class="card">
       <view class="card-title">修改登录密码</view>
-      <view class="card-desc">修改成功后需要使用新密码重新登录</view>
 
       <!-- 当前密码 -->
       <view class="field">
@@ -84,13 +83,6 @@
       >
         {{ submitting ? '提交中…' : '确认修改' }}
       </button>
-    </view>
-
-    <view class="tips">
-      <text class="tips-title">安全提示</text>
-      <text class="tips-item">· 不要在多个平台使用相同密码</text>
-      <text class="tips-item">· 修改成功后当前登录状态会失效，请重新登录</text>
-      <text class="tips-item">· 如果忘记当前密码，可在「忘记密码」页通过邮箱找回</text>
     </view>
   </view>
 </template>
@@ -218,12 +210,6 @@ onLoad(() => {
   color: #1f2937;
 }
 
-.card-desc {
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: #9aa3b2;
-}
-
 .field {
   margin-top: 28rpx;
 }
@@ -302,25 +288,4 @@ onLoad(() => {
   }
 }
 
-.tips {
-  margin-top: 28rpx;
-  padding: 24rpx 28rpx;
-  background: #ffffff;
-  border-radius: 16rpx;
-}
-
-.tips-title {
-  display: block;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 10rpx;
-}
-
-.tips-item {
-  display: block;
-  font-size: 23rpx;
-  color: #8b93a1;
-  line-height: 1.8;
-}
 </style>
