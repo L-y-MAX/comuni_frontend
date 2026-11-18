@@ -102,6 +102,17 @@
       ]
     },
     {
+      "root": "pagesMember/accountSecurity",
+      "pages": [
+        {
+          "path": "accountSecurity",
+          "style": {
+            "navigationBarTitleText": "账号安全"
+          }
+        }
+      ]
+    },
+    {
       "root": "pagesMember/register",
       "pages": [
         {
