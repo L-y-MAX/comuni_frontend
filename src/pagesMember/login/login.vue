@@ -59,7 +59,7 @@
             />
             <input
               type="text"
-              :password="true"
+              :password="!showPassword"
               v-model="password"
               placeholder="请输入密码"
               class="input-field"
@@ -67,6 +67,19 @@
               @focus="passwordFocused = true"
               @blur="passwordFocused = false"
             />
+            <!-- 密码可见性切换：点一下明文，再点变回密文 -->
+            <view
+              class="pwd-toggle"
+              hover-class="pwd-toggle-active"
+              :hover-stay-time="80"
+              @click.stop="togglePassword"
+            >
+              <uni-icons
+                :type="showPassword ? 'eye-filled' : 'eye-slash-filled'"
+                size="19"
+                :color="showPassword ? '#4c3fe0' : '#9ca3af'"
+              />
+            </view>
           </view>
           <text
             v-if="passwordError"
@@ -178,6 +191,13 @@ const usernameError = ref('')
 const passwordError = ref('')
 const usernameFocused = ref(false)
 const passwordFocused = ref(false)
+/** 密码是否明文显示（眼睛按钮切换） */
+const showPassword = ref(false)
+
+/** 切换密码可见性 */
+const togglePassword = (): void => {
+  showPassword.value = !showPassword.value
+}
 
 // ========== 验证逻辑 ==========
 const validateUsername = (): boolean => {
@@ -593,6 +613,19 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .password-icon {
   width: 32rpx;
   height: 32rpx;
+}
+
+/* 密码可见性切换按钮 */
+.pwd-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 4rpx 0 4rpx 16rpx;
+}
+
+.pwd-toggle-active {
+  opacity: 0.55;
 }
 
 .input-field {
