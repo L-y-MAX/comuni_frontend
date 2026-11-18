@@ -1,4 +1,12 @@
 {
+  // uni-ui 组件自动引入：项目用 npm 安装 @dcloudio/uni-ui，
+  // 必须配 easycom，否则 <uni-icons>、<uni-forms> 等会被当成未知标签而不渲染。
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
   "pages": [
     //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
     {
