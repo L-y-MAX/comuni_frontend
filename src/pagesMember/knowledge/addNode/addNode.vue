@@ -96,7 +96,6 @@ import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'
 import json from 'highlight.js/lib/languages/json'
 import bash from 'highlight.js/lib/languages/bash'
-import python from 'highlight.js/lib/languages/python'
 import java from 'highlight.js/lib/languages/java'
 import xml from 'highlight.js/lib/languages/xml'
 import css from 'highlight.js/lib/languages/css'
@@ -126,7 +125,6 @@ registerLanguage('ts', typescript)
 registerLanguage('json', json)
 registerLanguage('bash', bash)
 registerLanguage('shell', bash)
-registerLanguage('python', python)
 registerLanguage('java', java)
 registerLanguage('xml', xml)
 registerLanguage('html', xml)
