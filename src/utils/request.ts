@@ -26,18 +26,19 @@ const hideLoading = () => {
 }
 
 /**
- * 是否使用本机后端。
+ * 接口环境切换。
  *
- * true  = http://localhost:8000（本地联调）
- * false = https://youupro.xyz（线上）
+ * true  = 本机后端（本地联调）
+ * false = 阿里云线上后端（手机 / 体验版使用）
  *
- * 切环境只改这一个常量。注意开发者工具需要勾选
- * 「详情 → 本地设置 → 不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」，
- * 否则请求会在本地被拦掉（request:fail url not in domain list）。
+ * 切环境只改 USE_LOCAL_API 这一个常量。
  */
-const USE_LOCAL_API = true
+const USE_LOCAL_API = false
 
-export const baseURL = USE_LOCAL_API ? 'http://localhost:8000' : 'https://youupro.xyz'
+const LOCAL_API = 'http://127.0.0.1:8000'
+const ONLINE_API = 'https://api.moooncoco.top'
+
+export const baseURL = USE_LOCAL_API ? LOCAL_API : ONLINE_API
 
 // 2. 扩展RequestOptions类型
 type CustomRequestOptions = UniApp.RequestOptions & {
@@ -184,11 +185,20 @@ const responseInterceptor = async (
   // 处理其他错误（优化错误提示）
   if (response.statusCode >= 400 && response.statusCode !== 401) {
     let errMsg = `请求失败（${response.statusCode}）`
-    // 适配DRF的错误格式（detail字段）
-    if (typeof response.data === 'object' && response.data !== null) {
-      errMsg = (response.data as { detail?: string }).detail || errMsg
-    } else if (typeof response.data === 'string') {
-      errMsg = response.data
+    const body: any = response.data
+    if (typeof body === 'object' && body !== null) {
+      // 后端统一返回 { code, msg, data }，优先取 msg
+      errMsg = body.detail || body.msg || errMsg
+      // 校验类错误会把具体字段原因放在 data 里，一并提示出来
+      const fieldError =
+        body.data && typeof body.data === 'object' && !Array.isArray(body.data)
+          ? Object.values(body.data).find((v) => typeof v === 'string')
+          : ''
+      if (typeof fieldError === 'string' && fieldError) {
+        errMsg = `${errMsg}：${fieldError}`
+      }
+    } else if (typeof body === 'string') {
+      errMsg = body
     }
     showToast(errMsg)
     return Promise.reject(new Error(errMsg))

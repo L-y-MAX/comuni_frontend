@@ -232,6 +232,17 @@ const originalForm = ref({ ...editForm.value })
 
 // 性别选择器
 const genderOptions = ['男', '女', '其他']
+// 后端只认 male/female/other，页面显示中文，这里做一层转换
+const GENDER_LABEL_TO_VALUE: Record<string, string> = {
+  男: 'male',
+  女: 'female',
+  其他: 'other',
+}
+const GENDER_VALUE_TO_LABEL: Record<string, string> = {
+  male: '男',
+  female: '女',
+  other: '其他',
+}
 const genderIndex = ref(0)
 
 // ========== 头像相关逻辑（和my页面保持一致） ==========
@@ -286,7 +297,7 @@ const loadUserInfo = () => {
       username: userStore.userInfo.username || '',
       email: userStore.userInfo.email || '',
       bio: userStore.userInfo.bio || '',
-      gender: userStore.userInfo.gender || '',
+      gender: GENDER_VALUE_TO_LABEL[userStore.userInfo.gender] || '',
       is_private: userStore.userInfo.is_private || false,
       userId: userStore.userInfo.userId || '',
       avatar: userStore.userInfo.avatar || '',
@@ -432,11 +443,10 @@ const saveProfile = async () => {
       username: editForm.value.username,
       email: editForm.value.email,
       bio: editForm.value.bio,
-      gender: editForm.value.gender,
+      gender: GENDER_LABEL_TO_VALUE[editForm.value.gender] || '',
       is_private: editForm.value.is_private,
       // avatar: null, // null 清空 / 删除现有头像
       user_id: editForm.value.userId,
-      is_staff: false,
     }
 
     const result = await post('/api/v1/auth/user-info/', data)
