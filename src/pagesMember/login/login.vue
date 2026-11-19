@@ -653,7 +653,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .login-button {
   width: $btn-width; // 固定宽度，和微信按钮一致
   height: $btn-height; // 固定高度
-  background: $primary-color;
+  background: #ff8558;
   border: none;
   border-radius: $btn-radius; // 全圆角
   font-size: 32rpx;
@@ -667,15 +667,16 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   justify-content: center;
 
   &:active:not(:disabled) {
-    transform: translateY(2rpx);
-    opacity: 0.92;
+    background: #f0733f;
+    opacity: 1;
   }
 
   &:disabled {
-    opacity: 1;
-    background: #f4f5f7;
-    color: #9aa0a8 !important;
-    border: 1rpx solid #ececf0;
+    // 未输入账号密码时仍保持 #FF8558，降低透明度表示不可点
+    opacity: 0.55;
+    background: #ff8558;
+    color: #ffffff !important;
+    border: none;
     box-shadow: none;
     cursor: not-allowed;
   }
