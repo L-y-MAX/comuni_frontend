@@ -49,23 +49,23 @@ const gotoLoginPage = () => {
  * 复制联系邮箱到用户剪贴板
  */
 const copyContactEmail = () => {
-  const contactEmail = 'skixkk7@163.com'
+  const contactEmail = '1843982153@qq.com'
   uni.setClipboardData({
     data: contactEmail,
     success: () => {
       uni.showToast({
-        title: '邮箱: skixkk7@163.com',
+        title: '邮箱: 1843982153@qq.com',
         icon: 'none',
         duration: 4000,
       })
     },
     fail: (err) => {
       uni.showToast({
-        title: '邮箱: skixkk7@163.com',
+        title: '邮箱: 1843982153@qq.com',
         icon: 'none',
         duration: 4000,
       })
-      console.error('复制失败, 联系我们，邮箱: skixkk7@163.com', err)
+      console.error('复制失败, 联系我们，邮箱: 1843982153@qq.com', err)
     },
   })
 }
