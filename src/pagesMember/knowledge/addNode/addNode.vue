@@ -109,20 +109,30 @@ import markdown from 'highlight.js/lib/languages/markdown'
  * 默认入口 `highlight.js` 会带上全部 190+ 种语言定义（源码 5MB+），
  * 且会被打进主包的 common/vendor.js，明显拖慢小程序启动。
  */
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('js', javascript)
-hljs.registerLanguage('typescript', typescript)
-hljs.registerLanguage('ts', typescript)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('shell', bash)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('xml', xml)
-hljs.registerLanguage('html', xml)
-hljs.registerLanguage('css', css)
-hljs.registerLanguage('sql', sql)
-hljs.registerLanguage('markdown', markdown)
+// 部分基础库不支持 highlight.js 11 的 Unicode 属性正则（如 python 的 \p{XID_Start}），
+// 注册失败时跳过该语言，不能让整个页面初始化中断。
+const registerLanguage = (name: string, lang: any) => {
+  try {
+    hljs.registerLanguage(name, lang)
+  } catch (e) {
+    console.warn(`[highlight] ${name} 语法注册失败，已跳过`)
+  }
+}
+
+registerLanguage('javascript', javascript)
+registerLanguage('js', javascript)
+registerLanguage('typescript', typescript)
+registerLanguage('ts', typescript)
+registerLanguage('json', json)
+registerLanguage('bash', bash)
+registerLanguage('shell', bash)
+registerLanguage('python', python)
+registerLanguage('java', java)
+registerLanguage('xml', xml)
+registerLanguage('html', xml)
+registerLanguage('css', css)
+registerLanguage('sql', sql)
+registerLanguage('markdown', markdown)
 import { markedHighlight } from 'marked-highlight'
 import { addKnowledgeNode, getKnowledgeBaseList } from '@/api/knowledge'
 import RichEditor from './components/RichEditor.vue'

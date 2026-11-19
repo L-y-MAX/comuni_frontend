@@ -914,10 +914,12 @@ const selectKb = async (id: string, isRefresh = true, force = false) => {
       console.warn('解析 pendingDocToAdd 失败：', e)
     }
   } catch (error) {
-    // 仅打印警告，不抛出错误，友好提示用户
+    // 权限不足或知识库已被删除：清掉选中状态和缓存，避免每次进页面都重新请求报错
     console.warn('加载知识库内容时出现异常：', error)
-    uni.showToast({ title: '您没有访问该知识库的权限', icon: 'none' })
     tabState.value[currentTab].nodeList = []
+    tabState.value[currentTab].selectedKbId = ''
+    uni.removeStorageSync(`selectedKbId_${currentTab}`)
+    uni.showToast({ title: '没有访问权限，已返回知识库列表', icon: 'none' })
   } finally {
     if (isRefresh) isLoading.value = false
   }
