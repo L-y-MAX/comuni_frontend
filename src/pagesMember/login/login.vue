@@ -657,10 +657,10 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   border-radius: $btn-radius; // 全圆角
   font-size: 32rpx;
-  font-weight: 1000;
+  font-weight: 600;
   color: white !important; // 强制白色文字
   transition: $transition;
-  box-shadow: 0 8rpx 24rpx rgba(255, 106, 51, 0.18);
+  box-shadow: none;
   margin-top: 16rpx;
   display: flex; // 子元素居中
   align-items: center;
@@ -668,13 +668,14 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:active:not(:disabled) {
     transform: translateY(2rpx);
-    box-shadow: 0 4rpx 16rpx rgba(255, 106, 51, 0.24);
+    opacity: 0.92;
   }
 
   &:disabled {
     opacity: 1;
-    background: #ffe3d7;
-    color: #ff8a5c !important;
+    background: #f4f5f7;
+    color: #9aa0a8 !important;
+    border: 1rpx solid #ececf0;
     box-shadow: none;
     cursor: not-allowed;
   }

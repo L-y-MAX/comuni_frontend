@@ -321,10 +321,13 @@ const loadUserInfo = () => {
 const chooseAvatar = () => {
   uni.chooseImage({
     count: 1, // 仅选1张
-    sizeType: ['original', 'compressed'], // 原图/压缩图
+    sizeType: ['compressed'], // 只取压缩图，避免原图几 MB 上传很慢
     sourceType: ['album', 'camera'], // 相册/相机
     success: (res) => {
       const tempFilePath = res.tempFilePaths[0]
+      // 先本地预览，上传完成前就能看到新头像
+      const previousAvatar = userAvatar.value
+      userAvatar.value = tempFilePath
       uni.showLoading({ title: '上传头像中...' })
 
       // 上传文件到后端
@@ -342,11 +345,12 @@ const chooseAvatar = () => {
           try {
             const result = JSON.parse(uploadRes.data)
             if (result.code === 200 && result.data.avatar_url) {
-              // 更新页面头像
-              userAvatar.value = result.data.avatar_url
+              // 加时间戳，避免微信图片缓存导致看到旧头像
+              const freshUrl = `${result.data.avatar_url}?v=${Date.now()}`
+              userAvatar.value = freshUrl
               // 更新到store
               const userStore = useUserStore()
-              userStore.updateUserInfo({ avatar: result.data.avatar_url })
+              userStore.updateUserInfo({ avatar: freshUrl })
               uni.showToast({
                 title: '头像更换成功',
                 icon: 'success',
@@ -356,6 +360,7 @@ const chooseAvatar = () => {
               throw new Error(result.msg || '上传失败')
             }
           } catch (e) {
+            userAvatar.value = previousAvatar
             uni.showToast({
               title: `解析失败：${(e as Error).message}`,
               icon: 'none',
@@ -365,6 +370,7 @@ const chooseAvatar = () => {
         },
         fail: (uploadErr) => {
           uni.hideLoading()
+          userAvatar.value = previousAvatar
           console.error('头像上传失败:', uploadErr)
           uni.showToast({
             title: '头像上传失败，请重试',
