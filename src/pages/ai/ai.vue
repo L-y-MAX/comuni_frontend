@@ -1006,8 +1006,6 @@ onMounted(() => {
     inputContent.value = String(pendingPrompt)
     uni.removeStorageSync('aiPendingPrompt')
   }
-  // 第一次进来还没选上下文时，先把用法弹出来
-  if (!mountedNoteName.value) guideVisible.value = true
   console.log('AI助手页面初始化完成')
 
   // 获取跳转传递的prompt参数
