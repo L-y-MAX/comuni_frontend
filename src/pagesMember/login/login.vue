@@ -90,12 +90,9 @@
         </view>
 
         <!-- 登录按钮 -->
-        <button
-          class="login-button"
-          @click="handleLogin"
-          :disabled="!canLogin || isLoading"
-          :class="{ loading: isLoading }"
-        >
+       <view class="login-button {{canSubmit ? '' : 'btn-disabled'}}" bindtap="handleLogin">
+  登录
+</view>
           <text
             v-if="isLoading"
             class="loading-text"
@@ -651,40 +648,38 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 // 登录按钮
 .login-button {
-  width: $btn-width; // 固定宽度，和微信按钮一致
-  height: $btn-height; // 固定高度
+  width: $btn-width;
+  height: $btn-height;
   background: #ff8558;
   border: none;
-  border-radius: $btn-radius; // 全圆角
+  border-radius: $btn-radius;
   font-size: 32rpx;
   font-weight: 600;
-  color: white !important; // 强制白色文字
-  transition: $transition;
-  box-shadow: none;
+  color: #fff;
+  transition: all 0.2s ease;
   margin-top: 16rpx;
-  display: flex; // 子元素居中
+  display: flex;
   align-items: center;
   justify-content: center;
 
-  &:active:not(:disabled) {
+  // 点击按下效果（只有可用的时候才有）
+  &:active:not(.btn-disabled) {
     background: #f0733f;
-    opacity: 1;
   }
 
-  &:disabled {
-    // 未输入账号密码时仍保持 #FF8558，降低透明度表示不可点
-    opacity: 0.55;
-    background: #ff8558;
-    color: #ffffff !important;
-    border: none;
-    box-shadow: none;
-    cursor: not-allowed;
+  // 不可用状态：浅橙色
+  &.btn-disabled {
+    background: #ffd4c2;
+    color: #ff8558;
   }
 
   &.loading {
     pointer-events: none;
   }
 }
+
+
+
 
 // 加载文字样式
 .loading-text {

@@ -18,14 +18,14 @@
         </view>
 
         <!-- 邮箱复制区域 - 自定义样式 -->
-        <view class="email-desc">出现任何疑问请发送邮件至: skixkk7@163.com</view>
+        <view class="email-desc">出现任何疑问请发送邮件至: 1843982153@qq.com</view>
         <view class="email-wrapper">
           <view
             class="tooltip-container email-tooltip"
             @click="copyEmail"
           >
             <text class="text">复制邮箱</text>
-            <text class="tooltip">skixkk7@163.com</text>
+            <text class="tooltip">1843982153@qq.com</text>
           </view>
         </view>
       </view>
@@ -79,7 +79,7 @@ const copyPayLink = (): void => {
 // 复制邮箱函数
 const copyEmail = (): void => {
   // 获取邮箱文本
-  const email = 'skixkk7@163.com'
+  const email = '1843982153@qq.com'
   // uni-app复制到剪贴板API
   uni.setClipboardData({
     data: email,
