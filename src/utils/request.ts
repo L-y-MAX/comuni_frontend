@@ -133,7 +133,6 @@ const responseInterceptor = async (
         data: { refresh: refreshToken },
         header: {
           'content-type': 'application/json',
-          Authorization: `JWT ${accessToken}`,
         },
       })
 
@@ -217,7 +216,8 @@ export const logout = () => {
   uni.removeStorageSync('userInfo')
   uni.removeStorageSync('kbActiveTab')
   uni.removeStorageSync('selectedKbId_right')
-  uni.redirectTo({ url: '/pagesMember/login/login' })
+  // reLaunch 清空页面栈，避免 token 过期后按返回又回到空白页
+  uni.reLaunch({ url: '/pagesMember/login/login' })
   showToast('登录已过期，请重新登录')
 }
 
