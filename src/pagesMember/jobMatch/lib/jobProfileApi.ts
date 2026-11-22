@@ -320,6 +320,14 @@ export const generateJobProfile = async (
     shouldStop,
   } = options;
 
+  // 岗位画像后端 AI 解析接口尚未实现：固定走本地规则，避免每次匹配真实岗位都打 404。
+  // 后端接口就绪后把这里改成 true 即可，前端其余逻辑不用动。
+  const REMOTE_ENABLED = false;
+  if (!REMOTE_ENABLED) {
+    onProgress?.('正在使用本地规则解析…');
+    return { profile: parseJobProfileByRules(input), method: 'rule', degraded: false };
+  }
+
   // ---- 1. 缓存命中 ----
   if (useCache && !forceLocal && input.recruitment_id) {
     try {

@@ -628,7 +628,7 @@ export const followUser = async (user: User | undefined | null) => {
     // 确定接口URL、请求方法和提示文案
     const config = isCurrentFollowed
       ? {
-          apiUrl: `${baseURL}/api/v1/auth/users/user/unfollow_user/`,
+          apiUrl: `${baseURL}/api/v1/auth/user/follow/unfollow-user/`,
           method: 'DELETE' as const, // 取消关注用DELETE方法
           successMsg: '已取消关注',
         }
