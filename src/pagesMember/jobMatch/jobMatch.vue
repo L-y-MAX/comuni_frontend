@@ -3,6 +3,7 @@
     <scroll-view
       scroll-y
       class="page-scroll"
+      :class="{ 'with-compare-bar': compareIds.length }"
     >
       <!-- ========== 没有学生画像 ========== -->
       <view
@@ -130,6 +131,16 @@
               </view>
 
               <view class="score-actions">
+                <view
+                  class="compare-toggle"
+                  @click.stop="toggleCompare(r.jobId)"
+                >
+                  <view
+                    class="compare-dot"
+                    :class="{ on: isCompared(r.jobId) }"
+                  />
+                  <text class="compare-text">对比</text>
+                </view>
                 <text
                   class="why-link"
                   @click.stop="openScoreWhy(r)"
@@ -379,6 +390,28 @@
       </view>
     </scroll-view>
 
+    <view
+      v-if="compareIds.length"
+      class="compare-bar"
+    >
+      <view class="compare-bar-left">
+        <text class="compare-count">已选 {{ compareIds.length }}/4</text>
+        <text
+          class="compare-clear"
+          @click="clearCompare"
+        >
+          清空
+        </text>
+      </view>
+      <button
+        class="compare-btn"
+        :disabled="compareIds.length < 2"
+        @click="openCompare"
+      >
+        对比
+      </button>
+    </view>
+
     <WhySheet
       :visible="whyVisible"
       :mode="whyMode"
@@ -386,6 +419,12 @@
       :match="whyMatch"
       :job-dimension="whyJobDimension"
       @close="closeWhy"
+    />
+
+    <CompareSheet
+      :visible="compareVisible"
+      :matches="compareMatches"
+      @close="compareVisible = false"
     />
   </view>
 </template>
@@ -406,6 +445,7 @@ import { getSampleJobProfiles } from './lib/jobProfileSamples'
 import { fetchRecruitmentByCreditCode, generateJobProfile } from './lib/jobProfileApi'
 import WhySheet from './components/WhySheet.vue'
 import WhatIfPanel from './components/WhatIfPanel.vue'
+import CompareSheet from './components/CompareSheet.vue'
 import { clearWhatIfPlans, readWhatIfPlans, type WhatIfPlan } from './lib/whatIf'
 
 // ====================== 状态 ======================
@@ -426,6 +466,10 @@ const whyMatch = ref<MatchResult | null>(null)
 
 /** 本地补差计划 */
 const plans = ref<WhatIfPlan[]>([])
+
+/** 岗位对比：最多 4 个 */
+const compareIds = ref<string[]>([])
+const compareVisible = ref(false)
 
 const loading = ref(false)
 const errorMsg = ref('')
@@ -507,6 +551,36 @@ const clearPlans = () => {
   })
 }
 
+const isCompared = (jobId: string) => compareIds.value.includes(jobId)
+
+const toggleCompare = (jobId: string) => {
+  const idx = compareIds.value.indexOf(jobId)
+  if (idx >= 0) {
+    compareIds.value.splice(idx, 1)
+    return
+  }
+  if (compareIds.value.length >= 4) {
+    uni.showToast({ title: '最多对比 4 个岗位', icon: 'none' })
+    return
+  }
+  compareIds.value.push(jobId)
+}
+
+const clearCompare = () => {
+  compareIds.value = []
+}
+
+const compareMatches = computed(() =>
+  compareIds.value
+    .map((id) => results.value.find((r) => r.jobId === id))
+    .filter((r): r is MatchResult => !!r),
+)
+
+const openCompare = () => {
+  if (compareIds.value.length < 2) return
+  compareVisible.value = true
+}
+
 const goAbilityProfile = () => {
   // 能力画像现在是 tabBar 页面，只能用 switchTab
   uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
@@ -537,6 +611,7 @@ const matchWithSampleJobs = () => {
     profiles.map((p) => [p.recruitment_id || p.job_name, p]),
   )
   results.value = rankJobsByMatch(student.value, profiles)
+  compareIds.value = []
   expandedIndex.value = 0
 }
 
@@ -573,6 +648,7 @@ const matchWithRealJob = async (creditCode: string) => {
       [profile.recruitment_id || profile.job_name]: profile,
     }
     results.value = [matchStudentToJob(student.value, profile)]
+    compareIds.value = []
     expandedIndex.value = 0
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') return
@@ -1477,6 +1553,84 @@ onShareAppMessage(() => ({
   margin-top: 8rpx;
   font-size: 24rpx;
   color: #9aa0a8;
+}
+
+.page-scroll.with-compare-bar {
+  padding-bottom: 180rpx;
+}
+
+.compare-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.compare-dot {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 8rpx;
+  border: 1rpx solid #d1d5db;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.compare-dot.on {
+  background: #ff8558;
+  border-color: #ff8558;
+}
+
+.compare-text {
+  font-size: 24rpx;
+  color: #5b616b;
+}
+
+.compare-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 28rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1rpx solid #ececf0;
+}
+
+.compare-bar-left {
+  display: flex;
+  align-items: baseline;
+}
+
+.compare-count {
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.compare-clear {
+  margin-left: 20rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.compare-btn {
+  margin: 0;
+  padding: 0 36rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 26rpx;
+  color: #ffffff;
+  background: #ff8558;
+  border-radius: 8rpx;
+
+  &::after {
+    border: none;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
 }
 
 /* ====================== 补差计划 ====================== */
