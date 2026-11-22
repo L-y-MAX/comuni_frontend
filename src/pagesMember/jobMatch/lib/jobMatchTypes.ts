@@ -25,8 +25,8 @@
  * 若后端改用真实向量模型，只需替换 utils/jobMatch.ts 的打分函数，接口结构无需改动。
  */
 
-import type { AbilityDimensionKey } from '@/types/jobProfile';
-import type { SkillProficiency } from '@/types/studentProfile';
+import type { AbilityDimensionKey, ParseSource } from '@/types/jobProfile';
+import type { DimensionParseDetail, SkillProficiency } from '@/types/studentProfile';
 
 // ====================== 四大类目 ======================
 
@@ -171,6 +171,42 @@ export interface DimensionGap {
   noRequirement: boolean;
   /** 折算后的有效权重（已按双方置信度降权；未提要求的维度为 0） */
   effectiveWeight: number;
+
+  // ====================== 证据链（用于「为什么」抽屉） ======================
+
+  /** 岗位原文中支撑该维度判断的句子 */
+  jobEvidence: string[];
+  /** 学生资料中支撑该维度判断的片段 */
+  studentEvidence: string[];
+  /** 岗位画像的解析来源 */
+  jobSource: ParseSource;
+  /** 学生画像的解析来源 */
+  studentSource: ParseSource;
+  /** 岗位侧解析置信度 0-1 */
+  jobConfidence: number;
+  /** 学生侧解析置信度 0-1 */
+  studentConfidence: number;
+  /** 学生侧解析明细：命中词、未命中词、分数/置信度公式、提升建议 */
+  studentParseDetail?: DimensionParseDetail;
+  /** 技能/证书维度的覆盖情况（岗位共几项、已覆盖几项） */
+  coverage?: {
+    matched: number;
+    total: number;
+  };
+}
+
+/** 总分是怎么算出来的：基础分 → 扣分 → 门槛/信息不足封顶 → 最终分 */
+export interface ScoreBreakdown {
+  /** 四类加权后的基础分 */
+  baseScore: number;
+  /** 硬技能/证书缺失扣分 */
+  skillPenalty: number;
+  /** 核心技能门槛封顶值（未触发为 null） */
+  gateCap: number | null;
+  /** 信息不足封顶值（未触发为 null） */
+  infoCap: number | null;
+  /** 最终匹配度 */
+  finalScore: number;
 }
 
 // ====================== 技能 / 证书缺口 ======================
@@ -257,6 +293,17 @@ export interface MatchResult {
    * 必须单独标注并封顶，否则用户会把「已知要求满足」误读成「岗位匹配」。
    */
   informationInsufficient: boolean;
+
+  // ====================== 证据链（用于「为什么是这个分」） ======================
+
+  /** 总分拆解：基础分 → 扣分 → 门槛/信息不足封顶 → 最终分 */
+  scoreBreakdown: ScoreBreakdown;
+
+  /** 总分相关的解释文案（仅在触发门槛/信息不足封顶时存在） */
+  scoreNotes: {
+    gate?: string;
+    info?: string;
+  };
 }
 
 // ====================== 常量 ======================

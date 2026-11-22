@@ -279,6 +279,21 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
       noRequirement,
       insufficientInfo: studentConf < INSUFFICIENT_INFO_CONFIDENCE,
       effectiveWeight,
+
+      // 证据链：岗位原句、学生资料、解析来源与置信度，供「为什么」抽屉展示
+      jobEvidence: j?.evidence ?? [],
+      studentEvidence: s?.evidence ?? [],
+      jobSource: j?.source ?? job.parse_method,
+      studentSource: s?.source ?? student.parse_method,
+      jobConfidence: jobConf,
+      studentConfidence: studentConf,
+      studentParseDetail: s?.parse_detail,
+      coverage:
+        meta.key === 'professional_skill'
+          ? { matched: skillCoverage.matched, total: skillCoverage.total }
+          : meta.key === 'certificate'
+            ? { matched: certCoverage.matched, total: certCoverage.total }
+            : undefined,
     };
   });
 
@@ -378,6 +393,7 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   const profGap = gaps.find((g) => g.key === 'professional_skill');
   let matchScore = rawScore;
   let gateNote = '';
+  let gateCap: number | null = null;
 
   if (
     profGap &&
@@ -388,6 +404,7 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     const cap = Math.round(CORE_GATE_FLOOR + (100 - CORE_GATE_FLOOR) * profGap.fit);
     if (cap < rawScore) {
       matchScore = cap;
+      gateCap = cap;
       gateNote =
         `核心技能门槛：岗位要求的 ${skillCoverage.total} 项技能中你只覆盖了 ${profGap.fitPercent}%，` +
         `核心能力未达标，总评从 ${rawScore}% 封顶到 ${cap}%`;
@@ -398,8 +415,10 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   // 可评估维度太少时（岗位没写要求 / 画像只解析出一两项），不能按「满足已知要求」
   // 直接照常归一化——否则「满足唯一一项要求」就是 100%，用户会误读为岗位完全匹配。
   let infoNote = '';
+  let infoCapApplied: number | null = null;
   if (informationInsufficient && infoCap < matchScore) {
     matchScore = infoCap;
+    infoCapApplied = infoCap;
     infoNote =
       `岗位要求信息不足：原文只解析出 ${evaluatedDimCount}/10 项可评估的要求，` +
       `匹配度按信息完整度封顶为 ${infoCap}%，仅代表已知要求的满足程度，不代表岗位整体匹配`;
@@ -536,6 +555,18 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     isRuleBased: student.parse_method === 'rule' || job.parse_method === 'rule',
     evaluatedDimCount,
     informationInsufficient,
+
+    scoreBreakdown: {
+      baseScore: Math.round(baseScore),
+      skillPenalty: penalty,
+      gateCap,
+      infoCap: infoCapApplied,
+      finalScore: matchScore,
+    },
+    scoreNotes: {
+      gate: gateCap !== null ? `核心技能覆盖 ${profGap?.fitPercent ?? 0}%，总评封顶 ${gateCap}%` : undefined,
+      info: infoCapApplied !== null ? `可评估要求 ${evaluatedDimCount}/10，总评封顶 ${infoCapApplied}%` : undefined,
+    },
   };
 };
 

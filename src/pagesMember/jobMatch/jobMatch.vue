@@ -86,170 +86,169 @@
             </text>
           </view>
 
-          <!-- ========== 结果列表 ========== -->
+          <!-- ========== 结果列表：匹配度 → 差距 → 行动 ========== -->
           <view
             v-for="(r, idx) in results"
             :key="r.jobId + idx"
-            class="result-card card-style"
+            class="result-card"
           >
-            <!-- 头部 -->
-            <view class="result-head">
-              <view class="result-title-wrap">
-                <text class="result-job">{{ r.jobName }}</text>
-                <text class="result-ent">{{ r.enterpriseName || '未提供企业信息' }}</text>
-                <text
-                  v-if="r.industry"
-                  class="result-industry"
-                >
-                  {{ r.industry }}
-                </text>
+            <!-- ① 匹配度 -->
+            <view class="score-hero">
+              <view class="score-top">
+                <view class="score-title-wrap">
+                  <text class="result-job">{{ r.jobName }}</text>
+                  <text class="result-ent">{{ r.enterpriseName || '未提供企业信息' }}</text>
+                  <text
+                    v-if="r.industry"
+                    class="result-industry"
+                  >
+                    {{ r.industry }}
+                  </text>
+                </view>
+                <view class="score-right">
+                  <text
+                    class="result-score"
+                    :style="{ color: levelColor(r.matchLevel) }"
+                  >
+                    {{ r.matchScore }}
+                    <text class="result-score-unit">%</text>
+                  </text>
+                  <text
+                    class="result-level"
+                    :style="{ color: levelColor(r.matchLevel) }"
+                  >
+                    {{ r.matchLevelLabel }}
+                  </text>
+                </view>
               </view>
-              <view class="result-score-wrap">
+
+              <view class="bar-track">
+                <view
+                  class="bar-fill"
+                  :style="{ width: `${r.matchScore}%`, backgroundColor: levelColor(r.matchLevel) }"
+                />
+              </view>
+
+              <view class="score-actions">
                 <text
-                  class="result-score"
-                  :style="{ color: levelColor(r.matchLevel) }"
+                  class="why-link"
+                  @click.stop="openScoreWhy(r)"
                 >
-                  {{ r.matchScore }}
-                  <text class="result-score-unit">%</text>
+                  为什么是这个分 ›
                 </text>
                 <text
-                  class="result-level"
-                  :style="{ color: levelColor(r.matchLevel) }"
+                  class="expand-link"
+                  @click="toggleExpand(idx)"
                 >
-                  {{ r.matchLevelLabel }}
+                  {{ expandedIndex === idx ? '收起明细' : '查看十维差距与建议' }}
+                  <text
+                    class="expand-arrow"
+                    :class="{ expanded: expandedIndex === idx }"
+                  >
+                    ›
+                  </text>
                 </text>
               </view>
             </view>
 
-            <!-- 匹配度条 -->
-            <view class="bar-track">
+            <!-- ② 差距 -->
+            <view class="section gap-section">
+              <text class="section-title">差距</text>
+
+              <view class="cat-grid">
+                <view
+                  v-for="c in r.categories"
+                  :key="c.key"
+                  class="cat-item"
+                >
+                  <text class="cat-score">{{ c.active ? c.score : '—' }}</text>
+                  <text class="cat-label">{{ c.label }}</text>
+                  <text class="cat-weight">权重 {{ (c.weight * 100).toFixed(0) }}%</text>
+                </view>
+              </view>
+
+              <view class="fact-line">
+                <text class="fact-item">达标 {{ r.satisfiedCount }}/{{ r.totalCount }}</text>
+                <text class="fact-item">必须技能缺口 {{ r.missingMustSkills }}</text>
+              </view>
+
               <view
-                class="bar-fill"
-                :style="{ width: `${r.matchScore}%`, backgroundColor: levelColor(r.matchLevel) }"
-              />
-            </view>
-
-            <!-- 四维得分 -->
-            <view class="cat-grid">
-              <view
-                v-for="c in r.categories"
-                :key="c.key"
-                class="cat-item"
+                v-if="r.informationInsufficient"
+                class="result-insufficient"
               >
-                <text class="cat-score">{{ c.score }}</text>
-                <text class="cat-label">{{ c.label }}</text>
-                <text class="cat-weight">权重{{ (c.weight * 100).toFixed(0) }}%</text>
+                <text class="result-insufficient-text">
+                  岗位要求信息不足：原文仅能解析出 {{ r.evaluatedDimCount }}/10
+                  项可评估要求，匹配度仅供参考
+                </text>
               </view>
-            </view>
 
-            <!-- 摘要 -->
-            <text class="result-summary">{{ r.summary }}</text>
-
-            <!-- 信息不足提示：不展开详情也能看到，解释匹配度为何被限制 -->
-            <view
-              v-if="r.informationInsufficient"
-              class="result-insufficient"
-            >
-              <text class="result-insufficient-text">
-                岗位要求信息不足：原文仅能解析出 {{ r.evaluatedDimCount }}/10
-                项可评估要求，匹配度仅供参考
-              </text>
-            </view>
-
-            <!-- 展开详情 -->
-            <view
-              class="expand-trigger"
-              @click="toggleExpand(idx)"
-            >
-              <text class="expand-text">
-                {{ expandedIndex === idx ? '收起分析详情' : '查看十维差距与提升建议' }}
-              </text>
-              <text
-                class="expand-arrow"
-                :class="{ expanded: expandedIndex === idx }"
+              <view
+                v-if="expandedIndex === idx"
+                class="detail-block"
               >
-                ▶
-              </text>
-            </view>
-
-            <view
-              v-if="expandedIndex === idx"
-              class="detail-block"
-            >
-              <!-- 十维差距 -->
-              <view class="detail-section">
-                <view class="detail-head">
-                  <text class="detail-title">十大维度对比</text>
-                  <view class="legend">
-                    <text class="legend-dot student" />
-                    <text class="legend-text">我的能力</text>
-                    <text class="legend-dot required" />
-                    <text class="legend-text">岗位要求</text>
-                  </view>
+                <view class="sub-head">
+                  <text class="sub-title">十维差距</text>
                 </view>
 
                 <view
                   v-for="g in r.gaps"
                   :key="g.key"
-                  class="cmp-row"
+                  class="dim-row"
+                  @click="openGapWhy(g, r)"
                 >
-                  <view class="cmp-head">
-                    <text class="cmp-label">{{ g.label }}</text>
-                    <text
-                      class="cmp-status"
-                      :class="{ ok: g.satisfied }"
-                    >
-                      {{ gapStatusText(g) }}
-                    </text>
+                  <view class="dim-head">
+                    <view class="dim-name-wrap">
+                      <text class="dim-name">{{ g.label }}</text>
+                      <text
+                        class="dim-status"
+                        :class="{ ok: g.satisfied, na: g.noRequirement }"
+                      >
+                        {{ gapStatusText(g) }}
+                      </text>
+                    </view>
+                    <view class="dim-score-wrap">
+                      <text class="dim-percent">
+                        {{ g.noRequirement ? '—' : `${g.fitPercent}%` }}
+                      </text>
+                      <text class="dim-why">›</text>
+                    </view>
                   </view>
 
-                  <!-- 岗位未提要求：不参与评分，因此不画进度条，
-                       避免出现「覆盖率 100%」配绿色满格条这种看起来像"已达标"的误导 -->
-                  <block v-if="g.noRequirement">
-                    <text class="cmp-num">岗位未对该维度提出可判定的要求，不参与评分</text>
-                  </block>
-
-                  <!-- 专业技能 / 证书：按岗位要求条目的覆盖率展示 -->
-                  <block v-else-if="g.basis === 'coverage'">
-                    <view class="cmp-bars">
-                      <view class="cmp-track">
-                        <view
-                          class="cmp-fill"
-                          :class="g.satisfied ? 'ok' : 'student'"
-                          :style="{ width: `${g.fitPercent}%` }"
-                        />
-                      </view>
-                    </view>
-                    <text class="cmp-num">岗位要求条目覆盖率 {{ g.fitPercent }}%</text>
-                  </block>
-
-                  <!-- 其余维度：我的水平 vs 岗位要求 -->
-                  <block v-else>
-                    <view class="cmp-bars">
-                      <view class="cmp-track">
-                        <view
-                          class="cmp-fill student"
-                          :style="{ width: `${g.studentScore}%` }"
-                        />
-                      </view>
-                      <view class="cmp-track">
-                        <view
-                          class="cmp-fill required"
-                          :style="{ width: `${g.requiredScore}%` }"
-                        />
-                      </view>
-                    </view>
-                    <text class="cmp-num">{{ g.studentScore }} / {{ g.requiredScore }}</text>
-                  </block>
+                  <view
+                    v-if="!g.noRequirement"
+                    class="dim-track"
+                  >
+                    <view
+                      class="dim-fill"
+                      :class="{ ok: g.satisfied, warn: g.insufficientInfo }"
+                      :style="{ width: `${g.fitPercent}%` }"
+                    />
+                  </view>
+                  <text class="dim-note">
+                    {{
+                      g.noRequirement
+                        ? '岗位未提要求，不参与评分'
+                        : g.basis === 'coverage'
+                          ? `覆盖 ${g.coverage?.matched ?? 0}/${g.coverage?.total ?? 0} 项`
+                          : `你 ${g.studentScore} / 岗位 ${g.requiredScore}`
+                    }}
+                  </text>
                 </view>
               </view>
+            </view>
 
-              <!-- 技能缺口 -->
+            <!-- ③ 行动 -->
+            <view
+              v-if="expandedIndex === idx"
+              class="section action-section"
+            >
+              <text class="section-title">行动</text>
+
               <view
                 v-if="r.skillGaps.length"
-                class="detail-section"
+                class="action-block"
               >
-                <text class="detail-title">硬技能缺口（{{ r.skillGaps.length }} 项）</text>
+                <text class="action-label">硬技能缺口（{{ r.skillGaps.length }} 项）</text>
                 <view class="chip-group">
                   <text
                     v-for="(s, i) in r.skillGaps"
@@ -257,17 +256,16 @@
                     class="chip"
                     :class="s.requirement"
                   >
-                    {{ s.name }}{{ s.requirement === 'must' ? ' ·必须' : '' }}
+                    {{ s.name }}{{ s.requirement === 'must' ? ' · 必须' : ' · 优先' }}
                   </text>
                 </view>
               </view>
 
-              <!-- 证书缺口 -->
               <view
                 v-if="r.certGaps.length"
-                class="detail-section"
+                class="action-block"
               >
-                <text class="detail-title">证书缺口（{{ r.certGaps.length }} 项）</text>
+                <text class="action-label">证书缺口（{{ r.certGaps.length }} 项）</text>
                 <view class="chip-group">
                   <text
                     v-for="(c, i) in r.certGaps"
@@ -275,17 +273,16 @@
                     class="chip"
                     :class="c.requirement"
                   >
-                    {{ c.name }}
+                    {{ c.name }}{{ c.requirement === 'must' ? ' · 必须' : ' · 优先' }}
                   </text>
                 </view>
               </view>
 
-              <!-- 关键短板 -->
               <view
                 v-if="r.criticalGaps.length"
-                class="detail-section"
+                class="action-block"
               >
-                <text class="detail-title">关键短板</text>
+                <text class="action-label">关键短板</text>
                 <text
                   v-for="(cg, i) in r.criticalGaps"
                   :key="i"
@@ -295,9 +292,8 @@
                 </text>
               </view>
 
-              <!-- 提升建议 -->
-              <view class="detail-section">
-                <text class="detail-title">针对性提升建议</text>
+              <view class="action-block">
+                <text class="action-label">提升建议</text>
                 <view
                   v-for="(sg, i) in r.suggestions"
                   :key="i"
@@ -308,13 +304,10 @@
                 </view>
               </view>
 
-              <!-- 匹配信息 -->
-              <view class="detail-section meta-section">
-                <text class="meta-line">
-                  达标维度 {{ r.satisfiedCount }}/{{ r.totalCount }} · 匹配置信度
-                  {{ Math.round(r.confidence * 100) }}%
-                </text>
-              </view>
+              <text class="meta-line">
+                达标维度 {{ r.satisfiedCount }}/{{ r.totalCount }} · 匹配置信度
+                {{ Math.round(r.confidence * 100) }}%
+              </text>
             </view>
           </view>
         </block>
@@ -341,6 +334,15 @@
         </text>
       </view>
     </scroll-view>
+
+    <WhySheet
+      :visible="whyVisible"
+      :mode="whyMode"
+      :gap="whyGap"
+      :match="whyMatch"
+      :job-dimension="whyJobDimension"
+      @close="closeWhy"
+    />
   </view>
 </template>
 
@@ -354,9 +356,11 @@ import {
   type MatchResult,
 } from './lib/jobMatchTypes'
 import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studentProfile'
+import type { JobProfile } from '@/types/jobProfile'
 import { matchStudentToJob, rankJobsByMatch } from './lib/jobMatch'
 import { getSampleJobProfiles } from './lib/jobProfileSamples'
 import { fetchRecruitmentByCreditCode, generateJobProfile } from './lib/jobProfileApi'
+import WhySheet from './components/WhySheet.vue'
 
 // ====================== 状态 ======================
 
@@ -364,6 +368,15 @@ const student = ref<StudentProfile | null>(null)
 const results = ref<MatchResult[]>([])
 const usingSampleJobs = ref(true)
 const expandedIndex = ref<number | null>(null)
+
+/** 岗位画像缓存：结果卡里只有 MatchResult，证据抽屉需要回查岗位维度的技能/证书清单 */
+const jobProfiles = ref<Record<string, JobProfile>>({})
+
+/** 「为什么」抽屉状态 */
+const whyVisible = ref(false)
+const whyMode = ref<'dimension' | 'score'>('dimension')
+const whyGap = ref<DimensionGap | null>(null)
+const whyMatch = ref<MatchResult | null>(null)
 
 const loading = ref(false)
 const errorMsg = ref('')
@@ -400,6 +413,32 @@ const toggleExpand = (idx: number) => {
   expandedIndex.value = expandedIndex.value === idx ? null : idx
 }
 
+/** 抽屉里要展示的岗位维度（技能/证书清单在 MatchResult 里没有，需要回查岗位画像） */
+const whyJobDimension = computed(() => {
+  const jobId = whyMatch.value?.jobId
+  const key = whyGap.value?.key
+  if (!jobId || !key) return null
+  return jobProfiles.value[jobId]?.dimensions.find((d) => d.key === key) ?? null
+})
+
+const openGapWhy = (gap: DimensionGap, match: MatchResult) => {
+  whyMode.value = 'dimension'
+  whyGap.value = gap
+  whyMatch.value = match
+  whyVisible.value = true
+}
+
+const openScoreWhy = (match: MatchResult) => {
+  whyMode.value = 'score'
+  whyGap.value = null
+  whyMatch.value = match
+  whyVisible.value = true
+}
+
+const closeWhy = () => {
+  whyVisible.value = false
+}
+
 const goAbilityProfile = () => {
   // 能力画像现在是 tabBar 页面，只能用 switchTab
   uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
@@ -425,7 +464,11 @@ const readStudentProfile = (): StudentProfile | null => {
 const matchWithSampleJobs = () => {
   if (!student.value) return
   usingSampleJobs.value = true
-  results.value = rankJobsByMatch(student.value, getSampleJobProfiles())
+  const profiles = getSampleJobProfiles()
+  jobProfiles.value = Object.fromEntries(
+    profiles.map((p) => [p.recruitment_id || p.job_name, p]),
+  )
+  results.value = rankJobsByMatch(student.value, profiles)
   expandedIndex.value = 0
 }
 
@@ -457,7 +500,11 @@ const matchWithRealJob = async (creditCode: string) => {
     )
 
     progressText.value = '正在计算匹配度…'
-    results.value = [matchStudentToJob(student.value, generated.profile)]
+    const profile = generated.profile
+    jobProfiles.value = {
+      [profile.recruitment_id || profile.job_name]: profile,
+    }
+    results.value = [matchStudentToJob(student.value, profile)]
     expandedIndex.value = 0
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') return
@@ -1033,4 +1080,334 @@ onShareAppMessage(() => ({
   font-style: italic;
   line-height: 1.5;
 }
+/* ====================== 三段式结果卡 ====================== */
+.result-card {
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  background: #ffffff;
+  border: none;
+  border-radius: 20rpx;
+  box-shadow: none;
+}
+
+.score-hero {
+  padding-bottom: 22rpx;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.score-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.score-title-wrap {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+
+.score-right {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.result-job {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #17191c;
+  line-height: 1.35;
+}
+
+.result-ent {
+  margin-top: 6rpx;
+  font-size: 26rpx;
+  color: #5b616b;
+}
+
+.result-industry {
+  display: inline-block;
+  margin-top: 8rpx;
+  padding: 0;
+  font-size: 24rpx;
+  color: #9aa0a8;
+  background: transparent;
+  border-radius: 0;
+}
+
+.result-score {
+  font-size: 60rpx;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.result-score-unit {
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.result-level {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.bar-track {
+  height: 8rpx;
+  margin-top: 22rpx;
+  background: #eceef1;
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4rpx;
+  transition: width 0.4s ease;
+}
+
+.score-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+}
+
+.why-link {
+  font-size: 26rpx;
+  color: #ff8558;
+}
+
+.expand-link {
+  font-size: 26rpx;
+  color: #5b616b;
+}
+
+.expand-arrow {
+  font-size: 26rpx;
+  color: #9aa0a8;
+  margin-left: 6rpx;
+  transition: transform 0.2s ease;
+}
+
+.expand-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.section {
+  padding-top: 24rpx;
+  margin-top: 22rpx;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.section-title {
+  display: block;
+  margin-bottom: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.gap-section .cat-grid {
+  margin-top: 0;
+}
+
+.cat-item + .cat-item {
+  border-left: 1rpx solid #f2f3f5;
+}
+
+.cat-score {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.cat-label {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+}
+
+.cat-weight {
+  margin-top: 2rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.result-summary {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: #5b616b;
+  line-height: 1.7;
+}
+
+.fact-line {
+  display: flex;
+  align-items: center;
+  margin-top: 18rpx;
+}
+
+.fact-item {
+  margin-right: 28rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.sub-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6rpx;
+}
+
+.sub-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.sub-hint {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.dim-row {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f7f8fa;
+}
+
+.dim-row:last-child {
+  border-bottom: none;
+}
+
+.dim-row:active {
+  background: #fafbfc;
+}
+
+.dim-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dim-name-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.dim-name {
+  font-size: 28rpx;
+  color: #17191c;
+}
+
+.dim-status {
+  margin-left: 12rpx;
+  font-size: 24rpx;
+  color: #e5484d;
+}
+
+.dim-status.ok {
+  color: #17a673;
+}
+
+.dim-status.na {
+  color: #9aa0a8;
+}
+
+.dim-score-wrap {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin-left: 16rpx;
+}
+
+.dim-percent {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.dim-why {
+  margin-left: 8rpx;
+  font-size: 28rpx;
+  color: #c8ccd2;
+}
+
+.dim-track {
+  height: 6rpx;
+  margin-top: 10rpx;
+  background: #f2f3f5;
+  border-radius: 3rpx;
+  overflow: hidden;
+}
+
+.dim-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  background: #ff8558;
+}
+
+.dim-fill.ok {
+  background: #17a673;
+}
+
+.dim-fill.warn {
+  background: #f0b429;
+}
+
+.dim-note {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.action-block {
+  margin-bottom: 22rpx;
+}
+
+.action-label {
+  display: block;
+  margin-bottom: 10rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.action-section .chip-group {
+  margin-top: 2rpx;
+}
+
+.action-section .chip {
+  margin: 0 12rpx 10rpx 0;
+  padding: 4rpx 12rpx;
+  font-size: 24rpx;
+  border-radius: 6rpx;
+  background: #f7f8fa;
+  color: #5b616b;
+}
+
+.action-section .chip.must {
+  background: #fff3ed;
+  color: #b23c17;
+}
+
+.action-section .gap-line {
+  margin-top: 6rpx;
+  font-size: 26rpx;
+  color: #5b616b;
+  line-height: 1.7;
+}
+
+.meta-line {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
 </style>

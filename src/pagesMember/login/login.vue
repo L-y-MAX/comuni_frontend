@@ -90,9 +90,11 @@
         </view>
 
         <!-- 登录按钮 -->
-       <view class="login-button {{canSubmit ? '' : 'btn-disabled'}}" bindtap="handleLogin">
-  登录
-</view>
+        <button
+          class="login-button"
+          :disabled="!canLogin || isLoading"
+          @click="handleLogin"
+        >
           <text
             v-if="isLoading"
             class="loading-text"
