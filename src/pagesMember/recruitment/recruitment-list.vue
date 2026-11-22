@@ -1,142 +1,125 @@
 <template>
   <view class="recruitment-list-page">
-    <!-- 筛选区域（使用通用折叠逻辑和特效，从下到上展开，固定在上层） -->
-    <view class="collapse-container">
-      <!-- 筛选内容区域（根据折叠状态显示/隐藏） -->
-      <view
-        class="collapse-content"
-        :class="{ collapsed: !collapseStates.filter }"
-      >
-        <!-- 搜索框（企业名称/岗位名称）- 改用coolinput样式 -->
-        <view class="filter-item">
-          <view class="coolinput">
-            <label
-              for="search"
-              class="text"
-            >
-              搜索
-            </label>
-            <input
-              v-model="searchKeyword"
-              placeholder="企业名称/岗位名称/行业/专业"
-              class="input"
-              @confirm="handleSearch"
-              type="text"
-              id="search"
-            />
-          </view>
-        </view>
-
-        <!-- 排序选择 - 动态展示所有可排序字段 -->
-        <view class="filter-item">
-          <view class="coolinput">
-            <label
-              for="sort"
-              class="text"
-            >
-              排序
-            </label>
-            <picker
-              :range="sortOptions"
-              :value="selectedSortIndex"
-              @change="handleSortChange"
-              class="picker-wrap"
-              id="sort"
-            >
-              <view class="input select-input">
-                {{ sortOptions[selectedSortIndex] }}
-                <text class="select-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-        </view>
-
-        <!-- 筛选标签区域 (多选) -->
-        <view class="filter-tags-section">
-          <view class="filter-group-title">筛选条件 (点击添加/取消)</view>
-
-          <!-- 循环展示所有筛选维度 -->
-          <view
-            class="filter-dimension"
-            v-for="(options, field) in filterOptions"
-            :key="field"
-          >
-            <!-- 可点击的维度标题行 -->
-            <view
-              class="dimension-header"
-              @click="toggleDimensionCollapse(field)"
-            >
-              <text
-                class="dimension-arrow"
-                :class="{ expanded: dimensionCollapseStates[field] }"
-              >
-                ▶
-              </text>
-              <text class="dimension-name">{{ fieldLabels[field] }}</text>
-              <!-- 显示已选数量提示 -->
-              <text
-                v-if="activeFilters[field]"
-                class="dimension-count"
-              >
-                (已选: {{ activeFilters[field] }})
-              </text>
-            </view>
-
-            <!-- 可折叠的标签列表 -->
-            <view
-              class="tag-list-wrapper"
-              :class="{ collapsed: !dimensionCollapseStates[field] }"
-            >
-              <view class="tag-list">
-                <view
-                  class="tag-item"
-                  :class="{ active: activeFilters[field] === option }"
-                  v-for="option in options"
-                  :key="option"
-                  @click.stop="toggleFilter(field, option)"
-                >
-                  {{ option }}
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 筛选/重置按钮 -->
-        <view class="filter-btn-group">
-          <button
-            class="reset-btn"
-            @click="resetFilter"
-          >
-            重置筛选
-          </button>
-          <button
-            class="filter-btn"
-            @click="fetchList(1)"
-          >
-            立即筛选
-          </button>
-        </view>
+    <!-- 顶部搜索 + 筛选 -->
+    <view class="list-header">
+      <view class="search-box">
+        <uni-icons type="search" size="18" color="#9aa0a8" />
+        <input
+          v-model="searchKeyword"
+          class="search-input"
+          type="text"
+          placeholder="搜索岗位、企业或专业"
+          confirm-type="search"
+          @confirm="handleSearch"
+        />
+        <text
+          v-if="searchKeyword"
+          class="search-clear"
+          @click="clearSearch"
+        >
+          ×
+        </text>
       </view>
-
-      <!-- 折叠触发按钮（去掉箭头，使用特效，放在内容下方） -->
-      <view
-        class="collapse-trigger effect-btn"
-        @click="toggleCollapse('filter')"
-      >
-        <text class="btn-text">筛选条件</text>
+      <view class="filter-toggle" @click="toggleCollapse('filter')">
+        <uni-icons type="tune" size="20" color="#17191c" />
+        <text class="filter-toggle-text">筛选</text>
+        <text v-if="activeFilterCount" class="filter-badge">{{ activeFilterCount }}</text>
       </view>
     </view>
 
-    <!-- 列表区域 -->
-    <view class="list-container">
-      <!-- 已有数据时只在顶部显示一行轻量提示，不再整块替换列表（消除翻页闪烁） -->
-      <view
-        v-if="loading && list.length > 0"
-        class="refreshing"
-      >
-        正在刷新…
+    <!-- 快捷分类 -->
+    <scroll-view
+      scroll-x
+      class="quick-scroll"
+      :show-scrollbar="false"
+    >
+      <view class="quick-chips">
+        <text
+          v-for="chip in quickChips"
+          :key="chip.key"
+          class="quick-chip"
+          :class="{ active: quickFilter === chip.key }"
+          @click="setQuickFilter(chip.key)"
+        >
+          {{ chip.label }}
+        </text>
       </view>
+    </scroll-view>
+
+    <!-- 数量 + 排序 -->
+    <view class="list-toolbar">
+      <text class="result-count">{{ filteredList.length }} 个岗位</text>
+      <picker
+        :range="sortOptions"
+        :value="selectedSortIndex"
+        @change="handleSortChange"
+      >
+        <view class="sort-picker">
+          <text class="sort-text">{{ sortOptions[selectedSortIndex] }}</text>
+          <uni-icons type="down" size="12" color="#9aa0a8" />
+        </view>
+      </picker>
+    </view>
+
+    <!-- 筛选面板 -->
+    <view
+      v-if="collapseStates.filter"
+      class="filter-panel"
+    >
+      <view class="filter-panel-head">
+        <text class="filter-panel-title">筛选条件</text>
+        <text class="filter-reset" @click="resetFilter">重置</text>
+      </view>
+
+      <view
+        v-for="(options, field) in filterOptions"
+        :key="field"
+        class="filter-group"
+      >
+        <view
+          class="filter-group-head"
+          @click="toggleDimensionCollapse(field)"
+        >
+          <text class="filter-group-name">{{ fieldLabels[field] }}</text>
+          <text
+            v-if="activeFilters[field]"
+            class="filter-group-value"
+          >
+            {{ activeFilters[field] }}
+          </text>
+          <uni-icons
+            :type="dimensionCollapseStates[field] ? 'up' : 'down'"
+            size="12"
+            color="#9aa0a8"
+          />
+        </view>
+
+        <view
+          v-if="dimensionCollapseStates[field]"
+          class="filter-chips"
+        >
+          <text
+            v-for="option in options"
+            :key="option"
+            class="filter-chip"
+            :class="{ active: activeFilters[field] === option }"
+            @click.stop="toggleFilter(field, option)"
+          >
+            {{ option }}
+          </text>
+        </view>
+      </view>
+
+      <button
+        class="filter-apply"
+        @click="applyFilters"
+      >
+        查看结果
+      </button>
+    </view>
+
+    <!-- 岗位列表 -->
+    <view class="list-container">
       <view
         v-if="loading && list.length === 0"
         class="loading"
@@ -144,107 +127,77 @@
         加载中...
       </view>
       <view
-        v-else-if="list.length === 0"
+        v-else-if="filteredList.length === 0"
         class="empty"
       >
-        暂无招聘信息
+        暂无符合条件的岗位
       </view>
       <view
         v-else
-        class="list-item"
-        v-for="item in list"
+        v-for="item in filteredList"
         :key="item.id"
+        class="job-card"
         @click="goToDetail(item)"
       >
-        <view class="item-title">{{ item.enterprise_name }}</view>
-        <view class="item-info">
-          <text class="info-item">岗位：{{ item.job_name }}</text>
-          <text class="info-item">招聘专业：{{ item.recruit_major }}</text>
-          <text class="info-item">招聘人数：{{ item.recruit_number }}</text>
+        <view class="job-top">
+          <view class="job-title-wrap">
+            <text class="job-name">{{ item.job_name }}</text>
+            <text class="company-name">{{ item.enterprise_name }}</text>
+            <text v-if="item.company_address" class="company-address">{{ item.company_address }}</text>
+          </view>
+          <view class="job-right">
+            <text class="job-salary">{{ item.monthly_salary || '薪资面议' }}</text>
+            <view
+              class="job-fav"
+              @click.stop="toggleFavorite(item)"
+            >
+              <uni-icons
+                :type="isFavorite(item) ? 'star-filled' : 'star'"
+                size="20"
+                :color="isFavorite(item) ? '#ff8558' : '#c8ccd2'"
+              />
+            </view>
+          </view>
         </view>
-        <view class="item-info">
-          <text class="info-item">月薪：{{ item.monthly_salary }}</text>
-          <text class="info-item">展位号：{{ item.booth_number }}</text>
+
+        <view class="job-tags">
+          <text v-if="item.industry" class="job-tag">{{ item.industry }}</text>
+          <text v-if="item.enterprise_nature" class="job-tag">{{ item.enterprise_nature }}</text>
+          <text v-if="item.enterprise_scale" class="job-tag">{{ item.enterprise_scale }}</text>
           <text
-            class="info-item"
-            :class="item.is_alumni_enterprise === '是' ? 'alumni' : ''"
+            v-if="item.is_alumni_enterprise === '是'"
+            class="job-tag alumni"
           >
-            {{ item.is_alumni_enterprise === '是' ? '校友企业' : '非校友企业' }}
+            校友企业
           </text>
         </view>
+
+        <view class="job-bottom">
+          <text class="job-meta">招 {{ item.recruit_number || '若干' }}</text>
+          <text class="job-meta job-major">专业：{{ item.recruit_major || '不限' }}</text>
+        </view>
       </view>
     </view>
 
-    <!-- 分页组件 -->
     <view
-      v-if="total > 0"
-      class="pagination"
+      v-if="filteredList.length"
+      class="load-more"
     >
-      <!-- 上一页按钮/占位符 -->
-      <view
-        v-if="currentPage > 1"
-        class="page-btn button"
-        @click="changePage(currentPage - 1)"
-      >
-        上一页
-      </view>
-      <view
-        v-else
-        class="page-btn-placeholder"
-      ></view>
-
-      <!-- 页码信息 + 跳转功能 -->
-      <view class="page-info-with-jump">
-        <!-- 跳转输入框 -->
-        <input
-          v-model="jumpPageInput"
-          type="number"
-          class="jump-input"
-          :placeholder="`${currentPage}`"
-          @confirm="handleJump"
-          @focus="handleJumpFocus"
-          @blur="handleJumpBlur"
-        />
-
-        <!-- 显示总页数 -->
-        <view class="page-total">/ {{ totalPages }}</view>
-
-        <!-- 跳转按钮 -->
-        <button
-          class="jump-btn"
-          @click="handleJump"
-        >
-          跳转
-        </button>
-      </view>
-
-      <!-- 下一页按钮/占位符 -->
-      <view
-        v-if="currentPage < totalPages"
-        class="page-btn button"
-        @click="changePage(currentPage + 1)"
-      >
-        下一页
-      </view>
-      <view
-        v-else
-        class="page-btn-placeholder"
-      ></view>
+      {{ loadingMore ? '加载中...' : hasMore ? '上拉加载更多' : '没有更多了' }}
     </view>
 
-    <!-- 数据来源说明 -->
     <view class="data-source">数据由齐鲁人才网&聊城大学毕业生就业指导中心提供支持</view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 import { baseURL } from '@/utils/request'
 
 // ========== 通用折叠状态管理 ==========
 const collapseStates = ref<Record<string, boolean>>({
-  filter: true, // 筛选条件默认展开
+  filter: false, // 筛选条件默认收起
 })
 
 const toggleCollapse = (type: string) => {
@@ -263,7 +216,6 @@ const fieldLabels: Record<string, string> = {
   recruit_major: '招聘专业',
   monthly_salary: '月薪',
   recruit_number: '招聘人数',
-  check_in_status: '签到状态',
   is_alumni_enterprise: '校友企业',
 }
 
@@ -276,7 +228,6 @@ const filterFields = [
   'recruit_major',
   'monthly_salary',
   'recruit_number',
-  'check_in_status',
   'is_alumni_enterprise',
 ]
 
@@ -307,6 +258,69 @@ const selectedSort = computed(() => sortValues.value[selectedSortIndex.value])
 // 搜索关键词
 const searchKeyword = ref('')
 
+// 快捷分类（数据没有岗位类型字段，这里按岗位名/专业/企业性质做轻量归类）
+type QuickKey = 'all' | 'tech' | 'product' | 'intern' | 'state' | 'private' | 'fav'
+const quickChips: { key: QuickKey; label: string }[] = [
+  { key: 'all', label: '全部' },
+  { key: 'tech', label: '技术岗' },
+  { key: 'product', label: '产品运营' },
+  { key: 'intern', label: '实习' },
+  { key: 'state', label: '国企' },
+  { key: 'private', label: '民企' },
+  { key: 'fav', label: '我的收藏' },
+]
+const quickFilter = ref<QuickKey>('all')
+
+const setQuickFilter = (key: QuickKey) => {
+  quickFilter.value = key
+}
+
+const matchQuick = (item: any): boolean => {
+  const text = `${item.job_name || ''}${item.recruit_major || ''}`
+  const nature = String(item.enterprise_nature || '')
+  switch (quickFilter.value) {
+    case 'tech':
+      return /开发|工程师|算法|测试|运维|数据|Java|前端|后端/i.test(text)
+    case 'product':
+      return /产品|运营|市场|新媒体|策划/i.test(text)
+    case 'intern':
+      return /实习/.test(text)
+    case 'state':
+      return /国有|事业/.test(nature)
+    case 'private':
+      return /民营|民企/.test(nature)
+    case 'fav':
+      return isFavorite(item)
+    default:
+      return true
+  }
+}
+
+const filteredList = computed(() => list.value.filter(matchQuick))
+
+// 收藏（本地）
+const FAVORITE_KEY = 'recruitmentFavoriteJobs'
+const favoriteIds = ref<string[]>([])
+try {
+  const raw = uni.getStorageSync(FAVORITE_KEY)
+  if (Array.isArray(raw)) favoriteIds.value = raw.map(String)
+} catch {
+  favoriteIds.value = []
+}
+const isFavorite = (item: any) => favoriteIds.value.includes(String(item.id))
+const toggleFavorite = (item: any) => {
+  const id = String(item.id)
+  if (favoriteIds.value.includes(id)) {
+    favoriteIds.value = favoriteIds.value.filter((x) => x !== id)
+    uni.showToast({ title: '已取消收藏', icon: 'none' })
+  } else {
+    favoriteIds.value = [...favoriteIds.value, id]
+    uni.showToast({ title: '已收藏', icon: 'none' })
+  }
+  uni.setStorageSync(FAVORITE_KEY, favoriteIds.value)
+}
+
+
 // 分页数据
 const list = ref<any[]>([])
 const currentPage = ref(1)
@@ -314,6 +328,8 @@ const pageSize = ref(10)
 const total = ref(0)
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 const loading = ref(false)
+const loadingMore = ref(false)
+const hasMore = computed(() => list.value.length < total.value)
 
 // 新增：跳转页码输入
 const jumpPageInput = ref('')
@@ -354,7 +370,7 @@ const ensureLogin = (): boolean => {
  * 筛选选项（企业性质、行业、招聘专业、月薪档位…）几乎不变，
  * 原来每次进页面都要拉 9 个接口。这里加一层本地缓存，命中即用。
  */
-const FILTER_CACHE_KEY = 'recruitmentFilterOptions'
+const FILTER_CACHE_KEY = 'recruitmentFilterOptionsV2'
 const FILTER_CACHE_TTL = 6 * 60 * 60 * 1000 // 6 小时
 
 const readFilterCache = (): Record<string, string[]> | null => {
@@ -379,8 +395,33 @@ const writeFilterCache = (data: Record<string, string[]>) => {
 /** 把筛选选项落到响应式状态上（缓存与接口两条路径共用） */
 const applyFilterOptions = (data: Record<string, string[]>) => {
   Object.keys(data).forEach((field) => {
-    filterOptions.value[field] = data[field]
-    // 初始化折叠状态：默认 false (折叠)
+    let values = Array.isArray(data[field]) ? data[field] : []
+
+    if (field === 'job_name') {
+      // 去空格 + 忽略大小写去重，保留第一个展示值
+      const seen = new Set<string>()
+      values = values.filter((value) => {
+        const key = String(value || '').replace(/\s+/g, '').toLowerCase()
+        if (!key || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+    }
+
+    if (field === 'recruit_major') {
+      // 把「计算机、软件工程、网络工程」拆成一个个专业
+      const majors = new Set<string>()
+      values.forEach((value) => {
+        String(value || '')
+          .split(/[、,，;；/]+/)
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .forEach((part) => majors.add(part))
+      })
+      values = [...majors].sort()
+    }
+
+    filterOptions.value[field] = values
     dimensionCollapseStates.value[field] = false
   })
   initSortOptions()
@@ -409,7 +450,6 @@ const fetchFilterOptions = async () => {
       recruit_major: 'recruit-majors',
       monthly_salary: 'monthly-salaries',
       recruit_number: 'recruit-numbers',
-      check_in_status: 'check-in-statuses',
       is_alumni_enterprise: 'is-alumni-enterprises',
     }
 
@@ -445,18 +485,28 @@ const fetchFilterOptions = async () => {
 // 初始化排序选项
 const initSortOptions = () => {
   const dbSortFields = [
+    { label: '最新发布', val: '-registration_time' },
+    { label: '薪资从高到低', val: 'salary_desc' },
+    { label: '薪资从低到高', val: 'salary_asc' },
     { label: '企业名称升序', val: 'enterprise_name' },
-    { label: '企业名称降序', val: '-enterprise_name' },
-    { label: '发布时间升序', val: 'registration_time' },
-    { label: '发布时间降序', val: '-registration_time' },
-    { label: '岗位名称升序', val: 'job_name' },
-    { label: '岗位名称降序', val: '-job_name' },
-    { label: '月薪升序(字典序,非数值序，最大可能在第1页)', val: 'monthly_salary' },
-    { label: '月薪降序(字典序,非数值序，最小可能在第1页)', val: '-monthly_salary' },
   ]
 
   sortOptions.value = ['默认排序', ...dbSortFields.map((i) => i.label)]
   sortValues.value = ['', ...dbSortFields.map((i) => i.val)]
+}
+
+const activeFilterCount = computed(
+  () => Object.keys(activeFilters.value).filter((key) => !!activeFilters.value[key]).length,
+)
+
+const clearSearch = () => {
+  searchKeyword.value = ''
+  fetchList(1)
+}
+
+const applyFilters = () => {
+  collapseStates.value.filter = false
+  fetchList(1)
 }
 
 // 切换筛选标签
@@ -473,6 +523,7 @@ const toggleFilter = (field: string, option: string) => {
 // 处理排序选择
 const handleSortChange = (e: any) => {
   selectedSortIndex.value = e.detail.value
+  fetchList(1)
 }
 
 // 处理搜索确认
@@ -486,13 +537,14 @@ const handleSearch = () => {
  */
 let listRequestSeq = 0
 
-// 获取招聘列表数据
-const fetchList = async (page = currentPage.value) => {
+// 获取招聘列表数据（append=true 时追加，用于上拉加载）
+const fetchList = async (page = currentPage.value, append = false) => {
   if (!ensureLogin()) return
 
   const seq = ++listRequestSeq
   const wasEmpty = list.value.length === 0
-  loading.value = true
+  if (append) loadingMore.value = true
+  else loading.value = true
   try {
     const token = uni.getStorageSync('accessToken')
 
@@ -512,7 +564,7 @@ const fetchList = async (page = currentPage.value) => {
       }
     })
 
-    if (selectedSort.value) {
+    if (selectedSort.value && !['salary_desc', 'salary_asc'].includes(selectedSort.value)) {
       params.ordering = selectedSort.value
     }
 
@@ -529,15 +581,17 @@ const fetchList = async (page = currentPage.value) => {
     const responseData = Array.isArray(res) ? res[1] : res
     if (responseData?.statusCode === 200) {
       const data = responseData.data
-      // 注意：DRF 默认分页结构是 { count, next, previous, results }
-      list.value = data.results || data || []
+      let items = data.results || data || []
+      const merged = append ? [...list.value, ...items] : items
+      if (selectedSort.value === 'salary_desc' || selectedSort.value === 'salary_asc') {
+        const dir = selectedSort.value === 'salary_desc' ? -1 : 1
+        merged.sort((a: any, b: any) => (salaryValue(a) - salaryValue(b)) * dir)
+      }
+      list.value = merged
       total.value = data.count || list.value.length
       currentPage.value = page
-      // 跳转成功后清空输入框
       jumpPageInput.value = ''
-      // 翻页后回到顶部：原来整块替换列表但滚动位置不变，
-      // 用户会停在"新数据的中段"，看起来像没反应
-      if (!wasEmpty) {
+      if (!append && !wasEmpty) {
         uni.pageScrollTo({ scrollTop: 0, duration: 200 })
       }
     } else {
@@ -548,8 +602,23 @@ const fetchList = async (page = currentPage.value) => {
     console.error('获取招聘列表失败', error)
     uni.showToast({ title: '获取列表失败', icon: 'none' })
   } finally {
-    if (seq === listRequestSeq) loading.value = false
+    if (seq === listRequestSeq) {
+      loading.value = false
+      loadingMore.value = false
+    }
   }
+}
+
+// 薪资文本转成可比较的数字：7000-12000 → 12000，6k-9k → 9000
+const salaryValue = (item: any): number => {
+  const text = String(item.monthly_salary || '')
+  const nums = [...text.matchAll(/(\d+(?:\.\d+)?)\s*(k|K|千|万)?/g)].map((m) => {
+    const n = Number(m[1])
+    if (m[2] === 'k' || m[2] === 'K' || m[2] === '千') return n * 1000
+    if (m[2] === '万') return n * 10000
+    return n
+  })
+  return nums.length ? Math.max(...nums) : 0
 }
 
 // 切换分页
@@ -591,6 +660,7 @@ const resetFilter = () => {
   searchKeyword.value = ''
   activeFilters.value = {}
   selectedSortIndex.value = 0
+  quickFilter.value = 'all'
   fetchList(1)
 }
 
@@ -610,6 +680,18 @@ onMounted(() => {
   // 列表必须等 9 个筛选接口全部返回才开始，首屏时间被硬生生串行相加。
   fetchFilterOptions()
   fetchList(1)
+})
+
+// 上拉加载更多
+onReachBottom(() => {
+  if (loading.value || loadingMore.value || !hasMore.value) return
+  fetchList(currentPage.value + 1, true)
+})
+
+// 下拉刷新
+onPullDownRefresh(async () => {
+  await fetchList(1)
+  uni.stopPullDownRefresh()
 })
 
 // 分享给好友（小程序端）
@@ -1273,4 +1355,370 @@ $effect2-gradient2: linear-gradient(
   background: #fff5f0;
   border-radius: 12rpx;
 }
+/* ====================== 岗位列表新版 ====================== */
+.recruitment-list-page {
+  background: #f5f6f8;
+}
+
+.list-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 76rpx;
+  padding: 0 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+
+.search-input {
+  flex: 1;
+  margin-left: 12rpx;
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.search-clear {
+  padding: 0 8rpx;
+  font-size: 30rpx;
+  color: #9aa0a8;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  height: 76rpx;
+  margin-left: 16rpx;
+  padding: 0 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 12rpx;
+}
+
+.filter-toggle-text {
+  margin-left: 8rpx;
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.filter-badge {
+  min-width: 28rpx;
+  height: 28rpx;
+  margin-left: 8rpx;
+  padding: 0 6rpx;
+  font-size: 20rpx;
+  line-height: 28rpx;
+  text-align: center;
+  color: #ffffff;
+  background: #ff8558;
+  border-radius: 14rpx;
+  box-sizing: border-box;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.result-count {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.sort-picker {
+  display: flex;
+  align-items: center;
+  max-width: 420rpx;
+}
+
+.sort-text {
+  max-width: 380rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 24rpx;
+  color: #5b616b;
+}
+
+.filter-panel {
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 16rpx;
+}
+
+.filter-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.filter-panel-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.filter-reset {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.filter-group {
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.filter-group-head {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+}
+
+.filter-group-name {
+  flex: 1;
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.filter-group-value {
+  max-width: 300rpx;
+  margin-right: 12rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 24rpx;
+  color: #ff8558;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  padding-bottom: 16rpx;
+}
+
+.filter-chip {
+  margin: 0 12rpx 12rpx 0;
+  padding: 8rpx 18rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+  background: #f7f8fa;
+  border: 1rpx solid transparent;
+  border-radius: 8rpx;
+}
+
+.filter-chip.active {
+  color: #b23c17;
+  background: #fff3ed;
+  border-color: #ffd2bf;
+}
+
+.filter-apply {
+  width: 100%;
+  height: 76rpx;
+  line-height: 76rpx;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #ffffff;
+  background: #ff8558;
+  border-radius: 10rpx;
+
+  &::after {
+    border: none;
+  }
+}
+
+.list-container {
+  padding: 0;
+  margin-bottom: 16rpx;
+  background: transparent;
+}
+
+.job-card {
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 16rpx;
+}
+
+.job-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.job-title-wrap {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+
+.job-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #17191c;
+  line-height: 1.4;
+}
+
+.company-name {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 26rpx;
+  color: #5b616b;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.job-salary {
+  flex: none;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ff8558;
+}
+
+.company-address {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 14rpx;
+}
+
+.job-tag {
+  margin: 0 12rpx 8rpx 0;
+  padding: 4rpx 12rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+  background: #f7f8fa;
+  border-radius: 6rpx;
+}
+
+.job-tag.alumni {
+  color: #b23c17;
+  background: #fff3ed;
+}
+
+.job-bottom {
+  display: flex;
+  align-items: center;
+  margin-top: 6rpx;
+}
+
+.job-meta {
+  flex: none;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.job-major {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pagination {
+  padding: 12rpx 0 20rpx;
+}
+
+.pagination .page-btn {
+  padding: 10rpx 24rpx;
+  font-size: 24rpx;
+  color: #17191c;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 8rpx;
+}
+
+.pagination .page-btn.disabled {
+  color: #c8ccd2;
+}
+
+.page-info {
+  margin: 0 20rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.list-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  padding-top: 8rpx;
+  padding-bottom: 12rpx;
+  margin-bottom: 4rpx;
+  background: #f5f6f8;
+}
+
+.quick-scroll {
+  white-space: nowrap;
+  margin-bottom: 12rpx;
+}
+
+.quick-chips {
+  display: inline-flex;
+  padding-right: 20rpx;
+}
+
+.quick-chip {
+  flex: none;
+  margin-right: 12rpx;
+  padding: 10rpx 24rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 999rpx;
+}
+
+.quick-chip.active {
+  color: #ffffff;
+  background: #ff8558;
+  border-color: #ff8558;
+}
+
+.job-right {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.job-fav {
+  margin-top: 10rpx;
+  padding: 4rpx;
+}
+
+.load-more {
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
 </style>
