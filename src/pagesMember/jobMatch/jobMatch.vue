@@ -308,6 +308,50 @@
                 达标维度 {{ r.satisfiedCount }}/{{ r.totalCount }} · 匹配置信度
                 {{ Math.round(r.confidence * 100) }}%
               </text>
+
+              <WhatIfPanel
+                v-if="student && jobOf(r)"
+                :student="student"
+                :job="jobOf(r)"
+                :base="r"
+                @saved="reloadPlans"
+              />
+            </view>
+          </view>
+
+          <view
+            v-if="plans.length"
+            class="plan-card card-style"
+          >
+            <view class="plan-head">
+              <text class="plan-title">我的补差计划</text>
+              <text
+                class="plan-clear"
+                @click="clearPlans"
+              >
+                清空
+              </text>
+            </view>
+            <view
+              v-for="plan in plans"
+              :key="plan.jobId"
+              class="plan-item"
+            >
+              <view class="plan-top">
+                <text class="plan-job">{{ plan.jobName }}</text>
+                <text class="plan-score">
+                  {{ plan.baseScore }}% → {{ plan.simulatedScore }}%
+                </text>
+              </view>
+              <view class="plan-tags">
+                <text
+                  v-for="(item, i) in plan.items"
+                  :key="`${plan.jobId}-${i}`"
+                  class="plan-tag"
+                >
+                  {{ item.name }}
+                </text>
+              </view>
             </view>
           </view>
         </block>
@@ -361,6 +405,8 @@ import { matchStudentToJob, rankJobsByMatch } from './lib/jobMatch'
 import { getSampleJobProfiles } from './lib/jobProfileSamples'
 import { fetchRecruitmentByCreditCode, generateJobProfile } from './lib/jobProfileApi'
 import WhySheet from './components/WhySheet.vue'
+import WhatIfPanel from './components/WhatIfPanel.vue'
+import { clearWhatIfPlans, readWhatIfPlans, type WhatIfPlan } from './lib/whatIf'
 
 // ====================== 状态 ======================
 
@@ -377,6 +423,9 @@ const whyVisible = ref(false)
 const whyMode = ref<'dimension' | 'score'>('dimension')
 const whyGap = ref<DimensionGap | null>(null)
 const whyMatch = ref<MatchResult | null>(null)
+
+/** 本地补差计划 */
+const plans = ref<WhatIfPlan[]>([])
 
 const loading = ref(false)
 const errorMsg = ref('')
@@ -437,6 +486,25 @@ const openScoreWhy = (match: MatchResult) => {
 
 const closeWhy = () => {
   whyVisible.value = false
+}
+
+/** 结果卡只带 jobId，补差模拟需要回查完整岗位画像 */
+const jobOf = (match: MatchResult) => jobProfiles.value[match.jobId] ?? null
+
+const reloadPlans = () => {
+  plans.value = readWhatIfPlans()
+}
+
+const clearPlans = () => {
+  uni.showModal({
+    title: '清空补差计划',
+    content: '确定删除已保存的补差计划吗？',
+    success: (res) => {
+      if (!res.confirm) return
+      clearWhatIfPlans()
+      plans.value = []
+    },
+  })
 }
 
 const goAbilityProfile = () => {
@@ -528,6 +596,7 @@ const reload = () => {
 
 onLoad((options) => {
   student.value = readStudentProfile()
+  plans.value = readWhatIfPlans()
 
   // 没有能力画像时直接停在这里，界面会提示去生成
   if (!student.value) return
@@ -1408,6 +1477,74 @@ onShareAppMessage(() => ({
   margin-top: 8rpx;
   font-size: 24rpx;
   color: #9aa0a8;
+}
+
+/* ====================== 补差计划 ====================== */
+.plan-card {
+  padding: 24rpx 28rpx;
+  margin-bottom: 24rpx;
+  background: #ffffff;
+  border: none;
+  border-radius: 20rpx;
+  box-shadow: none;
+}
+
+.plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.plan-clear {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.plan-item {
+  padding-top: 18rpx;
+  margin-top: 18rpx;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.plan-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.plan-job {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.plan-score {
+  flex: none;
+  margin-left: 16rpx;
+  font-size: 24rpx;
+  color: #ff8558;
+}
+
+.plan-tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10rpx;
+}
+
+.plan-tag {
+  margin: 0 12rpx 8rpx 0;
+  padding: 4rpx 12rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+  background: #f7f8fa;
+  border-radius: 6rpx;
 }
 
 </style>
