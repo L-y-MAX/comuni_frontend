@@ -23,6 +23,7 @@
         <scroll-view
           scroll-y
           class="option-list"
+          :style="{ height: listHeight }"
         >
           <view
             v-for="opt in options"
@@ -93,6 +94,8 @@ const emit = defineEmits<{ (e: 'saved', plan: WhatIfPlan): void }>()
 const open = ref(false)
 const selectedIds = ref<string[]>([])
 const options = buildWhatIfOptions(props.student, props.job, props.base)
+
+const listHeight = computed(() => `${Math.min(options.length * 72, 420)}rpx`)
 
 const isSelected = (id: string) => selectedIds.value.includes(id)
 
