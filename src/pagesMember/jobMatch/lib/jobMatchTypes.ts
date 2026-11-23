@@ -245,6 +245,24 @@ export interface MatchCategoryResult {
   active: boolean;
 }
 
+/** 资格门槛：专业 + 必须技能/证书，和 soft score 分开 */
+export interface EligibilityInfo {
+  /** matched=专业匹配，mismatch=专业不完全一致，unknown=岗位不限/未写 */
+  majorStatus: 'matched' | 'mismatch' | 'unknown'
+  /** 学生专业 */
+  studentMajor: string
+  /** 岗位要求专业 */
+  requiredMajors: string[]
+  /** 岗位标「必须」但学生缺失的技能数 */
+  mustSkillsMissing: number
+  /** 岗位要求但学生缺失的证书数 */
+  mustCertsMissing: number
+  /** 资格是否通过（专业不冲突且没有必须技能缺口） */
+  passed: boolean
+  /** 给界面看的原因 */
+  reasons: string[]
+}
+
 export interface MatchResult {
   /** 岗位标识（招聘记录信用代码；示例岗位用固定 id） */
   jobId: string;
@@ -293,6 +311,9 @@ export interface MatchResult {
    * 必须单独标注并封顶，否则用户会把「已知要求满足」误读成「岗位匹配」。
    */
   informationInsufficient: boolean;
+
+  /** 资格门槛（专业 / 必须技能 / 证书），不直接重复扣分 */
+  eligibility: EligibilityInfo;
 
   // ====================== 证据链（用于「为什么是这个分」） ======================
 

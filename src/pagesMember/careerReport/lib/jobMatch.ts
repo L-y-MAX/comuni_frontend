@@ -33,7 +33,8 @@
  */
 
 import { JOB_DIMENSIONS, type AbilityDimensionKey, type JobProfile } from '@/types/jobProfile'
-import type { StudentProfile } from '@/types/studentProfile'
+import type { StudentProfile, SkillProficiency } from '@/types/studentProfile'
+import { normalizeCertName, normalizeSkillName } from '@/utils/skill-normalizer'
 import {
   MATCH_CATEGORIES,
   MAX_SKILL_PENALTY,
@@ -121,10 +122,16 @@ export interface CoverageResult {
  */
 export const calcRequirementCoverage = (
   required: { name: string; requirement: 'must' | 'preferred' }[],
-  possessed: Set<string>,
+  possessed: Map<string, SkillProficiency>,
 ): CoverageResult => {
   if (!required.length) {
     return { coverage: -1, mustCoverage: 1, total: 0, matched: 0 }
+  }
+
+  const proficiencyWeight = (level?: SkillProficiency): number => {
+    if (level === 'proficient') return 1
+    if (level === 'basic') return 0.5
+    return 0.4
   }
 
   let weightedTotal = 0
@@ -136,16 +143,16 @@ export const calcRequirementCoverage = (
   required.forEach((item) => {
     const isMust = item.requirement === 'must'
     const w = isMust ? 2 : 1
-    const has = possessed.has(item.name.toLowerCase())
+    const key = normalizeSkillName(item.name)
+    const has = possessed.has(key)
+    const depth = has ? proficiencyWeight(possessed.get(key)) : 0
 
     weightedTotal += w
-    if (has) {
-      weightedMatched += w
-      matched += 1
-    }
+    weightedMatched += w * depth
+    if (has) matched += 1
     if (isMust) {
       mustTotal += w
-      if (has) mustMatched += w
+      mustMatched += w * depth
     }
   })
 
@@ -189,14 +196,24 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   // ---------- 0. 先抽取技能 / 证书集合（专业技能与证书的达成度靠集合重合度算） ----------
   const jobSkills = jobDim('professional_skill')?.skills ?? []
   const studentSkills = studentDim('professional_skill')?.skills ?? []
-  const studentSkillNames = new Set(studentSkills.map((s) => s.name.toLowerCase()))
+  const studentSkillMap = new Map<string, SkillProficiency>()
+  studentSkills.forEach((s) => {
+    const key = normalizeSkillName(s.name)
+    const prev = studentSkillMap.get(key)
+    if (!prev || s.proficiency === 'proficient' || (prev === 'unknown' && s.proficiency === 'basic')) {
+      studentSkillMap.set(key, s.proficiency)
+    }
+  })
+  const studentSkillNames = new Set(studentSkillMap.keys())
 
   const jobCerts = jobDim('certificate')?.certificates ?? []
   const studentCerts = studentDim('certificate')?.certificates ?? []
-  const studentCertNames = new Set(studentCerts.map((c) => c.name.toLowerCase()))
+  const studentCertMap = new Map<string, SkillProficiency>()
+  studentCerts.forEach((c) => studentCertMap.set(normalizeCertName(c.name), 'proficient'))
+  const studentCertNames = new Set(studentCertMap.keys())
 
-  const skillCoverage = calcRequirementCoverage(jobSkills, studentSkillNames)
-  const certCoverage = calcRequirementCoverage(jobCerts, studentCertNames)
+  const skillCoverage = calcRequirementCoverage(jobSkills, studentSkillMap)
+  const certCoverage = calcRequirementCoverage(jobCerts, studentCertMap)
 
   // ---------- 1. 十维差距 ----------
   const gaps: DimensionGap[] = JOB_DIMENSIONS.map((meta) => {
@@ -338,8 +355,9 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
   // ---------- 4. 技能 / 证书缺口（集合已在第 0 步抽取） ----------
   const skillGaps: SkillGap[] = jobSkills
     .map((js) => {
-      const possessed = studentSkillNames.has(js.name.toLowerCase())
-      const matched = studentSkills.find((ss) => ss.name.toLowerCase() === js.name.toLowerCase())
+      const key = normalizeSkillName(js.name)
+      const possessed = studentSkillNames.has(key)
+      const matched = studentSkills.find((ss) => normalizeSkillName(ss.name) === key)
       return {
         name: js.name,
         requirement: js.requirement,
@@ -354,7 +372,7 @@ export const matchStudentToJob = (student: StudentProfile, job: JobProfile): Mat
     .map((jc) => ({
       name: jc.name,
       requirement: jc.requirement,
-      possessed: studentCertNames.has(jc.name.toLowerCase()),
+      possessed: studentCertNames.has(normalizeCertName(jc.name)),
     }))
     .filter((g) => !g.possessed)
 

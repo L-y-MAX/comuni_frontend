@@ -48,17 +48,18 @@ import {
 import {
   CERT_KEYWORDS,
   clampText,
-  confidenceByHits,
-  countDimensionHits,
   DIMENSION_SIGNALS,
   evidenceAround,
-  extractDimensionEvidence,
   findOccurrences,
+  filterCompoundFalsePositives,
+  isInsideAnySpan,
+  isNegatedOccurrence,
   SKILL_DICTIONARY,
   scoreByCertCount,
-  scoreByHits,
   scoreBySkillCount,
+  type MatchSpan,
 } from '@/utils/jobProfileParser'
+import { expandTermVariants, normalizeCertName, normalizeSkillName } from '@/utils/skill-normalizer'
 
 // ====================== 熟练度判定 ======================
 
@@ -117,22 +118,44 @@ const VENDOR_CERT_PATTERN =
 const extractStudentSkills = (text: string): { skills: StudentSkillItem[]; evidence: string[] } => {
   const skills: StudentSkillItem[] = []
   const evidence: string[] = []
+  const spans: MatchSpan[] = []
 
-  Object.entries(SKILL_DICTIONARY).forEach(([category, words]) => {
-    words.forEach((word) => {
-      const positions = findOccurrences(text, word)
-      if (!positions.length) return
-      if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return
+  // 最长匹配优先，避免「Java」命中「JavaScript」、「SQL」命中「MySQL」
+  const entries = Object.entries(SKILL_DICTIONARY)
+    .flatMap(([category, words]) => words.map((word) => ({ category, word })))
+    .sort((a, b) => b.word.length - a.word.length)
 
-      const idx = positions[0]
-      skills.push({
-        name: word,
-        category,
-        proficiency: strongestProficiency(text, positions, word.length),
-      })
+  entries.forEach(({ category, word }) => {
+    let positions: number[] = []
+    let matchedLen = word.length
+    for (const variant of expandTermVariants(word)) {
+      const candidate = filterCompoundFalsePositives(
+        text,
+        variant,
+        findOccurrences(text, variant),
+      ).filter(
+        (p) =>
+          !isInsideAnySpan(p, variant.length, spans) &&
+          !isNegatedOccurrence(text, p, variant.length),
+      )
+      if (candidate.length) {
+        positions = candidate
+        matchedLen = variant.length
+        break
+      }
+    }
+    if (!positions.length) return
+    if (skills.some((s) => normalizeSkillName(s.name) === normalizeSkillName(word))) return
 
-      if (evidence.length < 6) evidence.push(evidenceAround(text, idx, word.length))
+    positions.forEach((p) => spans.push({ start: p, end: p + matchedLen }))
+    const idx = positions[0]
+    skills.push({
+      name: word,
+      category,
+      proficiency: strongestProficiency(text, positions, matchedLen),
     })
+
+    if (evidence.length < 6) evidence.push(evidenceAround(text, idx, matchedLen))
   })
 
   return { skills, evidence }
@@ -146,16 +169,27 @@ const extractStudentCerts = (
   const evidence: string[] = []
 
   const push = (name: string, idx: number, len: number) => {
-    if (certificates.some((c) => c.name.toLowerCase() === name.toLowerCase())) return
+    if (certificates.some((c) => normalizeCertName(c.name) === normalizeCertName(name))) return
     certificates.push({ name })
     if (evidence.length < 4) evidence.push(evidenceAround(text, idx, len))
   }
 
-  CERT_KEYWORDS.forEach((word) => {
-    const positions = findOccurrences(text, word)
-    if (!positions.length) return
-    push(word, positions[0], word.length)
-  })
+  const certSpans: MatchSpan[] = []
+  ;[...CERT_KEYWORDS]
+    .sort((a, b) => b.length - a.length)
+    .forEach((word) => {
+      for (const variant of expandTermVariants(word)) {
+        const positions = findOccurrences(text, variant).filter(
+          (p) =>
+            !isInsideAnySpan(p, variant.length, certSpans) &&
+            !isNegatedOccurrence(text, p, variant.length),
+        )
+        if (!positions.length) continue
+        positions.forEach((p) => certSpans.push({ start: p, end: p + variant.length }))
+        push(word, positions[0], variant.length)
+        break
+      }
+    })
 
   // 厂商认证模式匹配。用 exec 循环而非 String.prototype.matchAll：
   // matchAll 是 ES2020，开发者工具 ES5 转换时会产生对
@@ -312,25 +346,45 @@ const buildSummary = (
 
 // ====================== 主入口 ======================
 
-/** 汇总学生填写内容为解析语料 */
-const buildCorpus = (input: StudentProfileInput): string =>
+/** 汇总指定字段为解析语料，避免技能/证书/自评互相污染 */
+const buildCorpusFromFields = (
+  input: StudentProfileInput,
+  fields: (keyof StudentProfileInput)[],
+): string =>
   clampText(
-    [
-      input.major,
-      input.target_job,
-      input.target_industry,
-      input.skills_text,
-      input.certificates_text,
-      input.projects_text,
-      input.internships_text,
-      input.awards_text,
-      input.gpa,
-      input.self_evaluation,
-      input.resume_text,
-    ]
+    fields
+      .map((field) => String(input[field] ?? '').trim())
       .filter(Boolean)
       .join('\n'),
   )
+
+/** 技能证据优先来自技能、项目、实习和简历原文；自评不算硬技能证据 */
+const SKILL_FIELDS: (keyof StudentProfileInput)[] = [
+  'skills_text',
+  'projects_text',
+  'internships_text',
+  'resume_text',
+]
+
+/** 证书只从证书栏和简历原文抽取 */
+const CERT_FIELDS: (keyof StudentProfileInput)[] = ['certificates_text', 'resume_text']
+
+/** 软性维度优先看项目/实习/技能/获奖等事实字段 */
+const CORE_FIELDS: (keyof StudentProfileInput)[] = [
+  'major',
+  'target_job',
+  'target_industry',
+  'skills_text',
+  'certificates_text',
+  'projects_text',
+  'internships_text',
+  'awards_text',
+  'gpa',
+  'resume_text',
+]
+
+/** 自我评价单独作为弱信号，不和事实字段混在一起 */
+const SELF_FIELDS: (keyof StudentProfileInput)[] = ['self_evaluation']
 
 /**
  * 本地规则解析入口：把学生填写的信息解析为十维能力画像。
@@ -339,7 +393,7 @@ const buildCorpus = (input: StudentProfileInput): string =>
  */
 // ====================== 解析明细（把评分过程写清楚） ======================
 
-/** 命中 0 个信号词时的中性基准分与置信度（与 scoreByHits / confidenceByHits 保持一致） */
+/** 没有有效证据时的中性基准分与置信度 */
 const NEUTRAL_SCORE = 50
 const NEUTRAL_CONFIDENCE = 0.25
 
@@ -354,10 +408,145 @@ const CERT_EMPTY_CONFIDENCE = 0.3
 /** 补充建议：按依据类型给出，不描述具体算法细节，避免与实现脱节 */
 const ADVICE_BY_KIND: Record<DimensionParseDetail['kind'], string> = {
   keyword:
-    '把上面「补充这些表述还能加分」里的词写进简历或表单即可命中——命中越多分值越高，命中 5 个及以上进入 90 分档。',
+    '优先写「角色 + 动作 + 结果」，例如「担任组长，主导需求对接，项目提前 3 天上线」；只有形容词的描述支撑力较弱。',
   skill:
     '按「技能 + 熟练度」的写法补充，例如「熟练使用 Vue3」：识别出的技能越多、标注「熟练」的越多，分值越高。',
   certificate: '补充已取得证书的全称，例如「全国计算机等级考试二级」：每多一项证书，分值上升一档。',
+}
+
+// ====================== 软性维度证据强度 ======================
+
+export type EvidenceStrength = 'strong' | 'medium' | 'weak'
+
+interface EvidenceUnit {
+  text: string
+  strength: EvidenceStrength
+  keyword: string
+  source: 'core' | 'self'
+}
+
+const ROLE_MARKERS = [
+  '负责人', '组长', '队长', '主讲', '核心成员', '主席', '部长', '班长',
+  '组长', '带队', '组织者', '发起人', '第一作者',
+]
+
+const ACTION_MARKERS = [
+  '负责', '主导', '设计', '开发', '优化', '重构', '对接', '组织', '协调',
+  '落地', '实施', '搭建', '维护', '推进', '汇报', '讲解', '编写', '测试',
+  '分析', '管理', '带领', '统筹', '策划', '执行', '改进',
+]
+
+const RESULT_PATTERN =
+  /\d+(?:\.\d+)?\s*(?:%|％|天|人|个|项|次|万|元|小时|分)|提升|降低|增长|减少|缩短|获奖|一等奖|二等奖|三等奖|金奖|银奖|铜奖|前\s*\d+|排名|上线|交付|验收|优秀/
+
+/** 切分证据句：保留逗号，避免把「负责…，结果…」拆成两句 */
+const splitEvidenceSentences = (text: string): string[] =>
+  text
+    .split(/[。；;！？!?\n\r]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 4)
+
+/** 这个句子里是否有未被否定的维度关键词 */
+const hasNonNegatedKeyword = (sentence: string, keywords: string[]): string | null => {
+  for (const keyword of keywords) {
+    const positions = findOccurrences(sentence, keyword)
+    if (positions.some((p) => !isNegatedOccurrence(sentence, p, keyword.length))) {
+      return keyword
+    }
+  }
+  return null
+}
+
+const classifyEvidence = (sentence: string, source: 'core' | 'self'): EvidenceStrength => {
+  // 自我评价里的形容词只算弱证据，不因为写了「能力强」就拔高
+  if (source === 'self') return 'weak'
+
+  const hasRole = ROLE_MARKERS.some((m) => sentence.includes(m))
+  const hasAction = ACTION_MARKERS.some((m) => sentence.includes(m))
+  const hasResult = RESULT_PATTERN.test(sentence)
+
+  if (hasResult) return 'strong'
+  if (hasAction || hasRole) return 'medium'
+  return 'weak'
+}
+
+const collectEvidence = (
+  corpus: string,
+  source: 'core' | 'self',
+  keywords: string[],
+): EvidenceUnit[] => {
+  const units: EvidenceUnit[] = []
+  splitEvidenceSentences(corpus).forEach((sentence) => {
+    const keyword = hasNonNegatedKeyword(sentence, keywords)
+    if (!keyword) return
+    units.push({
+      text: sentence,
+      strength: classifyEvidence(sentence, source),
+      keyword,
+      source,
+    })
+  })
+  return units
+}
+
+const scoreByEvidence = (units: EvidenceUnit[]): number => {
+  const strongCount = units.filter((u) => u.strength === 'strong').length
+  const mediumCount = units.filter((u) => u.strength === 'medium').length
+  const weakCount = units.filter((u) => u.strength === 'weak').length
+
+  if (strongCount > 0) {
+    return Math.min(100, 72 + Math.min(18, (strongCount - 1) * 5 + mediumCount * 2))
+  }
+  if (mediumCount > 0) {
+    return Math.min(75, 60 + Math.min(15, (mediumCount - 1) * 3))
+  }
+  if (weakCount > 0) {
+    return Math.min(60, 50 + Math.min(10, (weakCount - 1) * 2))
+  }
+  return NEUTRAL_SCORE
+}
+
+const confidenceByEvidence = (units: EvidenceUnit[]): number => {
+  const strongCount = units.filter((u) => u.strength === 'strong').length
+  const mediumCount = units.filter((u) => u.strength === 'medium').length
+  if (strongCount > 0) return Math.min(0.9, 0.8 + strongCount * 0.02)
+  if (mediumCount > 0) return 0.62
+  if (units.length > 0) return 0.35
+  return NEUTRAL_CONFIDENCE
+}
+
+const buildEvidenceDetail = (
+  units: EvidenceUnit[],
+  keywords: string[],
+  score: number,
+  confidence: number,
+): DimensionParseDetail => {
+  const strong = units.filter((u) => u.strength === 'strong').length
+  const medium = units.filter((u) => u.strength === 'medium').length
+  const weak = units.filter((u) => u.strength === 'weak').length
+  const matched = Array.from(new Set(units.map((u) => u.keyword)))
+  const { missed } = splitSignals(
+    units.map((u) => u.text).join('\n'),
+    keywords,
+  )
+
+  return {
+    kind: 'keyword',
+    matched_keywords: matched,
+    missed_keywords: missed,
+    matched_count: matched.length,
+    bonus_count: strong,
+    signal_total: keywords.length,
+    score_formula: units.length
+      ? `识别到 ${strong} 条强证据、${medium} 条中证据、${weak} 条弱证据；按最强证据定上限，再按证据数量加分，得 ${score} 分。`
+      : `这一项没有识别到有效证据，按中性基准记 ${NEUTRAL_SCORE} 分——只说明“没写到”，不代表能力不足。`,
+    score_curve:
+      '强证据（有角色/动作/结果）上限 100；中证据（有动作无结果）上限 75；弱证据（仅形容词/自评）上限 60。',
+    confidence_formula: units.length
+      ? `强证据 ${strong} 条、中证据 ${medium} 条、弱证据 ${weak} 条，置信度取 ${confidence.toFixed(2)}。`
+      : `没有有效证据，置信度取 ${NEUTRAL_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值。`,
+    advice: ADVICE_BY_KIND.keyword,
+  }
 }
 
 /** 把依据词表拆成「已命中」与「还没命中」两份，后者用于告诉用户补充什么能加分 */
@@ -375,37 +564,138 @@ const splitSignals = (
   return { matched, missed }
 }
 
-/** 软性维度的解析明细：由「信号词命中数」决定 */
-const buildKeywordDetail = (
-  text: string,
-  keywords: string[],
-  hitCount: number,
-  score: number,
-  confidence: number,
-): DimensionParseDetail => {
-  const { matched, missed } = splitSignals(text, keywords)
+export interface EvidenceCandidateSentence {
+  id: string
+  text: string
+}
+
+export interface EvidenceCandidateGroup {
+  dimension: string
+  label: string
+  sentences: EvidenceCandidateSentence[]
+}
+
+export interface EvidenceClassificationItem {
+  id: string
+  strength: EvidenceStrength | 'none'
+  quote?: string
+  role?: string
+  action?: string
+  result?: string
+  confidence?: number
+}
+
+/** 只挑规则置信度低的软性维度，交给 AI 复核句子强度 */
+export const collectLowConfidenceEvidence = (
+  input: StudentProfileInput,
+  profile: StudentProfile,
+  threshold = 0.62,
+): EvidenceCandidateGroup[] => {
+  const coreCorpus = buildCorpusFromFields(input, CORE_FIELDS)
+  const selfCorpus = buildCorpusFromFields(input, SELF_FIELDS)
+  const groups: EvidenceCandidateGroup[] = []
+
+  const softKeys = Object.keys(DIMENSION_SIGNALS).filter(
+    (key) => key !== 'professional_skill' && key !== 'certificate',
+  )
+
+  softKeys.forEach((key) => {
+    const dimension = profile.dimensions.find((d) => d.key === key)
+    if (!dimension || dimension.confidence >= threshold) return
+
+    const keywords = DIMENSION_SIGNALS[key] ?? []
+    const coreUnits = collectEvidence(coreCorpus, 'core', keywords)
+    const units = coreUnits.length ? coreUnits : collectEvidence(selfCorpus, 'self', keywords)
+    const lowConfidence = units.filter((u) => u.strength !== 'strong')
+    if (!lowConfidence.length) return
+
+    const sentences: EvidenceCandidateSentence[] = []
+    const seen = new Set<string>()
+    lowConfidence.slice(0, 5).forEach((unit) => {
+      if (seen.has(unit.text)) return
+      seen.add(unit.text)
+      sentences.push({ id: `${key}-${sentences.length + 1}`, text: unit.text })
+    })
+    if (!sentences.length) return
+    groups.push({ dimension: key, label: dimension.label, sentences })
+  })
+
+  return groups.slice(0, 3)
+}
+
+/** 把 AI 的句子强度结果合并回画像；没有有效证据时保留原规则结果 */
+export const applyEvidenceClassifications = (
+  input: StudentProfileInput,
+  profile: StudentProfile,
+  dimensionKey: string,
+  items: EvidenceClassificationItem[],
+): StudentProfile => {
+  const dimension = profile.dimensions.find((d) => d.key === dimensionKey)
+  if (!dimension) return profile
+
+  const keywords = DIMENSION_SIGNALS[dimensionKey] ?? []
+  const units: EvidenceUnit[] = items
+    .filter(
+      (item): item is EvidenceClassificationItem & { strength: EvidenceStrength } =>
+        item.strength !== 'none' && !!item.quote,
+    )
+    .map((item) => {
+      let strength = item.strength
+      // 防止 AI 把「沟通能力强」升级成强证据：
+      // strong 必须有角色/动作/结果，medium 至少要有一个动作或角色。
+      if (strength === 'strong' && !item.result) strength = 'medium'
+      if (strength === 'medium' && !item.role && !item.action) strength = 'weak'
+      return {
+        text: item.quote as string,
+        strength,
+        keyword: keywords.find((k) => (item.quote as string).includes(k)) ?? dimension.label,
+        source: 'core' as const,
+      }
+    })
+    .slice(0, 4)
+
+  // AI 也没找到有效证据时，不动规则结果，避免把一条正常证据判没
+  if (!units.length) return profile
+
+  const score = scoreByEvidence(units)
+  const confidence = confidenceByEvidence(units)
+  const dimensions = profile.dimensions.map((d) =>
+    d.key === dimensionKey
+      ? {
+          ...d,
+          score,
+          level: scoreToLevel(score) as AbilityLevel,
+          confidence,
+          evidence: units.map((u) => u.text).slice(0, 3),
+          parse_detail: buildEvidenceDetail(units, keywords, score, confidence),
+        }
+      : d,
+  )
+
+  const competitiveness = calcCompetitiveness(dimensions, profile.completeness)
+  const strengths = [...dimensions]
+    .sort((a, b) => b.score - a.score)
+    .filter((d) => d.score >= 70)
+    .slice(0, 3)
+    .map((d) => d.key)
+  const weaknesses = [...dimensions]
+    .sort((a, b) => a.score - b.score)
+    .filter((d) => d.score <= 60 && d.confidence >= 0.35)
+    .slice(0, 3)
+    .map((d) => d.key)
+
   return {
-    kind: 'keyword',
-    matched_keywords: matched,
-    missed_keywords: missed,
-    matched_count: hitCount,
-    bonus_count: 0,
-    signal_total: keywords.length,
-    score_formula:
-      hitCount > 0
-        ? `这一项的依据词表共 ${keywords.length} 个词，你填的内容命中了 ${hitCount} 个，代入下面的评分曲线得 ${score} 分。`
-        : `这一项的依据词表共 ${keywords.length} 个词，你的内容一个都没命中，因此按中性基准记 ${NEUTRAL_SCORE} 分——这只说明"没写到"，不代表能力不足。`,
-    score_curve: '命中 0 / 1 / 2 / 3 / 4 / ≥5 个词 → 50 / 62 / 72 / 80 / 86 / 90 分',
-    confidence_formula:
-      hitCount > 0
-        ? `置信度 = 0.35 + 命中数 ${hitCount} × 0.12 = ${confidence.toFixed(2)}（上限 0.80）：命中越多，这条结论的原文依据越足。`
-        : `命中数为 0，置信度直接取 ${NEUTRAL_CONFIDENCE}，低于 ${INFO_THRESHOLD_FOR_TEXT} 的「信息不足」阈值，所以只作参考。`,
-    advice: ADVICE_BY_KIND.keyword,
+    ...profile,
+    dimensions,
+    competitiveness,
+    strengths,
+    weaknesses,
+    badges: buildBadges(dimensions),
+    summary: buildSummary(input, dimensions, strengths, weaknesses, profile.completeness, competitiveness),
   }
 }
 
-/** 专业技能维度的解析明细：由「识别到的技能数 + 标注熟练的数量」决定 */
-const buildSkillDetail = (
+/** 专业技能维度的解析明细：由「识别到的技能数 + 标注熟练的数量」决定 */const buildSkillDetail = (
   skills: StudentSkillItem[],
   proficientCount: number,
   score: number,
@@ -455,10 +745,13 @@ const buildCertDetail = (
 })
 
 export const parseStudentProfileByRules = (input: StudentProfileInput): StudentProfile => {
-  const corpus = buildCorpus(input)
+  const skillCorpus = buildCorpusFromFields(input, SKILL_FIELDS)
+  const certCorpus = buildCorpusFromFields(input, CERT_FIELDS)
+  const coreCorpus = buildCorpusFromFields(input, CORE_FIELDS)
+  const selfCorpus = buildCorpusFromFields(input, SELF_FIELDS)
 
-  const { skills, evidence: skillEvidence } = extractStudentSkills(corpus)
-  const { certificates, evidence: certEvidence } = extractStudentCerts(corpus)
+  const { skills, evidence: skillEvidence } = extractStudentSkills(skillCorpus)
+  const { certificates, evidence: certEvidence } = extractStudentCerts(certCorpus)
   const proficientCount = skills.filter((s) => s.proficiency === 'proficient').length
 
   const dimensions: StudentDimension[] = JOB_DIMENSIONS.map((meta) => {
@@ -503,11 +796,15 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
       }
     }
 
-    // ---- 其余 8 个软性维度：信号词命中 ----
+    // ---- 其余 8 个软性维度：事实字段优先，自评只作为弱信号 ----
     const keywords = DIMENSION_SIGNALS[meta.key] ?? []
-    const hitCount = countDimensionHits(corpus, keywords)
-    const score = scoreByHits(hitCount)
-    const confidence = confidenceByHits(hitCount)
+    const coreUnits = collectEvidence(coreCorpus, 'core', keywords)
+    const selfUnits = coreUnits.length ? [] : collectEvidence(selfCorpus, 'self', keywords)
+    // 自评单独出现时最多计 1 条弱证据，避免形容词堆分数
+    const units = (coreUnits.length ? coreUnits : selfUnits).slice(0, 4)
+
+    const score = scoreByEvidence(units)
+    const confidence = confidenceByEvidence(units)
 
     return {
       key: meta.key,
@@ -516,8 +813,8 @@ export const parseStudentProfileByRules = (input: StudentProfileInput): StudentP
       level: scoreToLevel(score) as AbilityLevel,
       confidence,
       source: 'rule' as ParseSource,
-      evidence: extractDimensionEvidence(corpus, keywords),
-      parse_detail: buildKeywordDetail(corpus, keywords, hitCount, score, confidence),
+      evidence: units.map((u) => u.text).slice(0, 3),
+      parse_detail: buildEvidenceDetail(units, keywords, score, confidence),
     }
   })
 

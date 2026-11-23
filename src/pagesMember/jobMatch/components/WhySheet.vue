@@ -170,7 +170,10 @@
               <text class="kv-key">基础分</text>
               <text class="kv-value">{{ match.scoreBreakdown.baseScore }}%</text>
             </view>
-            <view class="kv-row">
+            <view
+              v-if="match.scoreBreakdown.skillPenalty > 0"
+              class="kv-row"
+            >
               <text class="kv-key">技能/证书扣分</text>
               <text class="kv-value">-{{ match.scoreBreakdown.skillPenalty }}%</text>
             </view>
@@ -224,7 +227,10 @@
               <text class="kv-key">基础分</text>
               <text class="kv-value">{{ match.scoreBreakdown.baseScore }}%</text>
             </view>
-            <view class="kv-row">
+            <view
+              v-if="match.scoreBreakdown.skillPenalty > 0"
+              class="kv-row"
+            >
               <text class="kv-key">技能/证书扣分</text>
               <text class="kv-value">-{{ match.scoreBreakdown.skillPenalty }}%</text>
             </view>

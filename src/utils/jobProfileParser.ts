@@ -28,6 +28,7 @@ import {
   type RequirementStrength,
   normalizeJobProfile,
 } from '@/types/jobProfile'
+import { expandTermVariants, normalizeCertName, normalizeSkillName } from '@/utils/skill-normalizer'
 
 // ====================== 输入 ======================
 
@@ -550,6 +551,39 @@ const isAsciiWordChar = (ch: string | undefined): boolean => !!ch && /[A-Za-z0-9
 /** 判断关键词是否为纯 ASCII（纯 ASCII 需做词边界判断，避免 Go 命中 Google） */
 const isAsciiKeyword = (kw: string): boolean => /^[\x20-\x7E]+$/.test(kw)
 
+export interface MatchSpan {
+  start: number
+  end: number
+}
+
+/** 某个命中是否已经落在更长的技能/证书词内部 */
+export const isInsideAnySpan = (start: number, length: number, spans: MatchSpan[]): boolean =>
+  spans.some((span) => start >= span.start && start + length <= span.end)
+
+const NEGATION_BEFORE =
+  /(?:不|未|没|无)(?:熟悉|了解|掌握|使用|接触|通过|取得|获得|具备|会|曾|擅长)|未通过|没有(?:使用|接触|通过|取得)?/
+const NEGATION_AFTER =
+  /^(?:\s*)(?:不熟悉|不会|未使用|未接触|未通过|没接触|不了解|没学过|没学过)/
+const CLAUSE_BOUNDARY = /[，。；;,.!?！？\n\r]|但是|但|不过|然而/g
+
+/**
+ * 判断某个关键词命中是否被否定。
+ * 只看同一分句内，避免「不熟悉 Redis，但熟悉 MySQL」把 MySQL 也否定。
+ */
+export const isNegatedOccurrence = (text: string, idx: number, keywordLength: number): boolean => {
+  const beforeText = text.slice(0, idx)
+  let clauseStart = 0
+  CLAUSE_BOUNDARY.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = CLAUSE_BOUNDARY.exec(beforeText)) !== null) {
+    clauseStart = match.index + match[0].length
+  }
+
+  const before = text.slice(clauseStart, idx)
+  const after = text.slice(idx + keywordLength, idx + keywordLength + 10)
+  return NEGATION_BEFORE.test(before) || NEGATION_AFTER.test(after)
+}
+
 /**
  * 在文本中查找关键词的全部出现位置。
  * 纯 ASCII 关键词做词边界校验；中文关键词直接匹配。
@@ -758,25 +792,47 @@ const confidenceByHits = (hitCount: number): number => {
 const extractSkills = (text: string): { skills: JobSkillItem[]; evidence: string[] } => {
   const skills: JobSkillItem[] = []
   const evidence: string[] = []
+  const spans: MatchSpan[] = []
 
-  Object.entries(SKILL_DICTIONARY).forEach(([category, words]) => {
-    words.forEach((word) => {
-      const rawPositions = findOccurrences(text, word)
-      const positions = filterCompoundFalsePositives(text, word, rawPositions)
-      if (!positions.length) return
-      // 避免同名技能重复（如 SQL 与 SQL Server 同时命中）
-      if (skills.some((s) => s.name.toLowerCase() === word.toLowerCase())) return
+  // 最长匹配优先：先处理长词，再处理短词，避免「数据分析」里的「数据」
+  // 或「MySQL」里的「SQL」被重复算成一项技能。
+  const entries = Object.entries(SKILL_DICTIONARY)
+    .flatMap(([category, words]) => words.map((word) => ({ category, word })))
+    .sort((a, b) => b.word.length - a.word.length)
 
-      skills.push({
-        name: word,
-        requirement: strongestStrength(text, positions, word.length),
-        category,
-      })
-
-      if (evidence.length < 6) {
-        evidence.push(evidenceAround(text, positions[0], word.length))
+  entries.forEach(({ category, word }) => {
+    let positions: number[] = []
+    let matchedLen = word.length
+    for (const variant of expandTermVariants(word)) {
+      const candidate = filterCompoundFalsePositives(
+        text,
+        variant,
+        findOccurrences(text, variant),
+      ).filter(
+        (p) =>
+          !isInsideAnySpan(p, variant.length, spans) &&
+          !isNegatedOccurrence(text, p, variant.length),
+      )
+      if (candidate.length) {
+        positions = candidate
+        matchedLen = variant.length
+        break
       }
+    }
+    if (!positions.length) return
+    // 同名/同义技能只保留一个（SpringBoot 与 Spring Boot 视为同一个）
+    if (skills.some((s) => normalizeSkillName(s.name) === normalizeSkillName(word))) return
+
+    positions.forEach((p) => spans.push({ start: p, end: p + matchedLen }))
+    skills.push({
+      name: word,
+      requirement: strongestStrength(text, positions, matchedLen),
+      category,
     })
+
+    if (evidence.length < 6) {
+      evidence.push(evidenceAround(text, positions[0], matchedLen))
+    }
   })
 
   return { skills, evidence }
@@ -803,7 +859,7 @@ const extractSkillsBySection = (
 
   const merged: JobSkillItem[] = [...primary.skills]
   secondary.skills.forEach((s) => {
-    if (merged.some((m) => m.name.toLowerCase() === s.name.toLowerCase())) return
+    if (merged.some((m) => normalizeSkillName(m.name) === normalizeSkillName(s.name))) return
     merged.push({ ...s, requirement: 'preferred' })
   })
 
@@ -818,23 +874,34 @@ const extractCerts = (text: string): { certificates: JobCertItem[]; evidence: st
   const certificates: JobCertItem[] = []
   const evidence: string[] = []
 
-  const pushCert = (name: string, positions: number[]) => {
-    if (certificates.some((c) => c.name.toLowerCase() === name.toLowerCase())) return
+  const pushCert = (name: string, positions: number[], matchLen = name.length) => {
+    if (certificates.some((c) => normalizeCertName(c.name) === normalizeCertName(name))) return
     certificates.push({
       name,
-      requirement: strongestStrength(text, positions, name.length),
+      requirement: strongestStrength(text, positions, matchLen),
     })
     if (evidence.length < 4) {
-      evidence.push(evidenceAround(text, positions[0], name.length))
+      evidence.push(evidenceAround(text, positions[0], matchLen))
     }
   }
 
-  // 1) 固定词典匹配
-  CERT_KEYWORDS.forEach((word) => {
-    const positions = findOccurrences(text, word)
-    if (!positions.length) return
-    pushCert(word, positions)
-  })
+  // 1) 固定词典匹配：长证书名优先，避免「计算机二级」里再命中短词
+  const certSpans: MatchSpan[] = []
+  ;[...CERT_KEYWORDS]
+    .sort((a, b) => b.length - a.length)
+    .forEach((word) => {
+      for (const variant of expandTermVariants(word)) {
+        const positions = findOccurrences(text, variant).filter(
+          (p) =>
+            !isInsideAnySpan(p, variant.length, certSpans) &&
+            !isNegatedOccurrence(text, p, variant.length),
+        )
+        if (!positions.length) continue
+        positions.forEach((p) => certSpans.push({ start: p, end: p + variant.length }))
+        pushCert(word, positions, variant.length)
+        break
+      }
+    })
 
   // 2) 厂商认证模式匹配（阿里云相关认证 / 华为认证 等）
   //
@@ -1078,6 +1145,7 @@ export {
   DIMENSION_SIGNALS,
   findOccurrences,
   hasHit,
+  filterCompoundFalsePositives,
   evidenceAround,
   clampText,
   countDimensionHits,

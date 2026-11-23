@@ -183,6 +183,13 @@
                 <text class="fact-item">必须技能缺口 {{ r.missingMustSkills }}</text>
               </view>
 
+              <text
+                v-if="r.eligibility?.reasons?.length"
+                class="eligibility-line"
+              >
+                {{ r.eligibility.reasons.join(' · ') }}
+              </text>
+
               <view
                 v-if="r.informationInsufficient"
                 class="result-insufficient"
@@ -581,6 +588,20 @@ const openCompare = () => {
   compareVisible.value = true
 }
 
+/** 把匹配结果缓存给岗位列表，避免列表重复解析岗位画像 */
+const cacheMatchScores = (items: MatchResult[]) => {
+  try {
+    const raw = uni.getStorageSync('jobMatchScores')
+    const scores = raw && typeof raw === 'object' ? (raw as Record<string, number>) : {}
+    items.forEach((item) => {
+      if (item.jobId) scores[item.jobId] = item.matchScore
+    })
+    uni.setStorageSync('jobMatchScores', scores)
+  } catch {
+    // 缓存失败不影响匹配
+  }
+}
+
 const goAbilityProfile = () => {
   // 能力画像现在是 tabBar 页面，只能用 switchTab
   uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
@@ -611,6 +632,7 @@ const matchWithSampleJobs = () => {
     profiles.map((p) => [p.recruitment_id || p.job_name, p]),
   )
   results.value = rankJobsByMatch(student.value, profiles)
+  cacheMatchScores(results.value)
   compareIds.value = []
   expandedIndex.value = 0
 }
@@ -648,6 +670,15 @@ const matchWithRealJob = async (creditCode: string) => {
       [profile.recruitment_id || profile.job_name]: profile,
     }
     results.value = [matchStudentToJob(student.value, profile)]
+    cacheMatchScores(results.value)
+    const first = results.value[0]
+    if (first) {
+      uni.setStorageSync('jobLastMatch', {
+        jobId: currentCreditCode,
+        jobName: first.jobName,
+        score: first.matchScore,
+      })
+    }
     compareIds.value = []
     expandedIndex.value = 0
   } catch (err) {
@@ -1398,6 +1429,14 @@ onShareAppMessage(() => ({
   margin-right: 28rpx;
   font-size: 24rpx;
   color: #9aa0a8;
+}
+
+.eligibility-line {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #b23c17;
 }
 
 .sub-head {

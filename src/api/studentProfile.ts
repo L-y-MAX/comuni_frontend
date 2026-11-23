@@ -39,7 +39,12 @@ import {
   type StudentProfile,
   type StudentProfileInput,
 } from '@/types/studentProfile'
-import { parseStudentProfileByRules } from '@/utils/studentProfileParser'
+import {
+  applyEvidenceClassifications,
+  collectLowConfidenceEvidence,
+  parseStudentProfileByRules,
+  type EvidenceClassificationItem,
+} from '@/utils/studentProfileParser'
 
 // ====================== 端点常量 ======================
 
@@ -47,6 +52,7 @@ export const STUDENT_PROFILE_ENDPOINTS = {
   parseTask: '/api/v1/auth/user/student-profile/parse/task/',
   parseResult: '/api/v1/auth/user/student-profile/parse/result/',
   detail: '/api/v1/auth/user/student-profile/',
+  evidenceClassify: '/api/v1/auth/user/student-profile/evidence/classify/',
 } as const
 
 /** 请求载荷（把学生填写内容整体交给后端做DeepSeek抽取） */
@@ -237,7 +243,55 @@ export const pollStudentProfileTask = (
   })
 }
 
-// ====================== 5. 对外主入口 ======================
+// ====================== 5. AI 证据复核 ======================
+
+interface EvidenceClassifyResponse {
+  items?: EvidenceClassificationItem[]
+}
+
+/**
+ * 只把规则置信度低的句子送 AI 复核强度。
+ * 失败、未登录、接口未部署都直接保留规则画像，不影响生成。
+ */
+const refineLocalProfileWithAI = async (
+  input: StudentProfileInput,
+  profile: StudentProfile,
+  onProgress?: (message: string) => void,
+): Promise<StudentProfile> => {
+  const groups = collectLowConfidenceEvidence(input, profile)
+  if (!groups.length) return profile
+
+  onProgress?.('正在复核低置信证据…')
+  const results = await Promise.all(
+    groups.map(async (group) => {
+      try {
+        const res = await rawRequest<EvidenceClassifyResponse>(
+          STUDENT_PROFILE_ENDPOINTS.evidenceClassify,
+          'POST',
+          {
+            dimension: group.dimension,
+            label: group.label,
+            sentences: group.sentences,
+          },
+          12000,
+        )
+        if (res.statusCode >= 400) return null
+        return { dimension: group.dimension, items: res.data?.items ?? [] }
+      } catch {
+        return null
+      }
+    }),
+  )
+
+  let refined = profile
+  results.forEach((result) => {
+    if (!result || !result.items.length) return
+    refined = applyEvidenceClassifications(input, refined, result.dimension, result.items)
+  })
+  return refined
+}
+
+// ====================== 6. 对外主入口 ======================
 
 export interface GenerateStudentProfileOptions {
   useCache?: boolean
@@ -311,7 +365,8 @@ export const generateStudentProfile = async (
       const reason = err instanceof Error ? err.message : 'DeepSeek解析不可用'
       console.warn('[学生画像] DeepSeek解析不可用，降级为本地规则解析：', reason)
       onProgress?.('DeepSeek接口暂不可用，正在使用本地规则解析…')
-      const profile = parseStudentProfileByRules(input)
+      let profile = parseStudentProfileByRules(input)
+      profile = await refineLocalProfileWithAI(input, profile, onProgress)
       return { profile, method: 'rule', degraded: true, degradedReason: reason }
     }
   }
