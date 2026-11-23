@@ -1,5 +1,7 @@
 <template>
   <view class="recruitment-list-page">
+    <EmploymentTabs active="jobs" />
+
     <!-- 顶部搜索 + 筛选 -->
     <view class="list-header">
       <view class="search-box">
@@ -165,6 +167,12 @@
           <text v-if="item.enterprise_nature" class="job-tag">{{ item.enterprise_nature }}</text>
           <text v-if="item.enterprise_scale" class="job-tag">{{ item.enterprise_scale }}</text>
           <text
+            v-if="scoreOf(item)"
+            class="job-tag match"
+          >
+            匹配 {{ scoreOf(item) }}%
+          </text>
+          <text
             v-if="item.is_alumni_enterprise === '是'"
             class="job-tag alumni"
           >
@@ -192,7 +200,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { onShareAppMessage, onShareTimeline, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onReachBottom, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import EmploymentTabs from '@/components/employment-tabs.vue'
 import { baseURL } from '@/utils/request'
 
 // ========== 通用折叠状态管理 ==========
@@ -330,6 +339,20 @@ const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = computed(() => list.value.length < total.value)
+
+// 匹配度缓存：来自人岗匹配页的结果，列表不再重复解析岗位画像
+const matchScores = ref<Record<string, number>>({})
+const readMatchScores = () => {
+  try {
+    const raw = uni.getStorageSync('jobMatchScores')
+    matchScores.value = raw && typeof raw === 'object' ? raw : {}
+  } catch {
+    matchScores.value = {}
+  }
+}
+const scoreOf = (item: any): number => matchScores.value[String(item.credit_code || '')] || 0
+
+onShow(readMatchScores)
 
 // 新增：跳转页码输入
 const jumpPageInput = ref('')
@@ -485,6 +508,7 @@ const fetchFilterOptions = async () => {
 // 初始化排序选项
 const initSortOptions = () => {
   const dbSortFields = [
+    { label: '匹配度优先', val: 'match_desc' },
     { label: '最新发布', val: '-registration_time' },
     { label: '薪资从高到低', val: 'salary_desc' },
     { label: '薪资从低到高', val: 'salary_asc' },
@@ -564,7 +588,7 @@ const fetchList = async (page = currentPage.value, append = false) => {
       }
     })
 
-    if (selectedSort.value && !['salary_desc', 'salary_asc'].includes(selectedSort.value)) {
+    if (selectedSort.value && !['salary_desc', 'salary_asc', 'match_desc'].includes(selectedSort.value)) {
       params.ordering = selectedSort.value
     }
 
@@ -586,6 +610,9 @@ const fetchList = async (page = currentPage.value, append = false) => {
       if (selectedSort.value === 'salary_desc' || selectedSort.value === 'salary_asc') {
         const dir = selectedSort.value === 'salary_desc' ? -1 : 1
         merged.sort((a: any, b: any) => (salaryValue(a) - salaryValue(b)) * dir)
+      }
+      if (selectedSort.value === 'match_desc') {
+        merged.sort((a: any, b: any) => scoreOf(b) - scoreOf(a))
       }
       list.value = merged
       total.value = data.count || list.value.length
@@ -1617,6 +1644,12 @@ $effect2-gradient2: linear-gradient(
 .job-tag.alumni {
   color: #b23c17;
   background: #fff3ed;
+}
+
+.job-tag.match {
+  color: #b23c17;
+  background: #fff3ed;
+  font-weight: 500;
 }
 
 .job-bottom {

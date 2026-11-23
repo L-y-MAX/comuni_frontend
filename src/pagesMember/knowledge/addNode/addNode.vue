@@ -521,6 +521,7 @@ onLoad(async (options: any) => {
 .page {
   min-height: 100vh;
   padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+  background: #f7f8fa;
 }
 
 .compose {
@@ -617,7 +618,8 @@ onLoad(async (options: any) => {
 }
 
 .pane--preview {
-  height: 900rpx;
+  height: calc(100vh - 480rpx);
+  min-height: 600rpx;
   padding: 8rpx 32rpx 40rpx;
 }
 

@@ -38,143 +38,50 @@
           </view>
         </view>
 
-        <!-- 会员状态 - 绑定点击跳转 -->
-        <view
-          class="membership-status"
-          @click="handleVipFeature"
-        >
-          <view
-            v-if="isVip"
-            class="vip-status-card"
-          >
-            <view class="vip-details">
-              <!-- 尊贵会员时显示VIP图标 -->
-              <view class="vip-label-wrap">
-                <image
-                  v-if="isVip"
-                  class="vip-icon"
-                  src="https://youupro.xyz/notes/static/icons/vip.png"
-                  mode="aspectFit"
-                />
-                <text class="vip-label">尊贵会员</text>
-              </view>
-              <text class="vip-expiry">到期: {{ vipExpireDate }}</text>
-            </view>
-          </view>
-          <view
-            v-else
-            class="normal-status-card"
-          >
-            <view class="normal-details">
-              <text class="normal-label">普通用户</text>
-              <text class="normal-upgrade">升级解锁更多功能</text>
-            </view>
-          </view>
-        </view>
       </view>
     </view>
 
-    <!-- 设置表单区域 - 悬浮效果调整 -->
+    <!-- 设置表单区域 -->
     <view class="forms-section">
       <view class="form-card">
-        <!-- 岗位能力画像与知识库入口已按要求移到首页，此处不再保留 -->
-        <!-- 原有表单项保留，调整会员权益和岗位招聘位置 -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'follow' }"
-          @click="navigateToFollowPage"
-          @touchstart="() => setActiveItem('follow')"
-          @touchend="() => clearActiveItem()"
-        >
+        <view class="form-item" @click="handleUserCardClick">
           <view class="form-label">
-            <text class="label-text">我的关注/粉丝</text>
+            <uni-icons type="person" size="20" color="#5b616b" />
+            <text class="label-text">个人资料</text>
           </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
+          <uni-icons type="right" size="16" color="#c8ccd2" />
         </view>
-        <!-- 我的收藏：展示从就业政策页收藏的资源 -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'favorites' }"
-          @click="navigateToCareerFavorites"
-          @touchstart="() => setActiveItem('favorites')"
-          @touchend="() => clearActiveItem()"
-        >
+
+        <view class="form-item" @click="goCareerReport">
           <view class="form-label">
+            <uni-icons type="medal" size="20" color="#5b616b" />
+            <text class="label-text">我的报告</text>
+          </view>
+          <uni-icons type="right" size="16" color="#c8ccd2" />
+        </view>
+
+        <view class="form-item" @click="navigateToCareerFavorites">
+          <view class="form-label">
+            <uni-icons type="star" size="20" color="#5b616b" />
             <text class="label-text">我的收藏</text>
           </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
+          <uni-icons type="right" size="16" color="#c8ccd2" />
         </view>
-        <!-- 岗位招聘入口已移到首页，此处不再保留 -->
-        <!-- 功能说明（替换原会员权益） -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'instruction' }"
-          @click="openInstructionManual"
-          @touchstart="() => setActiveItem('instruction')"
-          @touchend="() => clearActiveItem()"
-        >
+
+        <view class="form-item" @click="goAccountSecurity">
           <view class="form-label">
-            <text class="label-text">功能说明</text>
+            <uni-icons type="locked" size="20" color="#5b616b" />
+            <text class="label-text">账号安全</text>
           </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
+          <uni-icons type="right" size="16" color="#c8ccd2" />
         </view>
-        <!-- 联系我们  -->
-        <view
-          class="form-item"
-          :class="{ active: activeItemId === 'contact' }"
-          @click="copyContactEmail"
-          @touchstart="() => setActiveItem('contact')"
-          @touchend="() => clearActiveItem()"
-        >
+
+        <view class="form-item" @click="copyContactEmail">
           <view class="form-label">
+            <uni-icons type="email" size="20" color="#5b616b" />
             <text class="label-text">联系我们</text>
           </view>
-          <view class="form-control">
-            <image
-              class="forward-icon"
-              src="https://youupro.xyz/notes/static/icons/forward.png"
-              mode="aspectFit"
-            />
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 会员升级推广：修改显示条件 - 仅登录且非VIP时显示 -->
-    <view
-      v-if="isLogged && !isVip"
-      class="upgrade-section"
-    >
-      <view class="upgrade-card">
-        <view class="upgrade-content">
-          <view class="upgrade-text">
-            <text class="upgrade-title">升级到会员</text>
-            <text class="upgrade-subtitle">解锁尊贵会员</text>
-          </view>
-          <view
-            class="upgrade-button"
-            @click="handleOpenVip"
-          >
-            <text class="upgrade-btn-text">立即升级</text>
-          </view>
+          <uni-icons type="right" size="16" color="#c8ccd2" />
         </view>
       </view>
     </view>
@@ -237,40 +144,29 @@ import {
   getUserInfo,
   userAvatar,
   userName,
-  isVip,
   isLogged,
   userDesc,
-  vipExpireDate,
-  handleVipFeature,
-  handleOpenVip,
-  checkVipStatus,
-  fetchVipInfoFromServer,
   logout,
   getAvatarColor,
   getAvatarText,
-  navigateToFollowPage,
-  setActiveItem,
-  clearActiveItem,
-  activeItemId,
   copyContactEmail,
   wxQuickLogin,
   navigateToLoginPage,
-  navigateToAbilityProfile, // 能力画像（tabBar 页，内部用 switchTab）
 } from './my'
 
-// 修改：打开功能说明手册的函数 - 直接跳转分包页面，移除接口请求逻辑
-const openInstructionManual = () => {
-  // 直接跳转到功能说明页面（路径为实际的分包页面路径）
+// 我的报告
+const goCareerReport = () => {
   uni.navigateTo({
-    url: '/pagesMember/instruction/instruction',
-    fail: (err) => {
-      uni.showToast({
-        title: '跳转失败，请重试',
-        icon: 'none',
-        duration: 2000,
-      })
-      console.error('跳转功能说明页面失败：', err)
-    },
+    url: '/pagesMember/careerReport/careerReport',
+    fail: () => uni.showToast({ title: '跳转失败，请重试', icon: 'none' }),
+  })
+}
+
+// 账号安全
+const goAccountSecurity = () => {
+  uni.navigateTo({
+    url: '/pagesMember/accountSecurity/accountSecurity',
+    fail: () => uni.showToast({ title: '跳转失败，请重试', icon: 'none' }),
   })
 }
 
@@ -295,38 +191,17 @@ onLoad(() => {
   console.log('我的页面加载完成')
   // 延迟执行，确保 Pinia 完全初始化
   setTimeout(() => getUserInfo(), 0.5)
-  // 每次初始化页面时，先从服务器更新会员信息，再检查状态
-  fetchVipInfoFromServer().then(() => {
-    checkVipStatus()
-  })
 })
 
 // 新增：页面每次显示时执行（从其他页面返回/下拉刷新后）
 onShow(() => {
-  getUserInfo() // 刷新用户信息
-  checkVipStatus() // 同步刷新会员状态（可选，保持数据一致）
+  getUserInfo()
 })
 
 // 新增：下拉刷新时执行
 onPullDownRefresh(() => {
-  // 先刷新用户信息，再刷新会员信息，最后停止下拉刷新动画
-  fetchVipInfoFromServer()
-    .then(() => {
-      checkVipStatus()
-      getUserInfo()
-
-      // 停止下拉刷新动画（必须调用，否则刷新图标会一直转）
-      uni.stopPullDownRefresh()
-    })
-    .catch(() => {
-      // 失败也停止刷新动画
-      uni.stopPullDownRefresh()
-      uni.showToast({
-        title: '刷新失败，请重试',
-        icon: 'none',
-        duration: 2000,
-      })
-    })
+  getUserInfo()
+  uni.stopPullDownRefresh()
 })
 
 // ========== 新增：微信小程序分享功能 ==========
@@ -381,7 +256,7 @@ $border-radius-small: 16rpx;
 .top-section {
   position: relative;
   background: #e0e7ff;
-  padding: 60rpx 24rpx 120rpx;
+  padding: 60rpx 24rpx 48rpx;
   border-radius: 0 0 $border-radius-large $border-radius-large;
   margin-bottom: 4rpx;
   overflow: hidden;
@@ -405,7 +280,7 @@ $border-radius-small: 16rpx;
   padding: 32rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.8);
   box-shadow: $shadow-float;
-  margin-bottom: -20rpx; // 与下方会员卡片重叠，实现挂起效果
+  margin-bottom: 0; // 会员卡已移除，不再需要负边距挂起
   -webkit-tap-highlight-color: transparent; // 取消微信默认的点击高亮特效
   position: relative;
   z-index: 3;
@@ -533,7 +408,7 @@ $border-radius-small: 16rpx;
 // 设置表单区域 - 悬浮在上方
 .forms-section {
   padding: 0 24rpx;
-  margin: -60rpx 0 32rpx 0; // 向上偏移实现悬浮效果，覆盖顶部区域下方
+  margin: 24rpx 0 32rpx 0;
   position: relative;
   z-index: 4; // 提高层级确保浮在最上层
 }
@@ -594,9 +469,14 @@ $border-radius-small: 16rpx;
 }
 
 .label-text {
+  margin-left: 16rpx;
   font-size: 32rpx;
   font-weight: 500;
   color: $text-primary;
+}
+
+.form-item:last-child {
+  border-bottom: none;
 }
 
 .form-control {

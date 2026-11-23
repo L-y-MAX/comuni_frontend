@@ -211,7 +211,7 @@ const copyLink = (item: Record<string, any>) => {
 
 const askAi = (item: Record<string, any>) => {
   uni.setStorageSync('aiPendingPrompt', `基于《${item.title}》，帮我解答：`)
-  uni.switchTab({ url: '/pages/ai/ai' })
+  uni.navigateTo({ url: '/pages/ai/ai' })
 }
 
 const goResources = () => {

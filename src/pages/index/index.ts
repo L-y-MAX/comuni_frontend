@@ -380,23 +380,11 @@ const runSearch = async () => {
     ? filterResources(CAREER_RESOURCES, keyword).slice(0, MAX_LOCAL_RESULTS)
     : []
 
-  // 空关键词处理（补全缺失的count/next/previous字段，避免类型报错）
+  // 空关键词：不报错，直接回到首页初始态
   if (!keyword) {
     needLoginForSiteSearch.value = false
-    searchResult.value = {
-      code: 400,
-      msg: '搜索关键词不能为空',
-      count: 0,
-      next: null,
-      previous: null,
-      results: {
-        users: [],
-        knowledge_bases: [],
-        nodes: [],
-        tags: [],
-        comments: [],
-      },
-    }
+    searchResult.value = null
+    isSearching.value = false
     return
   }
 

@@ -589,9 +589,9 @@ const examplePrompts = [
   '用更简单的话重新讲一遍',
 ]
 
-/** 没带文章时的引导：去知识库挑一篇 */
+/** 没带文章时的引导：去资料库挑一篇 */
 const goKnowledge = () => {
-  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
+  uni.switchTab({ url: '/pages/knowledge/knowledge' })
 }
 
 /** 轮询上限：1 秒一次，最多 60 次；不设上限会在后台没返回时永远转圈 */
@@ -977,9 +977,9 @@ const toggleSource = (index: number) => {
   openSourceIndex.value = openSourceIndex.value === index ? -1 : index
 }
 
-/** 点来源卡片：去知识库查看原文 */
+/** 点来源卡片：去资料库查看原文 */
 const openSourceArticle = () => {
-  uni.navigateTo({ url: '/pages/knowledge/knowledge' })
+  uni.switchTab({ url: '/pages/knowledge/knowledge' })
 }
 
 /** 图标图片加载失败时整体回退到字符图标（避免破图） */

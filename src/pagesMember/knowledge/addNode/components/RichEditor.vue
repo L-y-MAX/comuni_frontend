@@ -343,10 +343,12 @@ defineExpose({
   margin: 0 12rpx;
 }
 
-/* 小程序 editor 必须给明确高度，否则内容区不显示 */
+/* 小程序 editor 必须给明确高度，否则内容区不显示。
+   按屏幕剩余高度撑满，避免固定 620rpx 在长屏/短屏上留下大片空白。 */
 .re-body {
   width: 100%;
-  height: 620rpx;
+  height: calc(100vh - 600rpx);
+  min-height: 520rpx;
   box-sizing: border-box;
   padding: 28rpx 32rpx;
   font-size: 30rpx;
@@ -369,7 +371,8 @@ defineExpose({
 
 .re-fallback-input {
   width: 100%;
-  height: 520rpx;
+  height: calc(100vh - 680rpx);
+  min-height: 480rpx;
   padding: 0;
   font-size: 30rpx;
   line-height: 1.8;

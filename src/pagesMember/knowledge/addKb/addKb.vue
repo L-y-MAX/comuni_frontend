@@ -121,8 +121,12 @@ const submit = async () => {
     uni.showToast({ title: '已创建', icon: 'success' })
     setTimeout(() => {
       if (newId) {
-        uni.redirectTo({
-          url: `/pages/knowledge/knowledge?tab=right&kbId=${encodeURIComponent(String(newId))}`,
+        // 资料库现在是 tabBar 页面，switchTab 不能带 query，
+        // 用本地缓存把“新建后要选中的知识库”传给资料库页。
+        uni.setStorageSync('knowledgePendingTab', 'right')
+        uni.setStorageSync('knowledgePendingKb', String(newId))
+        uni.switchTab({
+          url: '/pages/knowledge/knowledge',
           fail: () => uni.navigateBack({ delta: 1 }),
         })
       } else {

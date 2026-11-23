@@ -6,7 +6,7 @@
     >
       <!-- ========== 没有能力画像 ========== -->
       <view
-        v-if="!student"
+        v-if="!student && !report"
         class="state-card card-style"
       >
         <text class="state-title">还没有你的能力画像</text>
@@ -415,6 +415,42 @@
           </text>
         </view>
 
+        <!-- 历史报告 -->
+        <view class="history-card card-style">
+          <view class="history-head">
+            <text class="history-title">历史报告</text>
+            <text
+              v-if="historyList.length"
+              class="history-clear"
+              @click="confirmClearHistory"
+            >
+              清空
+            </text>
+          </view>
+
+          <text v-if="!historyList.length" class="history-empty">
+            还没有历史报告，重新生成后会自动存档
+          </text>
+
+          <view
+            v-for="entry in historyList"
+            :key="entry.id"
+            class="history-item"
+            @click="openHistoryEntry(entry)"
+          >
+            <view class="history-item-main">
+              <text class="history-item-date">{{ formatHistoryTime(entry.generatedAt) }}</text>
+              <text class="history-item-job">
+                {{ entry.snapshot.bestJobName || '无匹配岗位' }}
+              </text>
+            </view>
+            <view class="history-item-right">
+              <text class="history-item-score">{{ entry.snapshot.competitiveness }}</text>
+              <text class="history-item-arrow">›</text>
+            </view>
+          </view>
+        </view>
+
         <!-- ==================== 操作区 ==================== -->
         <view class="action-card card-style">
           <text class="action-title">导出与分享</text>
@@ -442,12 +478,6 @@
             </button>
           </view>
           <button
-            class="history-btn"
-            @click="goReportHistory"
-          >
-            历史报告记录
-          </button>
-          <button
             class="text-btn"
             @click="regenerate"
           >
@@ -467,7 +497,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
 import {
   CAREER_REPORT_STORAGE_KEY,
   PLAN_PHASE_LABEL,
@@ -482,7 +512,14 @@ import { STUDENT_PROFILE_STORAGE_KEY, type StudentProfile } from '@/types/studen
 import { buildCareerReport, refreshReportMarkdown } from './lib/careerReport'
 import { getSampleJobProfiles } from './lib/jobProfileSamples'
 import { exportCareerReport, type ExportFormat } from './lib/careerReportApi'
-import { getHistoryEntry, pushReportHistory, updateHistoryEntry } from './lib/reportHistory'
+import {
+  getHistoryEntry,
+  pushReportHistory,
+  updateHistoryEntry,
+  loadReportHistory,
+  clearReportHistory,
+  type ReportHistoryEntry,
+} from './lib/reportHistory'
 
 // ====================== 状态 ======================
 
@@ -492,6 +529,11 @@ const generating = ref(false)
 
 /** 是否正在查看历史版本（历史版本只读，不参与重算） */
 const isHistoryView = ref(false)
+const historyList = ref<ReportHistoryEntry[]>([])
+
+onShow(() => {
+  historyList.value = loadReportHistory()
+})
 
 const phases: PlanPhase[] = ['short', 'medium', 'long']
 
@@ -582,6 +624,7 @@ const generate = (previousTasks = report.value?.tasks) => {
       saveReport()
       // 每次生成都归档一份历史，供后续回看与趋势对比
       pushReportHistory(built)
+      historyList.value = loadReportHistory()
       isHistoryView.value = false
     } catch (err) {
       console.error('生成生涯报告失败：', err)
@@ -650,13 +693,33 @@ const goAbilityProfile = () => {
   uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
 }
 
-/** 打开历史报告列表 */
-const goReportHistory = () => {
+/** 历史报告：时间显示 */
+const formatHistoryTime = (iso: string): string => {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** 打开某份历史报告 */
+const openHistoryEntry = (entry: ReportHistoryEntry) => {
   uni.navigateTo({
-    url: '/pagesMember/reportHistory/reportHistory',
-    fail: (err) => {
-      console.error('打开历史报告失败：', err)
-      uni.showToast({ title: '打开失败，请重试', icon: 'none', duration: 2000 })
+    url: `/pagesMember/careerReport/careerReport?historyId=${encodeURIComponent(entry.id)}`,
+    fail: () => uni.showToast({ title: '打开失败，请重试', icon: 'none' }),
+  })
+}
+
+/** 清空历史报告 */
+const confirmClearHistory = () => {
+  uni.showModal({
+    title: '清空全部历史？',
+    content: `将删除全部 ${historyList.value.length} 份历史报告，不可恢复。`,
+    confirmText: '清空',
+    confirmColor: '#dc2626',
+    success: (res) => {
+      if (!res.confirm) return
+      clearReportHistory()
+      historyList.value = []
+      uni.showToast({ title: '已清空', icon: 'none' })
     },
   })
 }
@@ -1617,4 +1680,81 @@ onShareAppMessage(() => ({
   background: #2563eb;
   color: #ffffff;
 }
+/* ====================== 历史报告 ====================== */
+.history-card {
+  padding: 24rpx 28rpx;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.history-clear {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.history-empty {
+  display: block;
+  padding: 24rpx 0 8rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.history-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-date {
+  display: block;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.history-item-job {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 26rpx;
+  color: #17191c;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.history-item-right {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin-left: 20rpx;
+}
+
+.history-item-score {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ff8558;
+}
+
+.history-item-arrow {
+  margin-left: 10rpx;
+  font-size: 28rpx;
+  color: #c8ccd2;
+}
+
 </style>

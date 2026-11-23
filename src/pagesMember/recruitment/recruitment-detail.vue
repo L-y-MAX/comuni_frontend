@@ -1,312 +1,174 @@
 <template>
   <view class="recruitment-detail-page">
-    <!-- 悬浮刷新按钮 - 固定在屏幕右侧 -->
-    <button
-      class="refresh-btn"
-      @click="refreshDetail"
-    >
-      <text class="refresh-text">刷新</text>
-    </button>
-
     <scroll-view
       scroll-y
       class="detail-scroll"
     >
-      <!-- 企业基本信息 - 通用折叠 -->
-      <view class="collapse-container">
-        <view
-          class="collapse-trigger effect-btn"
-          @click="toggleCollapse('baseInfo')"
-        >
-          <text class="btn-text">企业基本信息</text>
+      <!-- 顶部岗位卡 -->
+      <view class="detail-hero">
+        <view class="hero-head">
+          <text class="hero-job">{{ detail.job_name || '岗位信息' }}</text>
+          <text class="hero-salary">{{ detail.monthly_salary || '薪资面议' }}</text>
         </view>
-        <view
-          class="collapse-content"
-          :class="{ collapsed: !collapseStates.baseInfo }"
-        >
-          <view class="base-info-card card-style">
-            <view class="info-item">
-              <text class="label">企业名称：</text>
-              <text
-                class="value copy-item"
-                @click="copyContent(detail.enterprise_name)"
-                :selectable="true"
-              >
-                {{ detail.enterprise_name }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">统一信用代码：</text>
-              <text
-                class="value copy-item"
-                @click="copyContent(detail.credit_code)"
-                :selectable="true"
-              >
-                {{ detail.credit_code }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">企业性质：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.enterprise_nature }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">企业规模：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.enterprise_scale }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">所属行业：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.industry }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">公司地址：</text>
-              <text
-                class="value copy-item"
-                @click="copyContent(detail.company_address)"
-                :selectable="true"
-              >
-                {{ detail.company_address }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">校友企业：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.is_alumni_enterprise }}
-              </text>
-            </view>
+        <text class="hero-company">{{ detail.enterprise_name || '企业信息加载中' }}</text>
+
+        <view class="hero-tags">
+          <text v-if="detail.industry" class="hero-tag">{{ detail.industry }}</text>
+          <text v-if="detail.enterprise_nature" class="hero-tag">{{ detail.enterprise_nature }}</text>
+          <text v-if="detail.enterprise_scale" class="hero-tag">{{ detail.enterprise_scale }}</text>
+          <text
+            v-if="detail.is_alumni_enterprise === '是'"
+            class="hero-tag alumni"
+          >
+            校友企业
+          </text>
+          <text
+            v-if="matchScore"
+            class="hero-tag match"
+          >
+            匹配 {{ matchScore }}%
+          </text>
+        </view>
+
+        <view class="hero-actions">
+          <button
+            class="hero-match"
+            @click="goJobMatch"
+          >
+            {{ matchScore ? '查看匹配结果' : '开始匹配' }}
+          </button>
+          <text class="hero-refresh" @click="refreshDetail">刷新</text>
+        </view>
+      </view>
+
+      <!-- 岗位关键信息 -->
+      <view class="detail-card">
+        <text class="section-title">岗位信息</text>
+        <view class="fact-grid">
+          <view class="fact-item">
+            <text class="fact-label">招聘人数</text>
+            <text class="fact-value">{{ detail.recruit_number || '若干' }}</text>
+          </view>
+          <view class="fact-item">
+            <text class="fact-label">招聘专业</text>
+            <text class="fact-value">{{ detail.recruit_major || '不限' }}</text>
           </view>
         </view>
       </view>
 
-      <!-- 企业简介 - 外层通用折叠 + 内部字符折叠 -->
-      <view class="collapse-container">
-        <view
-          class="collapse-trigger effect-btn"
-          @click="toggleCollapse('introInfo')"
-        >
-          <text class="btn-text">企业简介</text>
+      <!-- 岗位能力画像 -->
+      <view class="detail-card">
+        <view class="card-head">
+          <text class="section-title">岗位能力画像</text>
+          <text v-if="jobProfile" class="section-hint">十维要求</text>
         </view>
-        <view
-          class="collapse-content"
-          :class="{ collapsed: !collapseStates.introInfo }"
-        >
-          <view class="intro-card card-style">
-            <view class="intro-content-wrapper">
-              <text
-                class="intro-content"
-                :selectable="true"
-              >
-                {{ isIntroExpanded ? detail.enterprise_intro : getCollapsedIntro }}
-                <text
-                  v-if="(detail.enterprise_intro || '').length > 100"
-                  class="toggle-btn"
-                  @click="toggleIntroExpand"
-                >
-                  {{ isIntroExpanded ? '折叠' : '展开更多' }}
-                </text>
-              </text>
-            </view>
-          </view>
-        </view>
-      </view>
 
-      <!-- 招聘岗位信息 - 通用折叠 -->
-      <view class="collapse-container">
-        <view
-          class="collapse-trigger effect-btn"
-          @click="toggleCollapse('jobInfo')"
-        >
-          <text class="btn-text">招聘岗位信息</text>
-        </view>
-        <view
-          class="collapse-content"
-          :class="{ collapsed: !collapseStates.jobInfo }"
-        >
-          <view class="job-card card-style">
-            <view class="info-item">
-              <text class="label">岗位名称：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.job_name }}
-              </text>
+        <view v-if="profileLoading" class="profile-state">正在生成岗位画像…</view>
+        <view v-else-if="profileError" class="profile-state">{{ profileError }}</view>
+        <block v-else-if="jobProfile">
+          <view
+            v-for="dim in jobProfile.dimensions"
+            :key="dim.key"
+            class="profile-dim"
+          >
+            <view class="profile-dim-head">
+              <text class="profile-dim-name">{{ dim.label }}</text>
+              <text class="profile-dim-score">{{ dim.score }}</text>
             </view>
-            <view class="info-item">
-              <text class="label">招聘专业：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.recruit_major }}
-              </text>
+            <view class="profile-dim-track">
+              <view
+                class="profile-dim-fill"
+                :style="{ width: `${dim.score}%` }"
+              />
             </view>
-            <view class="info-item">
-              <text class="label">招聘人数：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.recruit_number }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">月薪范围：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.monthly_salary }}
-              </text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 岗位能力画像 - 跳转岗位画像页 -->
-      <view class="collapse-container">
-        <view
-          class="collapse-trigger effect-btn"
-          @click="toggleCollapse('profileInfo')"
-        >
-          <text class="btn-text">岗位能力画像</text>
-        </view>
-        <view
-          class="collapse-content"
-          :class="{ collapsed: !collapseStates.profileInfo }"
-        >
-          <view class="profile-card card-style">
-            <text class="profile-intro">
-              对岗位文本做结构化解析，输出专业技能、证书要求、创新能力、学习能力等十大维度的能力要求画像，
-              可直接用于人岗匹配与生涯发展报告生成。
-            </text>
-            <button
-              class="profile-entry-btn"
-              @click="goJobProfile"
+            <text
+              v-if="dim.skills?.length || dim.certificates?.length"
+              class="profile-dim-meta"
             >
-              查看岗位能力画像
-            </button>
+              <text v-if="dim.skills?.length">技能 {{ dim.skills.length }} 项</text>
+              <text v-if="dim.certificates?.length">
+                {{ dim.skills?.length ? ' · ' : '' }}证书 {{ dim.certificates.length }} 项
+              </text>
+            </text>
           </view>
+        </block>
+      </view>
+
+      <!-- 企业信息 -->
+      <view class="detail-card">
+        <text class="section-title">企业信息</text>
+        <view v-if="detail.credit_code" class="info-row">
+          <text class="info-label">统一信用代码</text>
+          <text
+            class="info-value copy-value"
+            @click="copyContent(detail.credit_code)"
+          >
+            {{ detail.credit_code }}
+          </text>
+        </view>
+        <view v-if="detail.company_address" class="info-row">
+          <text class="info-label">公司地址</text>
+          <text
+            class="info-value copy-value"
+            @click="copyContent(detail.company_address)"
+          >
+            {{ detail.company_address }}
+          </text>
+        </view>
+
+        <view v-if="detail.enterprise_intro" class="intro-block">
+          <text class="intro-text">
+            {{ isIntroExpanded ? detail.enterprise_intro : getCollapsedIntro }}
+          </text>
+          <text
+            v-if="(detail.enterprise_intro || '').length > 100"
+            class="intro-toggle"
+            @click="toggleIntroExpand"
+          >
+            {{ isIntroExpanded ? '收起' : '展开全部' }}
+          </text>
         </view>
       </view>
 
-      <!-- 联系方式 - 通用折叠 -->
-      <view class="collapse-container">
-        <view
-          class="collapse-trigger effect-btn"
-          @click="toggleCollapse('contactInfo')"
-        >
-          <text class="btn-text">联系方式</text>
-        </view>
-        <view
-          class="collapse-content"
-          :class="{ collapsed: !collapseStates.contactInfo }"
-        >
-          <view class="contact-card card-style">
-            <view class="info-item">
-              <text class="label">联系人：</text>
-              <text
-                class="value copy-item"
-                @click="copyContent(detail.contact_person || '无')"
-                :selectable="true"
-              >
-                {{ detail.contact_person || '无' }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">联系电话：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.contact_phone || '无' }}
-              </text>
-              <button
-                v-if="detail.contact_phone"
-                class="call-btn"
-                @click="makeCall(detail.contact_phone)"
-              >
-                拨打
-              </button>
-            </view>
-            <view class="info-item">
-              <text class="label">联系邮箱：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.email || '无' }}
-              </text>
-              <button
-                v-if="detail.email"
-                class="copy-btn"
-                @click="copyEmail(detail.email)"
-              >
-                复制
-              </button>
-            </view>
-          </view>
-        </view>
-      </view>
+      <!-- 联系方式 -->
+      <view class="detail-card">
+        <text class="section-title">联系方式</text>
 
-      <!-- 其他信息 - 通用折叠 -->
-      <view class="collapse-container">
-        <view
-          class="collapse-trigger effect-btn"
-          @click="toggleCollapse('otherInfo')"
-        >
-          <text class="btn-text">其他信息</text>
+        <view v-if="detail.contact_person" class="contact-row">
+          <uni-icons type="person" size="18" color="#5b616b" />
+          <text class="contact-value">{{ detail.contact_person }}</text>
         </view>
-        <view
-          class="collapse-content"
-          :class="{ collapsed: !collapseStates.otherInfo }"
-        >
-          <view class="other-card card-style">
-            <view class="info-item">
-              <text class="label">展位号：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.booth_number }}
-              </text>
-            </view>
-            <view class="info-item">
-              <text class="label">签到状态：</text>
-              <text
-                class="value"
-                :selectable="true"
-              >
-                {{ detail.check_in_status }}
-              </text>
-            </view>
-          </view>
-        </view>
-      </view>
 
-      <!-- 页面底部数据来源说明（移出折叠，全局固定在页面底部） -->
-      <view class="page-footer-source">
+        <view
+          v-if="detail.contact_phone"
+          class="contact-row"
+          @click="makeCall(detail.contact_phone)"
+        >
+          <uni-icons type="phone" size="18" color="#5b616b" />
+          <text class="contact-value">{{ detail.contact_phone }}</text>
+          <text class="contact-action">拨打</text>
+        </view>
+
+        <view
+          v-if="detail.email"
+          class="contact-row"
+          @click="copyEmail(detail.email)"
+        >
+          <uni-icons type="email" size="18" color="#5b616b" />
+          <text class="contact-value">{{ detail.email }}</text>
+          <text class="contact-action">复制</text>
+        </view>
+
         <text
-          class="source-text"
-          :selectable="true"
+          v-if="!detail.contact_person && !detail.contact_phone && !detail.email"
+          class="empty-text"
         >
+          暂无联系方式
+        </text>
+      </view>
+
+      <view class="page-footer-source">
+        <text class="source-text">
           该数据由齐鲁人才网&聊城大学毕业生就业指导中心提供支持
         </text>
       </view>
@@ -316,8 +178,10 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { baseURL } from '@/utils/request'
+import { generateJobProfile } from './lib/jobProfileApi'
+import type { JobProfile } from '@/types/jobProfile'
 
 // 定义数据类型（和列表页一致）
 interface RecruitmentItem {
@@ -368,6 +232,22 @@ const toggleCollapse = (type: string) => {
 
 // 响应式数据
 const detail = ref<RecruitmentItem>({} as RecruitmentItem)
+const jobProfile = ref<JobProfile | null>(null)
+const profileLoading = ref(false)
+const profileError = ref('')
+const matchScore = ref(0)
+
+const readMatchScore = () => {
+  try {
+    const raw = uni.getStorageSync('jobMatchScores')
+    const scores = raw && typeof raw === 'object' ? (raw as Record<string, number>) : {}
+    matchScore.value = scores[currentCreditCode.value] || 0
+  } catch {
+    matchScore.value = 0
+  }
+}
+
+onShow(readMatchScore)
 const currentCreditCode = ref<string>('') // 存储当前信用代码
 const isIntroExpanded = ref<boolean>(false) // 企业简介内部字符折叠状态
 
@@ -402,6 +282,7 @@ const fetchDetailById = async (creditCode: string) => {
     const responseData = res.data as RecruitmentListResponse
     if (res.statusCode === 200 && responseData.results && responseData.results.length > 0) {
       detail.value = responseData.results[0]
+      loadJobProfile()
       // 每次加载数据重置折叠状态
       isIntroExpanded.value = false
       // 重置所有通用折叠状态
@@ -444,26 +325,37 @@ const refreshDetail = async () => {
   })
 }
 
-// 跳转到岗位能力画像页（携带信用代码作为岗位标识）
-const goJobProfile = () => {
-  if (!currentCreditCode.value) {
-    uni.showToast({
-      title: '岗位信息未就绪',
-      icon: 'none',
-      duration: 2000,
+// 生成并内嵌岗位能力画像（本地规则，无网络）
+const loadJobProfile = async () => {
+  if (!detail.value.job_name) return
+  profileLoading.value = true
+  profileError.value = ''
+  try {
+    const result = await generateJobProfile({
+      recruitment_id: detail.value.credit_code || String(detail.value.id || ''),
+      job_name: detail.value.job_name,
+      enterprise_name: detail.value.enterprise_name,
+      industry: detail.value.industry,
+      recruit_major: detail.value.recruit_major,
+      monthly_salary: detail.value.monthly_salary,
+      recruit_number: detail.value.recruit_number,
+      enterprise_intro: detail.value.enterprise_intro,
     })
-    return
+    jobProfile.value = result.profile
+  } catch (err) {
+    profileError.value = '岗位画像生成失败，请稍后重试'
+    console.error('生成岗位画像失败：', err)
+  } finally {
+    profileLoading.value = false
   }
+}
+
+// 用当前岗位直接进入人岗匹配
+const goJobMatch = () => {
+  if (!currentCreditCode.value) return
   uni.navigateTo({
-    url: `/pagesMember/recruitment/job-profile?id=${encodeURIComponent(currentCreditCode.value)}`,
-    fail: (err) => {
-      console.error('跳转岗位画像失败：', err)
-      uni.showToast({
-        title: '跳转失败，请重试',
-        icon: 'none',
-        duration: 2000,
-      })
-    },
+    url: `/pagesMember/jobMatch/jobMatch?id=${encodeURIComponent(currentCreditCode.value)}`,
+    fail: () => uni.showToast({ title: '跳转失败，请重试', icon: 'none' }),
   })
 }
 
@@ -870,24 +762,66 @@ onShareTimeline(() => {
   }
 }
 
-// ========== 岗位能力画像入口样式 ==========
+// ========== 岗位能力画像 ==========
 .profile-card {
   display: flex;
   flex-direction: column;
 }
 
-.profile-intro {
-  font-size: 25rpx;
+.profile-state {
+  padding: 20rpx 0;
+  font-size: 26rpx;
   color: #6b7280;
-  line-height: 1.7;
-  display: block;
 }
 
-.profile-entry-btn {
+.profile-dim {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.profile-dim-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.profile-dim-name {
+  font-size: 26rpx;
+  color: #1f2937;
+}
+
+.profile-dim-score {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.profile-dim-track {
+  height: 6rpx;
+  margin-top: 8rpx;
+  background: #f1f5f9;
+  border-radius: 3rpx;
+  overflow: hidden;
+}
+
+.profile-dim-fill {
+  height: 100%;
+  background: #ff8558;
+  border-radius: 3rpx;
+}
+
+.profile-dim-meta {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.profile-match-btn {
   margin: 24rpx 0 0;
   height: 76rpx;
   line-height: 76rpx;
-  background: #ff7239;
+  background: #ff8558;
   color: #fff;
   border-radius: 14rpx;
   font-size: 28rpx;
@@ -912,4 +846,231 @@ onShareTimeline(() => {
   font-style: italic;
   line-height: 1.5;
 }
+/* ====================== 岗位详情新版 ====================== */
+.detail-scroll {
+  padding: 20rpx 0 40rpx;
+  box-sizing: border-box;
+}
+
+.detail-hero {
+  padding: 28rpx;
+  margin-bottom: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 20rpx;
+}
+
+.hero-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.hero-job {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #17191c;
+  line-height: 1.35;
+}
+
+.hero-salary {
+  flex: none;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #ff8558;
+}
+
+.hero-company {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 27rpx;
+  color: #5b616b;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 14rpx;
+}
+
+.hero-tag {
+  margin: 0 12rpx 8rpx 0;
+  padding: 4rpx 12rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+  background: #f7f8fa;
+  border-radius: 6rpx;
+}
+
+.hero-tag.alumni {
+  color: #b23c17;
+  background: #fff3ed;
+}
+
+.hero-tag.match {
+  color: #b23c17;
+  background: #fff3ed;
+  font-weight: 500;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 18rpx;
+}
+
+.hero-match {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  margin: 0;
+  padding: 0;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: #ff8558;
+  border-radius: 10rpx;
+
+  &::after {
+    border: none;
+  }
+}
+
+.hero-refresh {
+  margin-left: 24rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.detail-card {
+  padding: 24rpx 28rpx;
+  margin-bottom: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 16rpx;
+}
+
+.section-title {
+  display: block;
+  margin-bottom: 16rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.section-hint {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.fact-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.fact-item {
+  width: 50%;
+  padding: 10rpx 0;
+}
+
+.fact-label {
+  display: block;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.fact-value {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 27rpx;
+  color: #17191c;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12rpx 0;
+}
+
+.info-label {
+  flex: none;
+  width: 200rpx;
+  font-size: 25rpx;
+  color: #9aa0a8;
+}
+
+.info-value {
+  flex: 1;
+  text-align: right;
+  font-size: 25rpx;
+  color: #17191c;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.copy-value {
+  color: #5b616b;
+}
+
+.intro-block {
+  margin-top: 12rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.intro-text {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.8;
+  color: #5b616b;
+  white-space: pre-wrap;
+}
+
+.intro-toggle {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #ff8558;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f7f8fa;
+}
+
+.contact-row:last-child {
+  border-bottom: none;
+}
+
+.contact-value {
+  flex: 1;
+  margin-left: 14rpx;
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.contact-action {
+  flex: none;
+  margin-left: 16rpx;
+  font-size: 24rpx;
+  color: #ff8558;
+}
+
+.empty-text {
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
 </style>

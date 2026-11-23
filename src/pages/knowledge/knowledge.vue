@@ -104,8 +104,20 @@
           class="kb-column left-column"
           v-if="activeTab === 'left'"
         >
+          <view v-if="leftKbTotal === 0" class="kb-empty">
+            <view class="kb-empty-icon">
+              <uni-icons type="folder-add" size="26" color="#ff8558" />
+            </view>
+            <text class="kb-empty-title">还没有关注或分享的知识库</text>
+            <text class="kb-empty-desc">去首页搜索同学的知识库，关注后会出现在这里</text>
+            <view class="kb-empty-btn" @click="goDiscoverKb">
+              去首页搜索
+            </view>
+          </view>
+
+          <block v-else>
           <!-- 关注的知识库 -->
-          <view class="kb-section">
+          <view v-if="followKbList?.length" class="kb-section">
             <view class="kb-header">
               <text class="title">关注的知识库</text>
               <view class="kb-header-actions">
@@ -200,7 +212,7 @@
           </view>
 
           <!-- 分享给我的知识库 -->
-          <view class="kb-section">
+          <view v-if="shareKbList?.length" class="kb-section">
             <view class="kb-header">
               <text class="title">分享给我的知识库</text>
               <view class="kb-header-actions">
@@ -293,6 +305,7 @@
               </view>
             </view>
           </view>
+          </block>
         </view>
 
         <!-- 右侧栏：我的知识库 -->
@@ -506,6 +519,14 @@
         </view>
       </view>
     </view>
+
+    <AiChatPanel
+      :visible="aiPanelVisible"
+      :kb-id="aiKbId"
+      :kb-name="aiKbName"
+      :context="aiContext"
+      @close="aiPanelVisible = false"
+    />
   </view>
 </template>
 
@@ -531,7 +552,7 @@ import {
   followKnowledgeBase,
   unfollowKnowledgeBase,
 } from '@/api/knowledge'
-import { useKnowledgeStore } from '@/stores/knowledge'
+import AiChatPanel from '@/components/ai-chat-panel.vue'
 
 // ==========  分栏相关状态 ==========
 // 活跃分栏（left:关注/分享，right:我的），从缓存读取
@@ -925,6 +946,11 @@ const selectKb = async (id: string, isRefresh = true, force = false) => {
   }
 }
 
+// 左栏空状态：去首页搜索
+const goDiscoverKb = () => {
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
 // ====================== 生命周期 ======================
 onLoad(async (options?: { tab?: string; kbId?: string }) => {
   // 支持分享卡片深链：?tab=left|right&kbId=xxx
@@ -959,8 +985,23 @@ onLoad(async (options?: { tab?: string; kbId?: string }) => {
   }
 })
 
-onShow(() => {
-  refreshKnowledgeBaseList()
+onShow(async () => {
+  // 从“新建知识库”页通过 switchTab 回来时，用 storage 传递要选中的库
+  const pendingTab = uni.getStorageSync('knowledgePendingTab')
+  if (pendingTab === 'left' || pendingTab === 'right') {
+    activeTab.value = pendingTab
+    uni.setStorageSync('kbActiveTab', pendingTab)
+    uni.removeStorageSync('knowledgePendingTab')
+  }
+  const pendingKb = uni.getStorageSync('knowledgePendingKb')
+
+  await refreshKnowledgeBaseList()
+
+  if (pendingKb) {
+    uni.removeStorageSync('knowledgePendingKb')
+    await selectKb(String(pendingKb), false, true)
+    return
+  }
 
   // 从「新增文章 / 编辑文章」返回时，文章列表也必须刷新。
   // 否则会停在旧数据上：新加的文章不出现，篇数还是 0（新建的知识库本来就没有文章）。
@@ -1260,8 +1301,13 @@ const shareKb = (item: any) => {
   uni.showToast({ title: '已选中，点右上角「…」转发该知识库', icon: 'none', duration: 2200 })
 }
 
-/** 知识库 → AI：把库内文章拼成上下文挂载到 AI 页 */
+/** 知识库 → AI：把库内文章拼成上下文，打开半屏 AI 面板 */
 const KB_AI_CONTEXT_LIMIT = 8000
+const aiPanelVisible = ref(false)
+const aiContext = ref('')
+const aiKbId = ref('')
+const aiKbName = ref('')
+
 const askKbAi = async (item: any) => {
   try {
     uni.showLoading({ title: '读取知识库…' })
@@ -1285,16 +1331,12 @@ const askKbAi = async (item: any) => {
       parts.push(chunk)
       used += chunk.length
     }
-    const store = useKnowledgeStore()
-    store.setCurrentArticle({
-      id: String(item.id),
-      name: `知识库：${item.name}（${parts.length}/${nodes.length} 篇）`,
-      content: parts.join('\n\n'),
-      description: '',
-      knowledge_base_id: String(item.id),
-    })
+
+    aiKbId.value = String(item.id)
+    aiKbName.value = String(item.name || '知识库')
+    aiContext.value = parts.join('\n\n')
+    aiPanelVisible.value = true
     uni.hideLoading()
-    uni.switchTab({ url: '/pages/ai/ai' })
   } catch (e) {
     console.error('读取知识库上下文失败：', e)
     uni.hideLoading()
@@ -2468,4 +2510,52 @@ $border-radius-small: 12rpx;
   font-size: 24rpx;
   color: #9aa0a8;
 }
+.kb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 32rpx 0;
+  padding: 56rpx 32rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 20rpx;
+}
+
+.kb-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  margin-bottom: 20rpx;
+  background: #fff3ed;
+  border-radius: 44rpx;
+}
+
+.kb-empty-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #17191c;
+  text-align: center;
+}
+
+.kb-empty-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #9aa0a8;
+  text-align: center;
+}
+
+.kb-empty-btn {
+  margin-top: 26rpx;
+  padding: 0 34rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  background: #ff8558;
+  border-radius: 8rpx;
+}
+
 </style>

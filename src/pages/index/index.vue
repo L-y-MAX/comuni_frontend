@@ -3,156 +3,128 @@
     class="search-page"
     :class="{ searching: isSearching }"
   >
-    <!-- 品牌sign+文字 -->
-    <view class="brand-sign">
-      <view class="brand-sign-internal"></view>
-    </view>
-    <view class="brand-text">
-      <image
-        src="https://youupro.xyz/notes/static/logo.png"
-        class="brand-logo-img"
-        mode="widthFix"
-      ></image>
+    <!-- 顶部品牌 + 搜索 -->
+    <view class="home-header">
+      <!-- 品牌sign+文字 -->
+      <view class="brand-sign">
+        <view class="brand-sign-internal"></view>
+      </view>
+      <view class="brand-text">
+        <image
+          src="https://youupro.xyz/notes/static/logo.png"
+          class="brand-logo-img"
+          mode="widthFix"
+        ></image>
+      </view>
+
+      <!-- 搜索框容器 -->
+      <view class="search-row">
+        <view class="search-input-wrapper">
+          <input
+            v-model="searchKeyword"
+            class="search-input"
+            type="text"
+            placeholder="搜索对标岗位、就业资料"
+            @confirm="handleSearch"
+            @focus="handleInputFocus"
+            @blur="handleInputBlur"
+          />
+          <view
+            class="search-trigger"
+            @tap="searchNow"
+            :class="{ loading: isLoading }"
+          >
+            <!-- 优先用 /static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
+            <image
+              v-if="!isLoading && !searchIconError"
+              class="search-icon"
+              src="https://youupro.xyz/ly/static/home/search.png"
+              mode="aspectFit"
+              @error="searchIconError = true"
+            />
+            <text
+              v-else-if="!isLoading"
+              class="icon"
+            >
+              ◯
+            </text>
+            <text
+              v-else
+              class="loading-icon"
+            >
+              ◯
+            </text>
+          </view>
+        </view>
+        <text
+          v-if="isSearching"
+          class="search-cancel"
+          @tap="exitSearch"
+        >
+          取消
+        </text>
+      </view>
     </view>
 
-    <!-- 搜索框容器 -->
-    <view class="search-input-wrapper">
-      <input
-        v-model="searchKeyword"
-        class="search-input"
-        type="text"
-        placeholder="Search with 职引星途"
-        @confirm="handleSearch"
-        @focus="handleInputFocus"
-        @blur="handleInputBlur"
-      />
+
+    <!-- 首页主入口：只保留一个人岗匹配 CTA -->
+    <view
+      v-if="!isSearching && !searchResult"
+      class="home-main"
+    >
+      <view class="match-hero">
+        <template v-if="lastMatch">
+          <text class="match-hero-label">上次匹配</text>
+          <text class="match-hero-title">{{ lastMatch.jobName }}</text>
+          <text class="match-hero-score">{{ lastMatch.score }}%</text>
+          <view class="match-hero-actions">
+            <view class="match-hero-btn" @tap="goJobMatch(lastMatch.jobId)">
+              <text class="match-hero-btn-text">继续看结果</text>
+              <text class="match-hero-btn-arrow">›</text>
+            </view>
+            <text class="match-hero-link" @tap="goJobMatch()">重新匹配</text>
+          </view>
+        </template>
+
+        <template v-else-if="hasProfile">
+          <text class="match-hero-label">能力画像已就绪</text>
+          <text class="match-hero-title">选择岗位，看看你差在哪</text>
+          <view class="match-hero-btn" @tap="goJobMatch()">
+            <text class="match-hero-btn-text">开始匹配</text>
+            <text class="match-hero-btn-arrow">›</text>
+          </view>
+        </template>
+
+        <template v-else>
+          <text class="match-hero-label">人岗匹配</text>
+          <text class="match-hero-title">先花 2 分钟，生成你的能力画像</text>
+          <view class="match-hero-btn" @tap="goAbilityProfile">
+            <text class="match-hero-btn-text">生成能力画像</text>
+            <text class="match-hero-btn-arrow">›</text>
+          </view>
+        </template>
+      </view>
+
+      <view class="home-grid">
+        <view class="home-tile home-tile--full" @tap="goRecruitmentList">
+          <view class="home-tile-head">
+            <uni-icons type="shop" size="20" color="#ff8558" />
+            <text class="home-tile-title">就业信息</text>
+          </view>
+        </view>
+      </view>
+
       <view
-        class="search-trigger"
-        @tap="searchNow"
-        :class="{ loading: isLoading }"
+        v-if="hasReport"
+        class="home-report-link"
+        @tap="goCareerReport"
       >
-        <!-- 优先用 /static/home/search.png；缺图自动退回占位字符，不会出现破图 -->
-        <image
-          v-if="!isLoading && !searchIconError"
-          class="search-icon"
-          src="https://youupro.xyz/ly/static/home/search.png"
-          mode="aspectFit"
-          @error="searchIconError = true"
-        />
-        <text
-          v-else-if="!isLoading"
-          class="icon"
-        >
-          ◯
-        </text>
-        <text
-          v-else
-          class="loading-icon"
-        >
-          ◯
-        </text>
-      </view>
-    </view>
-
-    <!-- 退出搜索：一键回到首页初始状态 -->
-    <view
-      v-if="isSearching"
-      class="exit-search"
-      @tap="exitSearch"
-    >
-      <text class="exit-search-text">✕</text>
-    </view>
-
-    <!-- 岗位招聘入口（原在「我的」里叫「宣讲活动」，按要求移到首页；只在首页初始态显示） -->
-    <view
-      v-if="!isSearching && !searchResult"
-      class="resource-entry"
-      @tap="goRecruitmentList"
-    >
-      <view class="resource-entry-left">
-        <!-- 优先用 /static/home/jobs.png；文件不存在时自动退回 emoji，不会出现破图 -->
-        <image
-          v-if="!jobsIconError"
-          class="resource-entry-icon-img"
-          src="https://youupro.xyz/ly/static/home/jobs.png"
-          mode="aspectFit"
-          @error="jobsIconError = true"
-        />
-        <view class="resource-entry-texts">
-          <text class="resource-entry-title">岗位招聘</text>
-          <text class="resource-entry-desc">浏览校招合作企业的岗位与企业信息</text>
+        <view class="home-report-left">
+          <uni-icons type="medal" size="18" color="#5b616b" />
+          <text class="home-report-text">我的报告</text>
         </view>
+        <text class="home-report-arrow">›</text>
       </view>
-      <text class="resource-entry-arrow">›</text>
-    </view>
-
-    <!-- 就业政策与校招资源入口（只在首页初始态显示，进入搜索或出现结果后自动隐藏） -->
-    <view
-      v-if="!isSearching && !searchResult"
-      class="resource-entry"
-      @tap="goCareerResources"
-    >
-      <view class="resource-entry-left">
-        <!-- 优先用 /static/home/policy.png；文件不存在时自动退回 emoji -->
-        <image
-          v-if="!policyIconError"
-          class="resource-entry-icon-img"
-          src="https://youupro.xyz/ly/static/home/policy.png"
-          mode="aspectFit"
-          @error="policyIconError = true"
-        />
-        <view class="resource-entry-texts">
-          <text class="resource-entry-title">就业政策与校招资源</text>
-          <text class="resource-entry-desc">就业政策 · 校招企业名单 · 简历与面试指导</text>
-        </view>
-      </view>
-      <text class="resource-entry-arrow">›</text>
-    </view>
-
-    <!-- 岗位能力画像入口（原在「我的」里，按要求移到首页；只在首页初始态显示） -->
-    <view
-      v-if="!isSearching && !searchResult"
-      class="resource-entry"
-      @tap="goJobProfile"
-    >
-      <view class="resource-entry-left">
-        <!-- 优先用 /static/home/jobprofile.png；缺图自动退回 emoji -->
-        <image
-          v-if="!jobProfileIconError"
-          class="resource-entry-icon-img"
-          src="https://youupro.xyz/ly/static/home/jobprofile.png"
-          mode="aspectFit"
-          @error="jobProfileIconError = true"
-        />
-        <view class="resource-entry-texts">
-          <text class="resource-entry-title">岗位能力画像</text>
-          <text class="resource-entry-desc">查看岗位在十个能力维度上的要求</text>
-        </view>
-      </view>
-      <text class="resource-entry-arrow">›</text>
-    </view>
-
-    <!-- 知识库入口（原在「我的」里，按要求移到首页） -->
-    <view
-      v-if="!isSearching && !searchResult"
-      class="resource-entry"
-      @tap="goKnowledge"
-    >
-      <view class="resource-entry-left">
-        <!-- 优先用 /static/home/knowledge.png；缺图自动退回 emoji -->
-        <image
-          v-if="!knowledgeIconError"
-          class="resource-entry-icon-img"
-          src="https://youupro.xyz/ly/static/home/knowledge.png"
-          mode="aspectFit"
-          @error="knowledgeIconError = true"
-        />
-        <view class="resource-entry-texts">
-          <text class="resource-entry-title">知识库</text>
-          <text class="resource-entry-desc">收藏笔记与资料，支持富文本排版和 AI 问答</text>
-        </view>
-      </view>
-      <text class="resource-entry-arrow">›</text>
     </view>
 
     <!-- 本地检索结果：就业政策与校招资源（离线可用，不需要登录） -->
@@ -481,7 +453,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app' // 新增：导入分享生命周期函数
+import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app' // 新增：导入分享生命周期函数
 import {
   isSearching,
   searchKeyword,
@@ -534,6 +506,53 @@ const jobProfileIconError = ref(false)
 const knowledgeIconError = ref(false)
 const searchIconError = ref(false)
 
+// 跳转到「人岗匹配」页面（首页主入口）
+interface LastJobMatch {
+  jobId: string
+  jobName: string
+  score: number
+}
+
+const hasProfile = ref(false)
+const lastMatch = ref<LastJobMatch | null>(null)
+const hasReport = ref(false)
+
+const readHomeState = () => {
+  try {
+    hasProfile.value = !!uni.getStorageSync('studentAbilityProfile')
+    const raw = uni.getStorageSync('jobLastMatch')
+    lastMatch.value = hasProfile.value && raw && raw.jobName ? (raw as LastJobMatch) : null
+    hasReport.value = !!uni.getStorageSync('careerReport')
+  } catch {
+    hasProfile.value = false
+    lastMatch.value = null
+    hasReport.value = false
+  }
+}
+
+onShow(readHomeState)
+
+const goAbilityProfile = () => {
+  uni.switchTab({ url: '/pages/abilityProfile/abilityProfile' })
+}
+
+const goCareerReport = () => {
+  uni.navigateTo({
+    url: '/pagesMember/careerReport/careerReport',
+    fail: () => uni.showToast({ title: '页面跳转失败', icon: 'none' }),
+  })
+}
+
+const goJobMatch = (jobId?: string) => {
+  const url = jobId
+    ? `/pagesMember/jobMatch/jobMatch?id=${encodeURIComponent(jobId)}`
+    : '/pagesMember/jobMatch/jobMatch'
+  uni.navigateTo({
+    url,
+    fail: () => uni.showToast({ title: '页面跳转失败', icon: 'none' }),
+  })
+}
+
 // 跳转到「岗位能力画像」页面（页内可直接选岗位）
 const goJobProfile = () => {
   uni.navigateTo({
@@ -545,23 +564,23 @@ const goJobProfile = () => {
   })
 }
 
-// 跳转到「知识库」页面
+// 跳转到「资料库」页面（tabBar 页面只能用 switchTab）
 const goKnowledge = () => {
-  uni.navigateTo({
+  uni.switchTab({
     url: '/pages/knowledge/knowledge',
     fail: (err) => {
-      console.error('跳转知识库页面失败：', err)
+      console.error('跳转资料库页面失败：', err)
       uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
     },
   })
 }
 
-// 跳转到「岗位招聘」页面（招聘信息列表）
+// 跳转到「岗位库」页面（招聘信息列表）
 const goRecruitmentList = () => {
   uni.navigateTo({
     url: '/pagesMember/recruitment/recruitment-list',
     fail: (err) => {
-      console.error('跳转岗位招聘页面失败：', err)
+      console.error('跳转岗位库页面失败：', err)
       uni.showToast({ title: '页面跳转失败', icon: 'none', duration: 2000 })
     },
   })
@@ -1559,4 +1578,259 @@ onMounted(() => {
   box-shadow: none;
   border: none;
 }
+/* ====================== 首页主入口 ====================== */
+.home-main {
+  margin-top: 24rpx;
+}
+
+.match-hero {
+  padding: 30rpx 28rpx 28rpx;
+  background: #fff7f2;
+  border: 1rpx solid #ffe0d3;
+  border-radius: 20rpx;
+}
+
+.match-hero-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #17191c;
+  line-height: 1.4;
+}
+
+.match-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 22rpx;
+  padding: 0 28rpx;
+  height: 68rpx;
+  background: #ff8558;
+  border-radius: 10rpx;
+}
+
+.match-hero-btn-text {
+  font-size: 26rpx;
+  color: #ffffff;
+}
+
+.match-hero-btn-arrow {
+  margin-left: 10rpx;
+  font-size: 26rpx;
+  color: #ffffff;
+}
+
+.home-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 16rpx;
+}
+
+.home-tile {
+  width: calc(50% - 8rpx);
+  margin-bottom: 16rpx;
+  padding: 24rpx 22rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+.home-tile--wide {
+  width: 100%;
+}
+
+.home-tile-head {
+  display: flex;
+  align-items: center;
+}
+
+.home-tile-title {
+  margin-left: 12rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+/* ====================== 首页头部收拢 ====================== */
+.search-page {
+  display: block;
+  background: #f7f8fa;
+  padding: 0 24rpx 40rpx;
+}
+
+.home-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 16vh;
+}
+
+/* 去掉倒影与绝对定位，Logo 回到正常文档流 */
+.brand-text {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  margin: 0 0 120rpx;
+  -webkit-box-reflect: none;
+}
+
+.brand-logo-img {
+  width: 300rpx;
+  height: auto;
+  display: block;
+  -webkit-box-reflect: below 8rpx linear-gradient(transparent, rgba(255, 69, 0, 0.14));
+}
+
+/* 还原之前的渐变圆球，但不加倒影 */
+.brand-sign {
+  display: flex;
+  top: calc(16vh + 6rpx);
+  left: 50%;
+  width: 80rpx;
+  height: 80rpx;
+  padding: 3rpx;
+  transform: translateX(-50%);
+  background: linear-gradient(to right, #ff4400f1 50%, #ffffff00 100%);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.brand-sign-internal {
+  display: flex;
+}
+
+.search-page.searching .brand-sign {
+  display: none;
+}
+
+.search-input-wrapper {
+  width: 100%;
+  max-width: none;
+  height: 68rpx;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 14rpx;
+}
+
+.search-input {
+  height: 100%;
+  padding-left: 24rpx;
+  font-size: 26rpx;
+  background: transparent;
+  border-radius: 14rpx 0 0 14rpx;
+}
+
+.search-input::placeholder {
+  font-size: 26rpx;
+  color: #9aa0a8;
+}
+
+.search-trigger {
+  width: 68rpx;
+  background: transparent;
+  border-radius: 0 14rpx 14rpx 0;
+  color: #ff8558;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-row .search-input-wrapper {
+  flex: 1;
+  width: auto;
+}
+
+.search-cancel {
+  flex: none;
+  margin-left: 20rpx;
+  font-size: 26rpx;
+  color: #5b616b;
+}
+
+.search-page.searching {
+  padding-top: 0;
+}
+
+.search-page.searching .home-header {
+  padding-top: calc(var(--status-bar-height) + 120rpx);
+}
+
+.search-page.searching .brand-text {
+  display: none;
+}
+
+.search-page.searching .brand-logo-img {
+  -webkit-box-reflect: none;
+}
+
+.home-main {
+  margin-top: 20rpx;
+}
+
+.match-hero-label {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 24rpx;
+  color: #b23c17;
+}
+
+.match-hero-score {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 52rpx;
+  font-weight: 600;
+  color: #ff8558;
+  line-height: 1.1;
+}
+
+.match-hero-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+}
+
+.match-hero-link {
+  margin-left: 24rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.home-tile--full {
+  width: 100%;
+}
+
+.home-report-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 24rpx;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 16rpx;
+}
+
+.home-report-left {
+  display: flex;
+  align-items: center;
+}
+
+.home-report-text {
+  margin-left: 12rpx;
+  font-size: 26rpx;
+  color: #17191c;
+}
+
+.home-report-arrow {
+  font-size: 28rpx;
+  color: #c8ccd2;
+}
+
 </style>

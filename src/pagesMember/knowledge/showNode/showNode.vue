@@ -518,7 +518,7 @@ const toAI = () => {
   })
 
   // 2. 跳转至AI页面
-  uni.switchTab({
+  uni.navigateTo({
     url: '/pages/ai/ai',
     fail: (err) => {
       console.error('跳转AI页面失败：', err)

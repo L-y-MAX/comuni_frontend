@@ -1,88 +1,25 @@
 <template>
-  <view
-    class="cr-page"
-    :style="{ paddingTop: navTotalHeight + 'px' }"
-  >
-    <!-- ============================================================
-         1. 顶部导航栏
-         - 左上角：返回箭头
-         - 中间：页面标题
-         - 右上角：留出与微信原生胶囊（三个点 + 圆形按钮）等宽的空位，
-           这样标题在视觉上仍然居中，且不会被胶囊压住
-         ============================================================ -->
-    <view
-      class="custom-nav"
-      :style="{ paddingTop: statusBarHeight + 'px' }"
-    >
-      <view
-        class="nav-inner"
-        :style="{ height: navBarHeight + 'px' }"
-      >
-        <view
-          class="nav-left"
-          :style="{ width: sideWidth + 'px' }"
-          @tap="goBack"
-        >
-          <text class="nav-back">‹</text>
-        </view>
+  <view class="cr-page">
+    <EmploymentTabs active="policy" />
 
-        <text class="nav-title">就业政策与校招资源</text>
-
-        <!-- 右侧仅占位：微信胶囊由原生渲染在这里 -->
-        <view
-          class="nav-right"
-          :style="{ width: sideWidth + 'px' }"
-        ></view>
-      </view>
+    <view class="page-head">
+      <text class="page-title">就业政策与校招资源</text>
+      <text class="page-summary">{{ heroSummary }}</text>
     </view>
 
-    <!-- ============================================================
-         2. 橙色顶部大卡片：主标题 + 描述 + 三栏统计
-         ============================================================ -->
-    <view class="hero">
-      <text class="hero-title">就业政策与校招资源</text>
-      <text class="hero-desc">离线可检索 · 只给官方来源与定位，不转载原文</text>
-      <!-- 统计改成一句话，并随筛选变化：
-           原来是固定的三栏大数字（总条数 / 官方来源 / 主题数），
-           筛选之后数字一动不动，看起来像「不符合条件的还在展示」。 -->
-      <text class="hero-summary">{{ heroSummary }}</text>
+    <view class="theme-tabs">
       <text
-        class="hero-help"
-        @tap.stop="showHelp"
-      >
-        使用说明
-      </text>
-    </view>
-
-    <!-- ============================================================
-         3. 分类标签横向卡片组（3 个）
-         选中态：#FF7239 底 + 白字；未选中：白底 + 灰色文字
-         ============================================================ -->
-    <view class="theme-row">
-      <view
         v-for="t in themeList"
         :key="t.key"
-        class="theme-card"
+        class="theme-tab"
         :class="{ active: activeTheme === t.key }"
         @tap="switchTheme(t.key)"
       >
-        <image
-          class="theme-icon-img"
-          :src="t.icon"
-          mode="aspectFit"
-        />
-        <text class="theme-label">{{ t.label }}</text>
-      </view>
+        {{ t.label }}
+      </text>
     </view>
 
-    <!-- 选中分类的辅助说明（浅灰小字） -->
-    <text class="theme-desc">{{ currentThemeMeta.desc }}</text>
-
-    <!-- ============================================================
-         4. 搜索框：放大镜 + 输入 + 清除叉号
-         ============================================================ -->
     <view class="search-box">
-      <!-- 搜索图标：本地 search.png -->
       <image
         v-if="!searchIconError"
         class="search-icon search-icon-img"
@@ -103,22 +40,12 @@
         class="search-clear"
         @tap="clearKeyword"
       >
-        <text class="search-clear-icon">✕</text>
+        <text class="search-clear-icon">×</text>
       </view>
     </view>
 
-    <!-- ============================================================
-         6. 资源列表（政策文件 / 校招渠道 / 求职指导）
-         ============================================================ -->
     <view class="section">
-      <!-- 顶部条件区吸顶：标签筛选 + 列表标题
-           标签栏就是唯一的筛选条件；「政策类型速查」原本是另一层筛选，
-           但它映射到的就是这些标签，属于重复，已改成下方的信息面板。 -->
-      <view
-        class="list-sticky"
-        :style="{ top: navTotalHeight + 'px' }"
-      >
-        <!-- 标签筛选条：这排标签原来散落在每张卡片里，重复渲染，且要先点进卡片才能筛 -->
+      <view class="list-sticky">
         <scroll-view
           v-if="themeTags.length"
           class="chip-scroll"
@@ -140,18 +67,17 @@
               :class="{ active: activeTag === g }"
               @tap="toggleTag(g)"
             >
-              {{ g }}({{ tagCount(g) }})
+              {{ g }}
             </text>
           </view>
         </scroll-view>
 
         <view class="section-head">
           <text class="section-title">{{ listTitle }}</text>
-          <text class="section-hint">{{ visibleList.length }} / {{ themeTotal }} 条</text>
+          <text class="section-hint">{{ visibleList.length }} 条</text>
         </view>
       </view>
 
-      <!-- 当前筛选状态：标签已在上方筛选条高亮显示，这里只在有关键词时才出现，避免重复 -->
       <view
         v-if="hasKeywordFilter"
         class="filter-bar"
@@ -184,103 +110,43 @@
         <text class="res-meta">
           <text v-if="item.scope">{{ item.scope }} ·</text>
           {{ item.source }}
-          <text v-if="item.docNo">· {{ item.docNo }}</text>
+          <text v-if="item.docNo"> · {{ item.docNo }}</text>
         </text>
 
         <text class="res-summary">{{ item.summary }}</text>
 
         <view
-          v-if="item.advice"
-          class="res-advice"
-          @tap.stop="toggleAdvice(item)"
-        >
-          <text class="res-advice-label">使用指引</text>
-          <text class="res-advice-toggle">{{ isAdviceOpen(item) ? '收起' : '展开' }}</text>
-        </view>
-        <view
-          v-if="item.advice && isAdviceOpen(item)"
-          class="res-advice-body"
-        >
-          <text class="res-advice-text">{{ item.advice }}</text>
-        </view>
-
-        <!-- 标签：只留前 2 个做「这张卡讲什么」的提示，完整筛选在上方筛选条 -->
-        <view
-          v-if="item.tags && item.tags.length"
-          class="res-tags-mini"
-        >
-          <text
-            v-for="g in cardTags(item.tags)"
-            :key="g"
-            class="res-tag-mini"
-            :class="{ active: activeTag === g }"
-            @tap.stop="toggleTag(g)"
-          >
-            {{ g }}
-          </text>
-        </view>
-
-        <view
           v-if="item.url"
           class="res-actions"
         >
-          <view
-            class="fav-btn"
+          <text
+            class="fav-star"
+            :class="{ on: isFav(item) }"
             @tap.stop="toggleFav(item)"
           >
-            <text
-              class="fav-icon"
-              :class="{ on: isFav(item) }"
-            >
-              {{ isFav(item) ? '★' : '☆' }}
-            </text>
-          </view>
-          <view
-            class="ai-btn"
-            @tap.stop="askAi(item)"
-          >
-            <text class="ai-btn-text">AI 提问</text>
-          </view>
-          <view
-            class="copy-btn"
+            {{ isFav(item) ? '★' : '☆' }}
+          </text>
+          <text
+            class="copy-link"
             @tap.stop="copyLink(item)"
           >
-            <text class="copy-btn-text">复制官方链接</text>
-          </view>
-          <text class="copy-hint">小程序无法直接打开外链，复制后前往浏览器访问</text>
+            复制官方链接
+          </text>
         </view>
       </view>
 
-      <!-- 空状态 -->
       <view
         v-if="!visibleList.length"
         class="empty-card"
       >
         <text class="empty-title">没有匹配的资源</text>
-        <text class="empty-desc">
-          换个关键词，或点上方标签里的「全部」，查看全部 {{ themeTotal }} 条。
-        </text>
+        <text class="empty-desc">换个关键词，或点上方「全部」查看全部资源。</text>
       </view>
     </view>
 
-    <!-- ============================================================
-         7. 联动说明 + 来源与免责
-         ============================================================ -->
-    <view class="linkage-card">
-      <text class="linkage-title">怎么和本小程序的其他功能配合用</text>
-      <text class="linkage-text">{{ RESOURCE_LINKAGE_NOTE }}</text>
-    </view>
-
-    <view class="disclaimer-card">
-      <text class="disclaimer-title">来源与免责说明</text>
-      <text
-        v-for="(d, i) in DISCLAIMERS"
-        :key="i"
-        class="disclaimer-item"
-      >
-        · {{ d }}
-      </text>
-    </view>
+    <text class="source-note">
+      来源与免责：{{ DISCLAIMERS[0] }}
+    </text>
   </view>
 </template>
 
@@ -288,6 +154,7 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { baseURL } from '@/utils/request'
+import EmploymentTabs from '@/components/employment-tabs.vue'
 import {
   CAREER_RESOURCES,
   RESOURCE_LINKAGE_NOTE,
@@ -407,7 +274,7 @@ const tagCount = (tag: ResourceTag): number =>
 const askAi = (item: CareerResource) => {
   const title = item.title || '该资源'
   uni.setStorageSync('aiPendingPrompt', `基于《${title}》，帮我解答：`)
-  uni.switchTab({
+  uni.navigateTo({
     url: '/pages/ai/ai',
     fail: () => {
       uni.removeStorageSync('aiPendingPrompt')
@@ -1254,4 +1121,99 @@ $bg: #f7f8fa;
   color: #fff2ea;
   text-decoration: underline;
 }
+/* ====================== 政策页精简版 ====================== */
+.page-head {
+  padding: 24rpx 0 10rpx;
+}
+
+.page-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #17191c;
+}
+
+.page-summary {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #9aa0a8;
+}
+
+.theme-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8rpx;
+}
+
+.theme-tab {
+  margin: 0 12rpx 10rpx 0;
+  padding: 10rpx 22rpx;
+  font-size: 24rpx;
+  color: #5b616b;
+  background: #ffffff;
+  border: 1rpx solid #ececf0;
+  border-radius: 999rpx;
+}
+
+.theme-tab.active {
+  color: #ffffff;
+  background: #ff8558;
+  border-color: #ff8558;
+}
+
+.search-box {
+  height: 68rpx;
+  margin: 8rpx 0 16rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  box-shadow: none;
+}
+
+.search-input {
+  font-size: 26rpx;
+}
+
+.list-sticky {
+  top: 0 !important;
+}
+
+.res-card {
+  padding: 24rpx;
+  border: 1rpx solid #ececf0;
+  border-radius: 16rpx;
+  box-shadow: none;
+}
+
+.res-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14rpx;
+  padding-top: 16rpx;
+}
+
+.fav-star {
+  font-size: 36rpx;
+  color: #c8ccd2;
+}
+
+.fav-star.on {
+  color: #ff8558;
+}
+
+.copy-link {
+  font-size: 24rpx;
+  color: #ff8558;
+}
+
+.source-note {
+  display: block;
+  padding: 8rpx 0 40rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #9aa0a8;
+}
+
 </style>

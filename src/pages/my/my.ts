@@ -437,11 +437,10 @@ export const navigateToAbilityProfile = () => {
 /**
  * 跳转到知识库页面。
  *
- * 知识库已从 tabBar 移出，但**仍留在主包 pages 里**，
- * 所以可以直接用 navigateTo（不是 switchTab）。
+ * 知识库现在是 tabBar 页面，必须用 switchTab。
  */
 export const navigateToKnowledge = () => {
-  uni.navigateTo({
+  uni.switchTab({
     url: '/pages/knowledge/knowledge',
     fail: (err) => {
       console.error('跳转知识库页面失败：', err)

@@ -32,7 +32,7 @@
     {
       "path": "pages/knowledge/knowledge",
       "style": {
-        "navigationBarTitleText": "知识库",
+        "navigationBarTitleText": "资料库",
         "enablePullDownRefresh": true
       }
     },
@@ -61,10 +61,10 @@
         "text": "能力画像"
       },
       {
-        "pagePath": "pages/ai/ai",
-        "iconPath": "static/tabs/ai_default.png",
-        "selectedIconPath": "static/tabs/ai_selected.png",
-        "text": "AI 助手"
+        "pagePath": "pages/knowledge/knowledge",
+        "iconPath": "static/tabs/library_default.png",
+        "selectedIconPath": "static/tabs/library_selected.png",
+        "text": "资料库"
       },
       {
         "pagePath": "pages/my/my",
@@ -273,7 +273,9 @@
         {
           "path": "recruitment-list",
           "style": {
-            "navigationBarTitleText": "就业招聘"
+            "navigationBarTitleText": "就业信息",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 120
           }
         },
         {
@@ -340,8 +342,7 @@
         {
           "path": "careerResources",
           "style": {
-            "navigationBarTitleText": "就业政策与校招资源",
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "就业信息"
           }
         }
       ]
